@@ -15,7 +15,7 @@
 ## 🛠️ 기술 스택
 
 - **Frontend**: Vue.js 3, Vite
-- **Backend**: Fastapi, Python
+- **Backend**: Fast API
 - **Database**: Firebase Firestore (실시간 동기화)
 - **Authentication**: Firebase Auth
 - **API**: 국문관광정보 서비스 API, Geolocation API
