@@ -7,6 +7,7 @@ import Home from './components/Home.vue'
 import DestinationCategory from './components/DestinationCategory.vue'
 import PreferenceInput from './components/PreferenceInput.vue'
 import AuthPage from './components/AuthPage.vue'
+import Test from './components/test.vue'
 
 const routes = [
   { path: '/auth', component: AuthPage },
@@ -17,6 +18,7 @@ const routes = [
   { path: '/bookmarks', component: () => import('./components/BookmarkList.vue') }, // 북마크 페이지
   { path: '/management', component: () => import('./components/Management.vue') }, // 관리자 페이지
   { path: '/present', component: () => import('./components/PresentFestivals.vue') }, // 현재 진행중인 서울 행사
+  { path: '/test', component: Test }, // 위치 정보 테스트 페이지
 ]
 
 const router = createRouter({
