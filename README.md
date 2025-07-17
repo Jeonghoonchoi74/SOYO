@@ -157,9 +157,6 @@ flowchart LR
      ADL:::apiNode
      ADLR:::apiNode
      PD:::apiNode 
-    classDef apiNode fill:#ffebee,color:#000000,font-weight:bold
-    classDef adminNode fill:#fff8e1,color:#000000,font-weight:bold
-    classDef userNode fill:#e8f5e8,color:#000000,font-weight:bold
 ```
 
 
