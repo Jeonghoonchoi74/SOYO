@@ -1,6 +1,11 @@
-# 여행 추천 AI 서비스
+# SOYO (소요) - 여행 추천 AI 서비스
 
-외국인을 위한 맞춤형 한국 여행 추천 서비스입니다.
+![License](https://img.shields.io/badge/License-MIT-blue.svg)
+![Vue.js](https://img.shields.io/badge/Vue.js-3.x-4FC08D?logo=vue.js)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi)
+![Firebase](https://img.shields.io/badge/Firebase-FFCA28?logo=firebase&logoColor=black)
+
+**Search for your Own Oasis**의 줄임말이자, 한자어 소요(逍遙) '자유롭게 거닐다'는 의미를 담은 외국인을 위한 맞춤형 한국 여행 추천 서비스입니다.
 
 ## 🚀 주요 기능
 
@@ -14,11 +19,30 @@
 
 ## 🛠️ 기술 스택
 
-- **Frontend**: Vue.js 3, Vite
-- **Backend**: Fast API
-- **Database**: Firebase Firestore (실시간 동기화)
-- **Authentication**: Firebase Auth
-- **API**: 국문관광정보 서비스 API, Geolocation API
+### Frontend
+
+![Vue.js](https://img.shields.io/badge/Vue.js-4FC08D?style=for-the-badge&logo=vue.js&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
+
+### Backend
+
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+
+### Database & Authentication
+
+![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
+![Firestore](https://img.shields.io/badge/Firestore-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
+
+### Tools & Others
+
+![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white)
+![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white)
+![npm](https://img.shields.io/badge/npm-CB3837?style=for-the-badge&logo=npm&logoColor=white)
 
 ## 📱 시스템 아키텍처
 
@@ -86,7 +110,7 @@ sequenceDiagram
     FDB-->>B: 저장 완료
     B-->>F: 저장 성공 응답
     F-->>U: 북마크 완료 모달 표시
-    
+
     U->>F: 북마크 목록/리뷰 작성
     F->>B: POST /api/get_user_bookmarks, /api/save_review
     B->>FDB: 북마크/리뷰 조회 및 저장
@@ -156,35 +180,38 @@ flowchart LR
      AD:::apiNode
      ADL:::apiNode
      ADLR:::apiNode
-     PD:::apiNode 
+     PD:::apiNode
 ```
-
 
 ## 🚀 설치 및 실행
 
 ### 📋 사전 요구사항
+
 - Python 3.8 이상
 - Node.js 16 이상
 - npm 또는 yarn
 
 ### 🚀 빠른 시작 (권장)
+
 프로젝트 루트 폴더에서 다음 명령어를 실행하세요:
+
 ```powershell
 .\all.ps1
 ```
 
-
-
 ### 🌐 접속 정보
+
 - **프론트엔드**: http://localhost:5173
 - **백엔드 API**: http://localhost:8000
 
 ### 📝 주의사항
+
 1. 백엔드 실행 전 `firebase.json` 파일이 `backend` 폴더에 있어야 합니다
 2. 가상환경 활성화 후 백엔드를 실행해야 합니다
 3. 프론트엔드는 별도 터미널에서 실행해야 합니다
 
 ### 🔍 문제 해결
+
 - 포트 충돌 시: 다른 포트 사용 또는 기존 프로세스 종료
 - 의존성 오류: `pip install -r requirements.txt` 재실행
 - npm 오류: `npm install` 재실행
@@ -192,20 +219,24 @@ flowchart LR
 ## 📋 API 엔드포인트
 
 ### 사용자 선호도
+
 - `POST /api/save_user_preferences` - 선호도 저장
 - `POST /api/get_latest_user_preferences` - 최신 선호도 조회
 
 ### 북마크
+
 - `POST /api/save_bookmark` - 북마크 저장
 - `POST /api/get_user_bookmarks` - 북마크 목록 조회
 - `POST /api/delete_user_bookmark` - 북마크 삭제
 
 ### 리뷰
+
 - `POST /api/save_review` - 리뷰 저장/수정
 - `POST /api/get_user_reviews` - 사용자 리뷰 조회
 - `GET /api/get_all_reviews` - 전체 리뷰 조회 (관리자용)
 
 ### 사용자 관리
+
 - `POST /api/update_user_language` - 언어 설정 업데이트
 - `POST /api/delete_user_account` - 회원탈퇴
 
@@ -221,22 +252,33 @@ flowchart LR
 ## 🔧 주요 기능 상세
 
 ### 관리자 페이지 (Management.vue)
+
 - **자동 리다이렉트**: 관리자 계정으로 로그인 시 자동으로 `/management`로 이동
 - **실시간 동기화**: Firestore onSnapshot으로 리뷰/통계 실시간 업데이트
 - **통계 대시보드**: 전체 사용자 수, 북마크 수, 리뷰 수, 장소별 통계
 - **리뷰 관리**: 모든 사용자의 리뷰를 시간순으로 확인
 
 ### 북마크 UX 개선
+
 - **연속 클릭 방지**: 북마크 버튼 클릭 후 2초간 비활성화
 - **정확한 메시지**: 추가/삭제 성공/실패 메시지 분기
 - **개별 리뷰**: 각 북마크마다 개별 리뷰 작성/수정 가능
 
 ### 회원탈퇴
+
 - **완전 삭제**: 사용자 데이터, 북마크, 리뷰, 선호도 모두 삭제
 - **Firebase Auth**: Firebase Auth 계정도 함께 삭제
 
+## 👥 Credits
+
+이 프로젝트는 다음 팀원들의 협력으로 개발되었습니다:
+
+| 최정훈 (팀장)                                                                                                                               | 안효서                                                                                                                             | 박지연                                                                                                                               | 이서준                                                                                                                                | 이재진                                                                                                                                  |
+| ------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| [![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Jeonghoonchoi74) | [![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/pokqok) | [![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/jiyeon22) | [![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/seojun133) | [![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/LeeJaeJin00) |
 
 ## 📄 라이선스
 
-이 프로젝트는 MIT 라이선스 하에 배포됩니다.
+이 프로젝트는 [MIT 라이선스](LICENSE) 하에 배포됩니다.
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
