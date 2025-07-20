@@ -13,7 +13,6 @@
               <!-- 리뷰 섹션 -->
               <div class="review-section">
                 <div v-if="place.review && !place.isEditing" class="existing-review">
-                  <h4>내 리뷰:</h4>
                   <p>{{ place.review }}</p>
                   <button class="edit-review-btn" @click="editReview(idx, place)">수정</button>
                 </div>
@@ -266,19 +265,20 @@
     background: #f8fafc;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
   }
   
   .header {
-    text-align: center;
+    text-align: left;
     margin-bottom: 2.5rem;
+    width: 100%;
   }
   
   .title {
     font-size: 2rem;
     font-weight: 800;
     margin-bottom: 3rem;
-    text-align: center;
+    text-align: left;
     color: #1e293b;
   }
   
@@ -337,6 +337,7 @@
   
   .place-info {
     flex: 1;
+    text-align: left;
   }
   
   .place-name {
@@ -344,11 +345,14 @@
     font-weight: 800;
     margin-bottom: 0.4rem;
     color: #1e293b;
+    text-align: left;
   }
   
   .place-desc {
     font-size: 1.1rem;
     color: #334155;
+    text-align: left;
+    margin-bottom: 0.2rem;
   }
   
   .review-box {
@@ -419,11 +423,12 @@
   }
   
   .empty-state {
-    text-align: center;
+    text-align: left;
     padding: 2rem;
     background-color: #f8fafc;
     border-radius: 12px;
     color: #64748b;
+    width: 100%;
   }
 
   .back-home-btn {
@@ -580,24 +585,19 @@
     background: #b91c1c;
   }
 
+  /* 
   .review-section {
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid #e2e8f0;
-  }
+    margin-top: 0.2rem;
+    padding-top: 0.2rem;
+  } */
 
-  .existing-review h4 {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #475569;
-    margin-bottom: 0.5rem;
-  }
 
   .existing-review p {
     font-size: 0.9rem;
     color: #64748b;
     margin-bottom: 0.5rem;
     line-height: 1.4;
+    text-align: left;
   }
 
   .edit-review-btn {

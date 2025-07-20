@@ -33,3 +33,6 @@ firebase-schema.py
 backend/firebase.json
 api설명서.md
 구현해야되는거.txt
+kr_to_en.py
+check_seoul_count.py
+설명서.md

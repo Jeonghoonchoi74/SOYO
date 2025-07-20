@@ -41,14 +41,14 @@
           <div v-for="(review, idx) in reviews" :key="idx" class="review-card">
             <div class="review-header">
               <img :src="review.placeImage" class="place-img" :alt="review.placeName" />
-              <div class="review-info">
-                <div class="place-name">{{ review.placeName }}</div>
-                <div class="user-name">{{ review.userName }}</div>
-                <div class="review-date">{{ formatDate(review.createdAt) }}</div>
-              </div>
+                          <div class="review-info">
+              <div class="place-name"><strong>장소:</strong> {{ review.placeName }}</div>
+              <div class="user-name"><strong>사용자명:</strong> {{ review.userName }}</div>
+              <div class="review-date"><strong>등록 날짜:</strong> {{ formatDate(review.createdAt) }}</div>
+            </div>
             </div>
             <div class="review-content">
-              <p>{{ review.review }}</p>
+              <p><strong>리뷰:</strong> {{ review.review }}</p>
             </div>
           </div>
         </template>
@@ -300,7 +300,7 @@ export default {
 
 .review-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 1.5rem;
   margin-bottom: 1.5rem;
 }
@@ -314,6 +314,7 @@ export default {
 
 .review-info {
   flex: 1;
+  text-align: left;
 }
 
 .review-info .place-name {
@@ -321,17 +322,20 @@ export default {
   font-weight: 700;
   color: #1e293b;
   margin-bottom: 0.3rem;
+  text-align: left;
 }
 
 .review-info .user-name {
   font-size: 1rem;
   color: #64748b;
   margin-bottom: 0.2rem;
+  text-align: left;
 }
 
 .review-info .review-date {
   font-size: 0.9rem;
   color: #94a3b8;
+  text-align: left;
 }
 
 .review-content p {
@@ -339,6 +343,7 @@ export default {
   color: #475569;
   line-height: 1.6;
   margin: 0;
+  text-align: left;
 }
 
 .empty-state {
@@ -366,7 +371,7 @@ export default {
   
   .review-header {
     flex-direction: column;
-    text-align: center;
+    text-align: left;
     gap: 1rem;
   }
   
