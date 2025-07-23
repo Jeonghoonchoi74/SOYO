@@ -26,7 +26,6 @@ dist-ssr
 *.sw?
 db_insertion.py
 api_call_count.json
-api_insertion.py
 area_codes_single.json
 프로젝트_기술_선택_가이드.md
 firebase-schema.py
@@ -36,3 +35,10 @@ api설명서.md
 kr_to_en.py
 check_seoul_count.py
 설명서.md
+event_jeonnam.json
+final.json
+food_count.py
+food.py
+foods_jeonnam.json
+test.py
+api_insertion.py

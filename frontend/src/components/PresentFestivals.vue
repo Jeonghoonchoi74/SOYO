@@ -301,7 +301,7 @@ const fetchPresentFestivals = async () => {
     error.value = null;
     
     // Firebase에서 서울 행사 데이터 가져오기
-    const seoulCollectionRef = collection(db, 'api_data', 'ko', '서울'); // 나중에는 Prefercen Input 에서 받아온 값으로 변경 예정정
+    const seoulCollectionRef = collection(db, 'api_data', 'ko', '부산', 'events', 'items'); // 나중에는 Prefercen Input 에서 받아온 값으로 변경 예정정
     const querySnapshot = await getDocs(seoulCollectionRef);
     
     const allFestivals = [];

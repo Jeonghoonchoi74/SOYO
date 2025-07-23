@@ -177,6 +177,10 @@
               </div>
             </div>
             
+            <!-- overview(개요) 섹션: 제목 없이 overview만 -->
+            <div v-if="selectedPlace.overview" class="info-section">
+              <p v-html="selectedPlace.overview" style="margin-top: 12px; color: #222; font-size: 1.13rem; line-height: 1.7; text-align: left;"></p>
+            </div>
             <!-- 상세정보 섹션 -->
             <div v-if="selectedPlace.detail_intro2?.eventintro || selectedPlace.detail_intro2?.eventtext" class="info-section">
               <h3>상세 정보</h3>
@@ -328,7 +332,7 @@ export default {
         this.error = null;
         
         // Firebase에서 서울 행사 데이터 가져오기
-        const seoulCollectionRef = collection(db, 'api_data', 'ko', '부산');
+        const seoulCollectionRef = collection(db, 'api_data', 'ko', '부산', 'events', 'items');
         const querySnapshot = await getDocs(seoulCollectionRef);
         
         const allPlaces = [];
@@ -965,10 +969,20 @@ export default {
 }
 
 .detail-item {
-  border: 1px solid #e9ecef;
+  background: #fff;
+  color: #222;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
-  padding: 12px;
-  background: #f8f9fa;
+  padding: 18px 16px;
+  box-shadow: 0 1px 4px rgba(37,99,235,0.04);
+  font-size: 1.13rem;
+  line-height: 1.7;
+  word-break: keep-all;
+}
+.detail-item p {
+  color: #222;
+  text-align: left;
+  font-size: 1.13rem;
 }
 
 .detail-item h4 {
@@ -978,14 +992,6 @@ export default {
   margin-bottom: 6px;
   border-bottom: 2px solid #dee2e6;
   padding-bottom: 4px;
-}
-
-.detail-item p {
-  font-size: 0.8rem;
-  line-height: 1.5;
-  color: #6c757d;
-  margin: 0;
-  white-space: pre-line;
 }
 
 .custom-modal {
@@ -1010,6 +1016,8 @@ export default {
   90% { opacity: 1; transform: translate(-50%, -50%); }
   100% { opacity: 0; transform: translate(-50%, -40%); }
 }
+
+/* overview 관련 커스텀 스타일 제거 (overview-item, info-title 등) */
 
 /* 모바일 반응형 */
 @media (max-width: 768px) {
@@ -1061,6 +1069,13 @@ export default {
   
   .info-grid {
     grid-template-columns: 1fr;
+  }
+  .overview-item {
+    font-size: 0.97rem;
+    padding: 12px 6px;
+  }
+  .info-title {
+    font-size: 1rem;
   }
 }
 </style>
