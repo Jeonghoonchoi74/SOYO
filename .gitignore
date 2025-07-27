@@ -38,7 +38,15 @@ check_seoul_count.py
 event_jeonnam.json
 final.json
 food_count.py
-food.py
+1food.py
 foods_jeonnam.json
 test.py
 api_insertion.py
+AI_SUMMARY_GUIDE.md
+review.py
+/results
+fined_review.py
+test_ai_summary.py
+food.py
+requirements2.txt
+.env

@@ -151,6 +151,8 @@ async def save_bookmark(request: Request):
                 'name': name,
                 'desc': desc,
                 'image': image,
+                'rating': 0,  # 기본 평점
+                'isPublic': False,  # 기본 비공개
                 'createdAt': firestore.SERVER_TIMESTAMP
             },
             merge=True
@@ -287,7 +289,12 @@ async def save_review(request: Request):
                 db.collection('users').document(uid).collection('bookmarks').document(str(place_id)).update,
                 {'review': review}
             )
-            # 전체 리뷰 컬렉션에 저장 (관리자용)
+            # 전체 리뷰 컬렉션에 저장 (관리자용) - 북마크 정보도 포함
+            bookmark_doc = await asyncio.to_thread(
+                db.collection('users').document(uid).collection('bookmarks').document(str(place_id)).get
+            )
+            bookmark_data = bookmark_doc.to_dict() if bookmark_doc.exists else {}
+            
             all_review_data = {
                 'uid': uid,
                 'userName': user_name,
@@ -296,6 +303,8 @@ async def save_review(request: Request):
                 'placeDesc': place_desc,
                 'placeImage': place_image,
                 'review': review,
+                'rating': bookmark_data.get('rating', 0),
+                'isPublic': bookmark_data.get('isPublic', False),
                 'createdAt': firestore.SERVER_TIMESTAMP
             }
             await asyncio.to_thread(
@@ -331,6 +340,87 @@ async def get_all_reviews():
         )
         reviews = [doc.to_dict() for doc in docs]
         return {'success': True, 'reviews': reviews}
+    except Exception as e:
+        return JSONResponse(content={'success': False, 'error': str(e)}, status_code=500)
+
+@app.get("/api/get_public_bookmarks")
+async def get_public_bookmarks():
+    """모든 사용자의 공개된 북마크들을 가져오는 API"""
+    try:
+        public_bookmarks = []
+        
+        # 모든 사용자 문서 가져오기
+        users = await asyncio.to_thread(lambda: list(db.collection('users').stream()))
+        
+        for user in users:
+            user_data = user.to_dict()
+            user_name = user_data.get('name', 'Unknown')
+            
+            # 각 사용자의 공개된 북마크들 가져오기
+            bookmarks = await asyncio.to_thread(
+                lambda: list(user.reference.collection('bookmarks').where('isPublic', '==', True).stream())
+            )
+            
+            for bookmark in bookmarks:
+                bookmark_data = bookmark.to_dict()
+                bookmark_data['userName'] = user_name
+                bookmark_data['userId'] = user.id
+                public_bookmarks.append(bookmark_data)
+        
+        # 평점 높은 순으로 정렬
+        public_bookmarks.sort(key=lambda x: x.get('rating', 0), reverse=True)
+        
+        return {'success': True, 'bookmarks': public_bookmarks}
+    except Exception as e:
+        return JSONResponse(content={'success': False, 'error': str(e)}, status_code=500)
+
+@app.post("/api/update_bookmark_rating")
+async def update_bookmark_rating(request: Request):
+    data = await request.json()
+    uid = data.get('uid')
+    place_id = data.get('placeId')
+    rating = data.get('rating')
+    
+    if not uid or not place_id or rating is None:
+        return JSONResponse(content={'success': False, 'error': 'Missing required fields'}, status_code=400)
+    
+    if not isinstance(rating, int) or rating < 0 or rating > 5:
+        return JSONResponse(content={'success': False, 'error': 'Rating must be an integer between 0 and 5'}, status_code=400)
+    
+    try:
+        await asyncio.to_thread(
+            db.collection('users').document(uid).collection('bookmarks').document(str(place_id)).update,
+            {
+                'rating': rating,
+                'updatedAt': firestore.SERVER_TIMESTAMP
+            }
+        )
+        return {'success': True}
+    except Exception as e:
+        return JSONResponse(content={'success': False, 'error': str(e)}, status_code=500)
+
+@app.post("/api/update_bookmark_visibility")
+async def update_bookmark_visibility(request: Request):
+    data = await request.json()
+    uid = data.get('uid')
+    place_id = data.get('placeId')
+    is_public = data.get('isPublic')
+    
+    if not uid or not place_id or is_public is None:
+        return JSONResponse(content={'success': False, 'error': 'Missing required fields'}, status_code=400)
+    
+    if not isinstance(is_public, bool):
+        return JSONResponse(content={'success': False, 'error': 'isPublic must be a boolean'}, status_code=400)
+    
+    try:
+        await asyncio.to_thread(
+            db.collection('users').document(uid).collection('bookmarks').document(str(place_id)).update,
+            {
+                'isPublic': is_public,
+                'updatedAt': firestore.SERVER_TIMESTAMP
+            }
+        )
+        return {'success': True}
     except Exception as e:
         return JSONResponse(content={'success': False, 'error': str(e)}, status_code=500)
 
