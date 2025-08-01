@@ -211,6 +211,8 @@ import { getAuth } from 'firebase/auth';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase.js';
 
+let region = '부산';
+
 export default {
   name: 'RecommendResult',
   data() {
@@ -332,7 +334,7 @@ export default {
         this.error = null;
         
         // Firebase에서 서울 행사 데이터 가져오기
-        const seoulCollectionRef = collection(db, 'api_data', 'ko', '부산', 'events', 'items');
+        const seoulCollectionRef = collection(db, 'api_data', 'ko', region, 'events', 'items');
         const querySnapshot = await getDocs(seoulCollectionRef);
         
         const allPlaces = [];
@@ -476,15 +478,19 @@ export default {
       if (!user) return { success: false };
       try {
         if (value) {
-          // 북마크 추가
           const params = {
             uid: user.uid,
-            placeId: this.places[idx].title,
+            contentId: this.places[idx].contentid, // contentId 사용
             bookmark: value,
             name: this.places[idx].title,
             desc: this.places[idx].addr1,
             image: this.places[idx].firstimage,
+            region: region,
           };
+          
+          console.log('북마크 저장 파라미터:', params);
+          console.log('장소 정보:', this.places[idx]);
+          console.log('contentId 타입:', typeof this.places[idx].contentid);
           const res = await fetch('http://localhost:5000/api/save_bookmark', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -496,8 +502,10 @@ export default {
           // 북마크 삭제
           const params = {
             uid: user.uid,
-            placeId: this.places[idx].title,
+            contentId: this.places[idx].contentid, // contentId 사용
           };
+          
+          console.log('북마크 삭제 파라미터:', params);
           const res = await fetch('http://localhost:5000/api/delete_user_bookmark', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

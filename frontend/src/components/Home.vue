@@ -9,6 +9,10 @@
         </button>
       </div>
       <button class="start-btn" @click="start">{{ $t('start') }}</button>
+      <div v-if="isLoggedIn" class="nav-buttons">
+        <button class="nav-btn" @click="goToBookmarks">북마크</button>
+        <button class="nav-btn" @click="goToCommunity">커뮤니티</button>
+      </div>
     </div>
     
     <!-- 언어 선택 모달 -->
@@ -174,6 +178,12 @@ export default {
     start() {
       this.$router.push('/destination');
     },
+    goToBookmarks() {
+      this.$router.push('/bookmarks');
+    },
+    goToCommunity() {
+      this.$router.push('/community');
+    },
     goAuth() {
       this.showLoginModal = false;
       this.$router.push('/auth');
@@ -288,6 +298,37 @@ export default {
 
 .start-btn:active {
   background: #1e40af;
+  transform: translateY(0);
+}
+
+/* 네비게이션 버튼들 */
+.nav-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  justify-content: center;
+}
+
+.nav-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 0.8rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
+.nav-btn:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+.nav-btn:active {
   transform: translateY(0);
 }
 

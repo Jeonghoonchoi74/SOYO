@@ -41,16 +41,21 @@
                   </div>
                 </div>
 
-                <!-- 수정 버튼 -->
+                <!-- 액션 버튼들 -->
                 <div class="action-buttons">
-                  <button class="edit-btn" @click="editReview(idx, place)">
+                  <!-- 리뷰가 있는 경우: 수정 버튼 -->
+                  <button v-if="place.review" class="edit-btn" @click="editReview(idx, place)">
                     수정
+                  </button>
+                  <!-- 리뷰가 없는 경우: 리뷰 작성 버튼 -->
+                  <button v-else class="write-review-btn" @click="editReview(idx, place)">
+                    리뷰 작성
                   </button>
                 </div>
               </div>
 
               <!-- 편집 모드 -->
-              <div v-else class="edit-mode">
+              <div v-else class="edit-mode" :data-mode="place.review ? '리뷰 수정' : '리뷰 작성'">
                 <!-- 평점 편집 -->
                 <div class="rating-edit">
                   <div class="edit-label">평점:</div>
@@ -76,14 +81,15 @@
                 <!-- 리뷰 편집 -->
                 <div class="review-edit">
                   <div class="edit-label">리뷰:</div>
-                  <textarea v-model="place.reviewText" class="review-input" :placeholder="$t('review_placeholder')"
+                  <textarea v-model="place.reviewText" class="review-input" 
+                    :placeholder="place.review ? $t('review_placeholder') : '이 장소에 대한 리뷰를 작성해주세요...'"
                     rows="3" />
                 </div>
 
                 <!-- 편집 버튼들 -->
                 <div class="edit-buttons">
                   <button class="save-btn" @click="submitReview(idx, place)">
-                    저장
+                    {{ place.review ? '저장' : '리뷰 등록' }}
                   </button>
                   <button class="cancel-btn" @click="cancelEdit(idx, place)">
                     취소
@@ -225,7 +231,7 @@ export default {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 uid: user.uid,
-                placeId: place.name,
+                contentId: place.contentId, // placeId를 contentId로 변경
                 rating: place.tempRating
               })
             });
@@ -244,7 +250,7 @@ export default {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 uid: user.uid,
-                placeId: place.name,
+                contentId: place.contentId, // contentId 사용
                 isPublic: place.tempIsPublic
               })
             });
@@ -264,11 +270,14 @@ export default {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               uid: user.uid,
-              placeId: place.name,
+              contentId: place.contentId, // contentId 사용
               placeName: place.name,
               placeDesc: place.desc,
               placeImage: place.image,
               review: place.reviewText.trim(),
+              rating: place.rating || 0,
+              isPublic: place.isPublic || false,
+              region: '부산', // 기본값으로 부산 설정
               userName: user.displayName || user.email
             })
           });
@@ -301,13 +310,24 @@ export default {
       const auth = getAuth();
       const user = auth.currentUser;
       if (!user) return;
-      await fetch('http://localhost:5000/api/delete_user_bookmark', {
+      
+      console.log('삭제할 북마크 정보:', place);
+      console.log('전송할 placeId:', place.name);
+      
+      const response = await fetch('http://localhost:5000/api/delete_user_bookmark', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uid: user.uid, placeId: place.name }) // place.name이 placeId 역할
       });
-      this.bookmarked.splice(idx, 1);
-      this.showModalMessage(this.$t('delete_bookmark_alert'));
+      
+      const result = await response.json();
+      if (result.success) {
+        this.bookmarked.splice(idx, 1);
+        this.showModalMessage(this.$t('delete_bookmark_alert'));
+      } else {
+        console.error('북마크 삭제 실패:', result.error);
+        this.showModalMessage('북마크 삭제에 실패했습니다.');
+      }
     },
     showModalMessage(msg) {
       this.modalMessage = msg;
@@ -739,6 +759,25 @@ export default {
   box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
 }
 
+.write-review-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 0.8rem 2rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
+.write-review-btn:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
 /* 편집 모드 스타일 */
 .edit-mode {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
@@ -747,7 +786,7 @@ export default {
 }
 
 .edit-mode::before {
-  content: '편집 모드';
+  content: attr(data-mode);
   display: block;
   background: #3b82f6;
   color: white;

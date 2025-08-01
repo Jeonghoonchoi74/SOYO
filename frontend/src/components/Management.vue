@@ -30,51 +30,26 @@
             <span class="place-count">{{ count }}회</span>
           </div>
         </div>
-      </div>
-    </div>
-    
-    <!-- 리뷰 섹션 -->
-    <div class="reviews-section">
-      <h3 class="section-title">{{ $t('management_reviews') }}</h3>
-      <div class="reviews-list">
-        <template v-if="reviews.length > 0">
-          <div v-for="(review, idx) in reviews" :key="idx" class="review-card">
-            <div class="review-header">
-              <img :src="review.placeImage" class="place-img" :alt="review.placeName" />
-                          <div class="review-info">
-              <div class="place-name"><strong>장소:</strong> {{ review.placeName }}</div>
-              <div class="user-name"><strong>사용자명:</strong> {{ review.userName }}</div>
-              <div class="review-date"><strong>등록 날짜:</strong> {{ formatDate(review.createdAt) }}</div>
-            </div>
-            </div>
-            <div class="review-content">
-              <p><strong>리뷰:</strong> {{ review.review }}</p>
-            </div>
-          </div>
-        </template>
-        <div v-else class="empty-state">
-          <p>아직 리뷰가 없습니다.</p>
+        <div v-if="Object.keys(statistics.place_stats || {}).length === 0" class="no-data">
+          <p>아직 방문한 장소가 없습니다.</p>
         </div>
       </div>
     </div>
+    
+
   </div>
 </template>
 
 <script>
-import { i18nState, $t } from '../i18n';
+import { $t } from '../i18n';
 import { getAuth } from 'firebase/auth';
-import { db } from '../firebase';
-import { collection, onSnapshot, query, orderBy, getDocs } from 'firebase/firestore';
 
 export default {
   name: 'Management',
   data() {
     return {
-      reviews: [],
       statistics: {},
       isAdmin: false,
-      unsubscribeReviews: null,
-      unsubscribeUsers: null,
     };
   },
   async mounted() {
@@ -85,20 +60,7 @@ export default {
       return;
     }
     this.isAdmin = true;
-    // 실시간 리뷰 구독
-    const reviewsQuery = query(collection(db, 'all_reviews'), orderBy('createdAt', 'desc'));
-    this.unsubscribeReviews = onSnapshot(reviewsQuery, (snapshot) => {
-      this.reviews = snapshot.docs.map(doc => doc.data());
-      this.updateStatistics();
-    });
-    // 실시간 사용자 구독 (통계용)
-    this.unsubscribeUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
-      this.updateStatistics();
-    });
-  },
-  beforeUnmount() {
-    if (this.unsubscribeReviews) this.unsubscribeReviews();
-    if (this.unsubscribeUsers) this.unsubscribeUsers();
+    await this.loadStatistics();
   },
   computed: {
     $t() { return $t; },
@@ -107,31 +69,19 @@ export default {
     goBack() {
       this.$router.push('/bookmarks');
     },
-    async updateStatistics() {
-      // 전체 사용자 수
-      const userSnap = await getDocs(collection(db, 'users'));
-      const total_users = userSnap.size;
-      // 전체 북마크 수
-      let total_bookmarks = 0;
-      for (const userDoc of userSnap.docs) {
-        const bookmarksSnap = await getDocs(collection(db, 'users', userDoc.id, 'bookmarks'));
-        total_bookmarks += bookmarksSnap.size;
+    async loadStatistics() {
+      try {
+        const response = await fetch('http://localhost:5000/api/get_statistics');
+        const result = await response.json();
+        
+        if (result.success) {
+          this.statistics = result.statistics;
+        } else {
+          console.error('통계 로드 실패:', result.error);
+        }
+      } catch (error) {
+        console.error('통계 로드 오류:', error);
       }
-      // 전체 리뷰 수
-      const total_reviews = this.reviews.length;
-      // 장소별 통계
-      const place_stats = {};
-      this.reviews.forEach(review => {
-        const place = review.placeName || 'Unknown';
-        if (place_stats[place]) place_stats[place] += 1;
-        else place_stats[place] = 1;
-      });
-      this.statistics = {
-        total_users,
-        total_reviews,
-        total_bookmarks,
-        place_stats
-      };
     },
     formatDate(timestamp) {
       if (!timestamp) return '';
@@ -279,81 +229,16 @@ export default {
   font-weight: 600;
 }
 
-.reviews-section {
-  width: 100%;
-  max-width: 900px;
-}
-
-.reviews-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.review-card {
-  background: #fff;
-  border-radius: 16px;
-  padding: 2rem;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  border: 1px solid #e2e8f0;
-}
-
-.review-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.place-img {
-  width: 80px;
-  height: 80px;
-  object-fit: cover;
-  border-radius: 12px;
-}
-
-.review-info {
-  flex: 1;
-  text-align: left;
-}
-
-.review-info .place-name {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 0.3rem;
-  text-align: left;
-}
-
-.review-info .user-name {
-  font-size: 1rem;
-  color: #64748b;
-  margin-bottom: 0.2rem;
-  text-align: left;
-}
-
-.review-info .review-date {
-  font-size: 0.9rem;
-  color: #94a3b8;
-  text-align: left;
-}
-
-.review-content p {
-  font-size: 1rem;
-  color: #475569;
-  line-height: 1.6;
-  margin: 0;
-  text-align: left;
-}
-
-.empty-state {
+.no-data {
   text-align: center;
-  padding: 3rem;
-  background: #fff;
-  border-radius: 16px;
+  padding: 2rem;
   color: #64748b;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  border: 1px solid #e2e8f0;
+  font-style: italic;
+}
+
+.no-data p {
+  margin: 0;
+  font-size: 1rem;
 }
 
 @media (max-width: 768px) {
