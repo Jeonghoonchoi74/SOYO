@@ -290,24 +290,15 @@ async def delete_user_bookmark(request: Request):
             has_review = bookmark_data.get('review') or bookmark_data.get('rating') or bookmark_data.get('isPublic') is not None
             print(f"리뷰 관련 필드 존재 여부: {has_review}")
             
-            # 2. 북마크의 리뷰 관련 필드만 초기화 (북마크 자체는 유지)
-            update_data = {
-                'review': None,
-                'rating': None,
-                'isPublic': None,
-                'updatedAt': firestore.SERVER_TIMESTAMP
-            }
-            await asyncio.to_thread(bookmark_ref.update, update_data)
-            print("북마크 리뷰 관련 필드 초기화 완료")
+            # 2. 북마크 완전 삭제
+            await asyncio.to_thread(bookmark_ref.delete)
+            print("북마크 삭제 완료")
         else:
             print("북마크 문서가 존재하지 않습니다")
             return JSONResponse(content={'success': False, 'error': 'Bookmark not found'}, status_code=404)
         
-        # 장소별 고유한 리뷰 ID 생성
-        review_id = f"{uid}_{content_id}"
-        
         # 3. 사용자별 리뷰 삭제
-        user_review_ref = db.collection('users').document(uid).collection('reviews').document(review_id)
+        user_review_ref = db.collection('users').document(uid).collection('reviews').document(content_id)
         user_review_doc = await asyncio.to_thread(user_review_ref.get)
         
         if user_review_doc.exists:
@@ -348,7 +339,7 @@ async def delete_user_bookmark(request: Request):
         else:
             print("삭제할 places 리뷰가 없습니다")
         
-        print("북마크 리뷰 관련 필드 초기화 및 관련 데이터 삭제 완료")
+        print("북마크 및 관련 데이터 삭제 완료")
         return {'success': True}
     except Exception as e:
         print(f"북마크 삭제 오류: {str(e)}")
@@ -1118,51 +1109,91 @@ async def delete_review(request: Request):
         user_review_doc = await asyncio.to_thread(user_review_ref.get)
         
         if user_review_doc.exists:
+            print(f"삭제할 사용자별 리뷰 데이터: {user_review_doc.to_dict()}")
             await asyncio.to_thread(user_review_ref.delete)
             print("사용자별 리뷰 삭제 완료")
+        else:
+            print("삭제할 사용자별 리뷰가 존재하지 않습니다")
         
         # 2. places 컬렉션에서 리뷰 삭제
         place_review_ref = db.collection('places').document(content_id).collection('reviews').document(uid)
         place_review_doc = await asyncio.to_thread(place_review_ref.get)
         
         if place_review_doc.exists:
+            print(f"삭제할 places 리뷰 데이터: {place_review_doc.to_dict()}")
             await asyncio.to_thread(place_review_ref.delete)
             print("places 리뷰 삭제 완료")
+        else:
+            print("삭제할 places 리뷰가 존재하지 않습니다")
         
-        # 3. 북마크에서 리뷰 정보 제거 (북마크 자체는 유지, 리뷰 관련 필드만 삭제)
+        # 3. 북마크 완전 삭제 (리뷰 삭제 시 북마크도 함께 삭제)
         bookmark_ref = db.collection('users').document(uid).collection('bookmarks').document(str(content_id))
         bookmark_doc = await asyncio.to_thread(bookmark_ref.get)
         
         if bookmark_doc.exists:
-            bookmark_data = bookmark_doc.to_dict()
-            # 리뷰 관련 필드만 제거
-            update_data = {}
-            if 'review' in bookmark_data:
-                update_data['review'] = None
-            if 'rating' in bookmark_data:
-                update_data['rating'] = 0
-            if 'isPublic' in bookmark_data:
-                update_data['isPublic'] = False
-            
-            if update_data:
-                await asyncio.to_thread(bookmark_ref.update, update_data)
-                print("북마크에서 리뷰 정보 제거 완료")
+            print(f"삭제할 북마크 데이터: {bookmark_doc.to_dict()}")
+            await asyncio.to_thread(bookmark_ref.delete)
+            print("북마크 삭제 완료")
+        else:
+            print("삭제할 북마크가 존재하지 않습니다")
         
         # 4. 관련 댓글들 삭제
         comments = await asyncio.to_thread(
-            lambda: list(db.collection('review_comments').where('reviewId', '==', review_id).stream())
+            lambda: list(db.collection('places').document(content_id).collection('comments').stream())
         )
         for comment in comments:
-            await asyncio.to_thread(comment.reference.delete)
-        print(f"댓글 {len(comments)}개 삭제 완료")
+            comment_data = comment.to_dict()
+            if comment_data.get('uid') == uid:  # 해당 사용자의 댓글만 삭제
+                await asyncio.to_thread(comment.reference.delete)
+        print(f"사용자 댓글 삭제 완료")
         
         # 5. 관련 좋아요들 삭제
         likes = await asyncio.to_thread(
-            lambda: list(db.collection('review_likes').where('reviewId', '==', review_id).stream())
+            lambda: list(db.collection('places').document(content_id).collection('likes').stream())
         )
         for like in likes:
-            await asyncio.to_thread(like.reference.delete)
-        print(f"좋아요 {len(likes)}개 삭제 완료")
+            like_data = like.to_dict()
+            if like_data.get('uid') == uid:  # 해당 사용자의 좋아요만 삭제
+                await asyncio.to_thread(like.reference.delete)
+        print(f"사용자 좋아요 삭제 완료")
+        
+        # 6. 해당 장소에 다른 리뷰가 남아있는지 확인
+        remaining_reviews = await asyncio.to_thread(
+            lambda: list(db.collection('places').document(content_id).collection('reviews').stream())
+        )
+        
+        # 7. 다른 사용자의 북마크가 남아있는지 확인
+        all_users = await asyncio.to_thread(lambda: list(db.collection('users').stream()))
+        has_other_bookmarks = False
+        
+        for user in all_users:
+            if user.id != uid:  # 현재 사용자가 아닌 다른 사용자들만 확인
+                other_bookmark = await asyncio.to_thread(
+                    db.collection('users').document(user.id).collection('bookmarks').document(str(content_id)).get
+                )
+                if other_bookmark.exists:
+                    has_other_bookmarks = True
+                    break
+        
+        # 8. 리뷰도 없고 다른 북마크도 없으면 장소 정보도 삭제
+        if len(remaining_reviews) == 0 and not has_other_bookmarks:
+            # info 서브컬렉션 삭제
+            info_docs = await asyncio.to_thread(
+                lambda: list(db.collection('places').document(content_id).collection('info').stream())
+            )
+            for info_doc in info_docs:
+                await asyncio.to_thread(info_doc.reference.delete)
+            
+            # places 문서 자체도 삭제 (서브컬렉션이 모두 비어있으면)
+            place_doc = await asyncio.to_thread(
+                db.collection('places').document(content_id).get
+            )
+            if place_doc.exists:
+                await asyncio.to_thread(place_doc.reference.delete)
+            
+            print(f"장소 {content_id}의 모든 데이터 삭제 완료 (다른 사용자 데이터 없음)")
+        else:
+            print(f"장소 {content_id}에 다른 데이터가 남아있어 info는 유지됩니다 (리뷰: {len(remaining_reviews)}개, 다른 북마크: {has_other_bookmarks})")
         
         print("리뷰 삭제 완료")
         return {'success': True}
