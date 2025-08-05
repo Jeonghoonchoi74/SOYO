@@ -680,7 +680,7 @@ export default {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             uid: this.currentUser.uid,
-            placeId: review.placeId
+            contentId: review.contentId
           })
         });
 

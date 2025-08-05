@@ -211,7 +211,7 @@ import { getAuth } from 'firebase/auth';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase.js';
 
-let region = '부산';
+let region = '부산'; // 나중에는 수정 예정
 
 export default {
   name: 'RecommendResult',

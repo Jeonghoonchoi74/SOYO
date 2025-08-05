@@ -81,9 +81,8 @@
                 <!-- 리뷰 편집 -->
                 <div class="review-edit">
                   <div class="edit-label">리뷰:</div>
-                  <textarea v-model="place.reviewText" class="review-input" 
-                    :placeholder="place.review ? $t('review_placeholder') : '이 장소에 대한 리뷰를 작성해주세요...'"
-                    rows="3" />
+                  <textarea v-model="place.reviewText" class="review-input"
+                    :placeholder="place.review ? $t('review_placeholder') : '이 장소에 대한 리뷰를 작성해주세요...'" rows="3" />
                 </div>
 
                 <!-- 편집 버튼들 -->
@@ -277,7 +276,7 @@ export default {
               review: place.reviewText.trim(),
               rating: place.rating || 0,
               isPublic: place.isPublic || false,
-              region: '부산', // 기본값으로 부산 설정
+              region: '부산', // 기본값으로 부산 설정 나중에는 가져올예정
               userName: user.displayName || user.email
             })
           });
@@ -310,16 +309,16 @@ export default {
       const auth = getAuth();
       const user = auth.currentUser;
       if (!user) return;
-      
+
       console.log('삭제할 북마크 정보:', place);
       console.log('전송할 placeId:', place.name);
-      
+
       const response = await fetch('http://localhost:5000/api/delete_user_bookmark', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid: user.uid, placeId: place.name }) // place.name이 placeId 역할
+        body: JSON.stringify({ uid: user.uid, contentId: place.contentId }) // contentId 사용
       });
-      
+
       const result = await response.json();
       if (result.success) {
         this.bookmarked.splice(idx, 1);
