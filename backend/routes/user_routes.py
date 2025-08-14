@@ -84,6 +84,8 @@ async def save_user_preferences(request: Request):
             return JSONResponse(content={'success': False, 'error': 'Missing user ID'}, status_code=400)
         
         user_preferences = {
+            'region': preferences.get('region'),
+            'category': preferences.get('category'),
             'food': preferences.get('food'),
             'shopping': preferences.get('shopping'),
             'attraction': preferences.get('attraction'),

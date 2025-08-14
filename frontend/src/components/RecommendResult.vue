@@ -2,6 +2,7 @@
       <div class="recommend-container">
       <div class="header">
         <h2 class="title">{{ $t('recommend_title') }}</h2>
+        <p class="region-info">{{ getDisplayName(region) }} 지역 {{ getCategoryLabel(category) }} 추천</p>
       </div>
     
     <div v-if="loading" class="loading">
@@ -51,7 +52,7 @@
               <span class="value">{{ place.addr1 }}</span>
             </div>
             
-            <div class="info-item">
+            <div v-if="category === 'events' && place.eventstartdate && place.eventenddate" class="info-item">
               <span class="label">기간:</span>
               <span class="value">
                 {{ formatDate(place.eventstartdate) }} ~ {{ formatDate(place.eventenddate) }}
@@ -62,9 +63,21 @@
               <span class="label">연락처:</span>
               <span class="value">{{ formatTelForCard(place.tel) }}</span>
             </div>
+            
+            <!-- foods 카테고리 추가 정보 -->
+            <div v-if="category === 'foods' && place.firstmenu" class="info-item">
+              <span class="label">대표메뉴:</span>
+              <span class="value">{{ place.firstmenu }}</span>
+            </div>
+            
+            <!-- tourist_attraction 카테고리 추가 정보 -->
+            <div v-if="category === 'tourist_attraction' && place.infocenter" class="info-item">
+              <span class="label">문의처:</span>
+              <span class="value">{{ place.infocenter }}</span>
+            </div>
           </div>
           
-          <div class="place-status">
+          <div v-if="category === 'events'" class="place-status">
             <span :class="getStatusClass(place)" class="status-badge">
               {{ getStatusText(place) }}
             </span>
@@ -120,7 +133,7 @@
                   <span class="value">{{ selectedPlace.addr2 }}</span>
                 </div>
 
-                <div class="info-item">
+                <div v-if="category === 'events' && selectedPlace.eventstartdate && selectedPlace.eventenddate" class="info-item">
                   <span class="label">기간:</span>
                   <span class="value">
                     {{ formatDate(selectedPlace.eventstartdate) }} ~ {{ formatDate(selectedPlace.eventenddate) }}
@@ -210,13 +223,14 @@ import { i18nState, $t } from '../i18n';
 import { getAuth } from 'firebase/auth';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase.js';
-
-let region = '부산'; // 나중에는 수정 예정
+import { getDisplayName } from '../utils/regionMapping';
 
 export default {
   name: 'RecommendResult',
   data() {
     return {
+      region: '서울', // 기본값, 쿼리 파라미터에서 업데이트됨
+      category: 'events', // 기본값, 쿼리 파라미터에서 업데이트됨
       places: [],
       displayedPlaces: [],
       loading: true,
@@ -234,10 +248,40 @@ export default {
     $t() { return $t; },
   },
       async mounted() {
-      await this.fetchRecommendPlaces();
-      await this.loadUserBookmarks();
-    },
+        // 쿼리 파라미터에서 지역 정보 가져오기
+        const regionFromQuery = this.$route.query.region;
+        const categoryFromQuery = this.$route.query.category;
+        
+        if (regionFromQuery) {
+          this.region = regionFromQuery;
+        }
+        if (categoryFromQuery) {
+          this.category = categoryFromQuery;
+        }
+        
+        await this.fetchRecommendPlaces();
+        await this.loadUserBookmarks();
+      },
   methods: {
+    // 지역명 표시 함수
+    getDisplayName(dbRegionName) {
+      return getDisplayName(dbRegionName);
+    },
+    
+    // 카테고리 라벨 표시 함수
+    getCategoryLabel(category) {
+      switch (category) {
+        case 'events':
+          return '행사/축제';
+        case 'foods':
+          return '맛집';
+        case 'tourist_attraction':
+          return '관광지';
+        default:
+          return category;
+      }
+    },
+
     // 현재 날짜를 YYYYMMDD 형식으로 변환
     getCurrentDate() {
       const now = new Date();
@@ -281,16 +325,22 @@ export default {
       event.target.nextElementSibling.style.display = 'flex';
     },
 
-    // 현재부터 12월 31일까지의 행사 필터링
+    // 카테고리별 필터링 로직
     isInTargetPeriod(place) {
-      const startDate = place.eventstartdate;
-      const endDate = place.eventenddate;
-      const currentDate = this.getCurrentDate();
-      const targetEndDate = '20251231';
+      // events 카테고리인 경우 날짜 필터링 적용
+      if (this.category === 'events') {
+        const startDate = place.eventstartdate;
+        const endDate = place.eventenddate;
+        const currentDate = this.getCurrentDate();
+        const targetEndDate = '20251231';
+        
+        return startDate && endDate && 
+               startDate <= targetEndDate && 
+               endDate >= currentDate;
+      }
       
-      return startDate && endDate && 
-             startDate <= targetEndDate && 
-             endDate >= currentDate;
+      // foods, tourist_attraction 카테고리는 모든 데이터 표시
+      return true;
     },
 
     // 행사 상태 텍스트 반환
@@ -333,8 +383,18 @@ export default {
         this.loading = true;
         this.error = null;
         
-        // Firebase에서 서울 행사 데이터 가져오기
-        const seoulCollectionRef = collection(db, 'api_data', 'ko', region, 'events', 'items');
+        // 사용자 로그인 상태 확인
+        const auth = getAuth();
+        const user = auth.currentUser;
+        
+        if (!user) {
+          this.error = '로그인이 필요합니다. 먼저 로그인해주세요.';
+          this.loading = false;
+          return;
+        }
+        
+        // Firebase에서 해당 지역의 행사 데이터 가져오기
+        const seoulCollectionRef = collection(db, 'api_data', 'ko', this.region, this.category, 'items');
         const querySnapshot = await getDocs(seoulCollectionRef);
         
         const allPlaces = [];
@@ -343,24 +403,32 @@ export default {
           allPlaces.push(data);
         });
         
-        // 2025년 4월부터 12월까지의 행사만 필터링
+        // 카테고리별 필터링 및 정렬
         const targetPlaces = allPlaces.filter(this.isInTargetPeriod);
         
-        // 상태별로 정렬 (진행중 → 예정 → 종료)
-        const sortedPlaces = targetPlaces.sort((a, b) => {
-          const statusA = this.getStatusClass(a);
-          const statusB = this.getStatusClass(b);
-          
-          // 상태 우선순위: ongoing(진행중) > upcoming(예정) > ended(종료)
-          const statusOrder = { 'ongoing': 0, 'upcoming': 1, 'ended': 2, 'unknown': 3 };
-          
-          if (statusOrder[statusA] !== statusOrder[statusB]) {
-            return statusOrder[statusA] - statusOrder[statusB];
-          }
-          
-          // 같은 상태 내에서는 시작일순으로 정렬
-          return (a.eventstartdate || '') - (b.eventstartdate || '');
-        });
+        let sortedPlaces;
+        if (this.category === 'events') {
+          // events 카테고리: 상태별로 정렬 (진행중 → 예정 → 종료)
+          sortedPlaces = targetPlaces.sort((a, b) => {
+            const statusA = this.getStatusClass(a);
+            const statusB = this.getStatusClass(b);
+            
+            // 상태 우선순위: ongoing(진행중) > upcoming(예정) > ended(종료)
+            const statusOrder = { 'ongoing': 0, 'upcoming': 1, 'ended': 2, 'unknown': 3 };
+            
+            if (statusOrder[statusA] !== statusOrder[statusB]) {
+              return statusOrder[statusA] - statusOrder[statusB];
+            }
+            
+            // 같은 상태 내에서는 시작일순으로 정렬
+            return (a.eventstartdate || '') - (b.eventstartdate || '');
+          });
+        } else {
+          // foods, tourist_attraction 카테고리: 제목순으로 정렬
+          sortedPlaces = targetPlaces.sort((a, b) => {
+            return (a.title || '').localeCompare(b.title || '', 'ko');
+          });
+        }
         
         // 북마크 상태 초기화
         this.places = sortedPlaces.map(place => ({
@@ -373,7 +441,15 @@ export default {
         
       } catch (err) {
         console.error('추천 장소 데이터 가져오기 오류:', err);
-        this.error = '추천 장소 정보를 불러오는 중 오류가 발생했습니다.';
+        
+        // Firebase 권한 에러인지 확인
+        if (err.code === 'permission-denied') {
+          this.error = '데이터 접근 권한이 없습니다. 관리자에게 문의해주세요.';
+        } else if (err.code === 'not-found') {
+          this.error = `${this.getDisplayName(this.region)} 지역의 데이터를 찾을 수 없습니다.`;
+        } else {
+          this.error = '추천 장소 정보를 불러오는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+        }
       } finally {
         this.loading = false;
       }
@@ -485,7 +561,7 @@ export default {
             name: this.places[idx].title,
             desc: this.places[idx].addr1,
             image: this.places[idx].firstimage,
-            region: region,
+            region: this.region,
           };
           
           console.log('북마크 저장 파라미터:', params);
@@ -565,6 +641,13 @@ export default {
   width: 100%;
   margin-bottom: 30px;
   text-align: center;
+}
+
+.region-info {
+  font-size: 1.1rem;
+  color: #64748b;
+  margin-top: 0.5rem;
+  font-weight: 600;
 }
 
 .back-home-btn {
@@ -1039,6 +1122,11 @@ export default {
   .title {
     font-size: 1.5rem;
     margin-bottom: 2rem;
+  }
+  
+  .region-info {
+    font-size: 1rem;
+    margin-top: 0.3rem;
   }
   
   .places-grid {
