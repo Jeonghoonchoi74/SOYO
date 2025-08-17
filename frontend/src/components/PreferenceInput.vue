@@ -94,8 +94,8 @@
   
   <script>
   import { i18nState, $t } from '../i18n';
-  import { getAuth } from 'firebase/auth';
-  import { getRegionOptions, getAvailableCategories, getCategoryLabel } from '../utils/regionMapping';
+import { getAuth } from 'firebase/auth';
+import { getRegionOptions, getAvailableCategories, getCategoryLabel } from '../utils/regionMapping';
   export default {
     name: 'PreferenceInput',
     data() {

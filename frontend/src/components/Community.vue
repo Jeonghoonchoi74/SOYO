@@ -187,6 +187,7 @@
 
 <script>
 import { getAuth } from 'firebase/auth';
+import { getRegionOptions, getDisplayName } from '../utils/regionMapping';
 
 export default {
   name: 'Community',
@@ -403,39 +404,51 @@ export default {
         return;
       }
 
-      //db에 내에 저장된 데이터 중 region 사용
-      // 예를 들어 /users/p8ivTbr2MPXClgQW1a2z04Ew4Y43/bookmarks/2025 여행영화제 경우 db에 저장된 데이터 중 region 의 값인 부산을 사용
-      let region = this.selectedPlace.region;
-      // console.log('선택된 장소:', this.selectedPlace);
-      // console.log('사용할 지역:', region);
-      // console.log('db에 저장된 데이터:', this.selectedPlace.region);
-
-
-      // region이 없으면 장소 설명에서 추출
-      if (!region && this.selectedPlace.desc) {
-        const desc = this.selectedPlace.desc;
-        if (desc.includes('부산')) region = '부산';
-        else if (desc.includes('서울')) region = '서울';
-        else if (desc.includes('대구')) region = '대구';
-        else if (desc.includes('인천')) region = '인천';
-        else if (desc.includes('광주')) region = '광주';
-        else if (desc.includes('대전')) region = '대전';
-        else if (desc.includes('울산')) region = '울산';
-        else if (desc.includes('세종')) region = '세종';
-        else if (desc.includes('경기')) region = '경기';
-        else if (desc.includes('강원')) region = '강원';
-        else if (desc.includes('충북')) region = '충북';
-        else if (desc.includes('충남')) region = '충남';
-        else if (desc.includes('전북')) region = '전북';
-        else if (desc.includes('전남')) region = '전남';
-        else if (desc.includes('경북')) region = '경북';
-        else if (desc.includes('경남')) region = '경남';
-        else if (desc.includes('제주')) region = '제주';
-        else region = '전국';
+      // 사용자 선호도에서 region 우선 가져오기
+      let region = '전국'; // 기본값
+      try {
+        const preferencesResponse = await fetch('http://localhost:5000/api/get_user_preferences', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uid: this.currentUser.uid })
+        });
+        
+        const preferencesResult = await preferencesResponse.json();
+        if (preferencesResult.success && preferencesResult.preferences && preferencesResult.preferences.region) {
+          region = preferencesResult.preferences.region;
+        }
+      } catch (error) {
+        console.warn('사용자 선호도 조회 실패, 장소 정보에서 추출:', error);
+        
+        // 사용자 선호도가 없으면 장소 정보에서 region 사용
+        region = this.selectedPlace.region;
+        
+        // region이 없으면 장소 설명에서 추출 (regionMapping.js 매핑에 맞게 수정)
+        if (!region && this.selectedPlace.desc) {
+          const desc = this.selectedPlace.desc;
+          if (desc.includes('부산')) region = '부산';
+          else if (desc.includes('서울')) region = '서울';
+          else if (desc.includes('대구')) region = '대구';
+          else if (desc.includes('인천')) region = '인천';
+          else if (desc.includes('광주')) region = '광주';
+          else if (desc.includes('대전')) region = '대전';
+          else if (desc.includes('울산')) region = '울산';
+          else if (desc.includes('세종')) region = '세종특별자치시';
+          else if (desc.includes('경기')) region = '경기도';
+          else if (desc.includes('강원')) region = '강원특별자치도';
+          else if (desc.includes('충북')) region = '충청북도';
+          else if (desc.includes('충남')) region = '충청남도';
+          else if (desc.includes('전북')) region = '전북특별자치도';
+          else if (desc.includes('전남')) region = '전라남도';
+          else if (desc.includes('경북')) region = '경상북도';
+          else if (desc.includes('경남')) region = '경상남도';
+          else if (desc.includes('제주')) region = '제주도';
+          else region = '전국';
+        }
       }
 
-      // console.log('선택된 장소:', this.selectedPlace);
-      // console.log('사용할 지역:', region);
+      console.log('선택된 장소:', this.selectedPlace);
+      console.log('사용할 지역:', region);
 
       try {
         const response = await fetch('http://localhost:5000/api/save_review', {
@@ -646,17 +659,14 @@ export default {
 
     async loadRegions() {
       try {
-        const response = await fetch('http://localhost:5000/api/get_regions');
-        const result = await response.json();
-
-        if (result.success) {
-          this.regions = ['전국', ...result.regions];
-          this.selectedRegion = '전국';
-        }
+        // regionMapping.js에서 지역 목록 가져오기
+        const regionOptions = getRegionOptions();
+        this.regions = ['전국', ...regionOptions.map(option => getDisplayName(option.value))];
+        this.selectedRegion = '전국';
       } catch (error) {
         console.error('지역 로드 오류:', error);
         // 오류 시 기본 지역 목록 사용
-        this.regions = ['전국', '서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종', '경기', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주'];
+        this.regions = ['전국', '서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종', '경기도', '강원도', '충청북도', '충청남도', '전라북도', '전라남도', '경상북도', '경상남도', '제주도'];
         this.selectedRegion = '전국';
       }
     },

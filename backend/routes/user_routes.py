@@ -111,6 +111,31 @@ async def save_user_preferences(request: Request):
         print("전체 에러:", traceback.format_exc())
         return JSONResponse(content={'success': False, 'error': str(e)}, status_code=500)
 
+@router.post("/get_user_preferences")
+async def get_user_preferences(request: Request):
+    """사용자의 최신 선호도 정보를 가져오는 API"""
+    try:
+        data = await request.json()
+        uid = data.get('uid')
+        
+        if not uid:
+            return JSONResponse(content={'success': False, 'error': 'Missing user ID'}, status_code=400)
+        
+        # 사용자의 선호도 컬렉션에서 최신 문서 가져오기
+        preferences_docs = await asyncio.to_thread(
+            lambda: list(db.collection('users').document(uid).collection('preferences').order_by('createdAt', direction=firestore.Query.DESCENDING).limit(1).stream())
+        )
+        
+        if preferences_docs:
+            latest_preferences = preferences_docs[0].to_dict()
+            return {'success': True, 'preferences': latest_preferences}
+        else:
+            return {'success': True, 'preferences': None}
+            
+    except Exception as e:
+        print(f"선호도 조회 에러: {str(e)}")
+        return JSONResponse(content={'success': False, 'error': str(e)}, status_code=500)
+
 @router.post("/delete_user_account")
 async def delete_user_account(request: Request):
     data = await request.json()
