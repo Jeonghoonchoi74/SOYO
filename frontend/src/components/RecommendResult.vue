@@ -91,9 +91,10 @@
     </div>
     
     <div v-if="hasMoreItems" class="load-more-container">
-      <button class="load-more-btn" @click="loadMore" :disabled="loading">
-        {{ loading ? '로딩 중...' : '더 보기' }}
-      </button>
+      <div class="loading-indicator" v-if="loading">
+        <div class="spinner"></div>
+        <p>추천 장소를 불러오는 중...</p>
+      </div>
     </div>
     
     <button class="bookmark-list-btn" @click="goBookmark">{{ $t('recommend_bookmark_btn') }}</button>
@@ -239,9 +240,10 @@ export default {
       showModal: false,
       modalMessage: '',
       bookmarkDisabled: [],
-      itemsPerPage: 6,
+      itemsPerPage: 12, // 무한스크롤을 위해 더 많은 항목을 한 번에 로드
       currentPage: 1,
       hasMoreItems: true,
+      scrollHandler: null, // 스크롤 핸들러 참조 저장
     };
   },
   computed: {
@@ -261,6 +263,14 @@ export default {
         
         await this.fetchRecommendPlaces();
         await this.loadUserBookmarks();
+        
+        // 무한스크롤 이벤트 리스너 추가
+        this.addScrollListener();
+      },
+      
+      beforeUnmount() {
+        // 컴포넌트 언마운트 시 이벤트 리스너 제거
+        this.removeScrollListener();
       },
   methods: {
     // 지역명 표시 함수
@@ -461,16 +471,18 @@ export default {
       this.displayedPlaces = this.places.slice(0, this.itemsPerPage);
       this.hasMoreItems = this.places.length > this.itemsPerPage;
       this.bookmarkDisabled = Array(this.displayedPlaces.length).fill(false);
+      
+      // 초기 로드 후 스크롤 이벤트 리스너 다시 추가 (데이터 로드 완료 후)
+      this.$nextTick(() => {
+        this.addScrollListener();
+      });
     },
 
-    // 더 많은 항목 로드
+    // 더 많은 항목 로드 (무한스크롤용)
     loadMore() {
       if (this.loading || !this.hasMoreItems) return;
       
       this.loading = true;
-      
-      // 현재 스크롤 위치 저장
-      const scrollPosition = window.scrollY;
       
       setTimeout(() => {
         const startIndex = this.currentPage * this.itemsPerPage;
@@ -485,12 +497,35 @@ export default {
         this.bookmarkDisabled = Array(this.displayedPlaces.length).fill(false);
         
         this.loading = false;
-        
-        // 스크롤 위치 복원
-        this.$nextTick(() => {
-          window.scrollTo(0, scrollPosition);
-        });
-      }, 500); // 로딩 효과를 위한 지연
+      }, 300); // 로딩 효과를 위한 지연
+    },
+    
+    // 스크롤 이벤트 리스너 추가
+    addScrollListener() {
+      this.scrollHandler = this.handleScroll.bind(this);
+      window.addEventListener('scroll', this.scrollHandler, { passive: true });
+    },
+    
+    // 스크롤 이벤트 리스너 제거
+    removeScrollListener() {
+      if (this.scrollHandler) {
+        window.removeEventListener('scroll', this.scrollHandler);
+      }
+    },
+    
+    // 스크롤 핸들러
+    handleScroll() {
+      if (this.loading || !this.hasMoreItems) return;
+      
+      // 스크롤이 페이지 하단에 가까워졌는지 확인
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      
+      // 페이지 하단에서 200px 이내에 도달하면 더 로드
+      if (scrollTop + windowHeight >= documentHeight - 200) {
+        this.loadMore();
+      }
     },
 
     async loadUserBookmarks() {
@@ -914,28 +949,25 @@ export default {
   margin: 2rem 0;
 }
 
-.load-more-btn {
-  background: #e2e8f0;
-  color: #475569;
-  border: none;
-  border-radius: 12px;
-  padding: 1rem 2rem;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
+.loading-indicator {
+  text-align: center;
+  padding: 2rem 0;
+  color: #64748b;
 }
 
-.load-more-btn:hover:not(:disabled) {
-  background: #cbd5e1;
-  transform: translateY(-2px);
+.loading-indicator .spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid #e2e8f0;
+  border-top: 3px solid #2563eb;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 10px;
 }
 
-.load-more-btn:disabled {
-  background: #f1f5f9;
-  color: #94a3b8;
-  cursor: not-allowed;
-  transform: none;
+.loading-indicator p {
+  font-size: 0.9rem;
+  margin: 0;
 }
 
 /* 모달 스타일 */
