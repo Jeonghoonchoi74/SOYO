@@ -4,6 +4,42 @@
       <p class="subtitle">{{ $t('pref_subtitle') }}</p>
       
       <div class="section">
+        <div class="section-label">{{ $t('pref_section_region') }}</div>
+        <div class="region-selector">
+          <select v-model="selectedRegion" class="region-dropdown" @change="onRegionChange">
+            <option value="" disabled>{{ $t('pref_region_placeholder') }}</option>
+            <option v-for="region in regionOptions" :key="region.value" :value="region.value">
+              {{ region.label }}
+            </option>
+          </select>
+        </div>
+      </div>
+      
+      <div v-if="selectedRegion" class="section">
+        <div class="section-label">{{ $t('pref_section_category') }}</div>
+        <div class="category-selector">
+          <button 
+            v-for="category in availableCategories" 
+            :key="category" 
+            :class="['category-btn', { active: selectedCategory === category }]" 
+            @click="selectCategory(category)"
+          >
+            {{ getCategoryDisplayName(category) }}
+          </button>
+        </div>
+      </div>
+      
+      <!-- 카테고리별 선호도 섹션들 -->
+      <div v-if="selectedCategory === 'events'" class="section">
+        <div class="section-label">{{ $t('pref_section_purpose') }}</div>
+        <div class="toggle-list">
+          <button v-for="item in purposeOptions" :key="item" :class="['toggle-btn', { active: selectedPurpose === item }]" @click="selectPurpose(item)">
+            {{ $t(item) }}
+          </button>
+        </div>
+      </div>
+      
+      <div v-if="selectedCategory === 'foods'" class="section">
         <div class="section-label">{{ $t('pref_section_food') }}</div>
         <div class="toggle-list">
           <button v-for="item in foodOptions" :key="item" :class="['toggle-btn', { active: selectedFood === item }]" @click="selectFood(item)">
@@ -12,16 +48,7 @@
         </div>
       </div>
       
-      <div class="section">
-        <div class="section-label">{{ $t('pref_section_shopping') }}</div>
-        <div class="toggle-list">
-          <button v-for="item in shoppingOptions" :key="item" :class="['toggle-btn', { active: selectedShopping === item }]" @click="selectShopping(item)">
-            {{ $t(item) }}
-          </button>
-        </div>
-      </div>
-
-      <div class="section">
+      <div v-if="selectedCategory === 'tourist_attraction'" class="section">
         <div class="section-label">{{ $t('pref_section_attraction') }}</div>
         <div class="toggle-list">
           <button v-for="item in attractionOptions" :key="item" :class="['toggle-btn', { active: selectedAttraction === item }]" @click="selectAttraction(item)">
@@ -29,8 +56,9 @@
           </button>
         </div>
       </div>
-
-      <div class="section">
+      
+      <!-- 공통 섹션들 -->
+      <div v-if="selectedCategory" class="section">
         <div class="section-label">{{ $t('pref_section_sns') }}</div>
         <div class="toggle-list">
           <button v-for="item in snsOptions" :key="item" :class="['toggle-btn', { active: selectedSNS === item }]" @click="selectSNS(item)">
@@ -39,16 +67,16 @@
         </div>
       </div>
 
-      <div class="section">
-        <div class="section-label">{{ $t('pref_section_purpose') }}</div>
+      <div v-if="selectedCategory" class="section">
+        <div class="section-label">{{ $t('pref_section_shopping') }}</div>
         <div class="toggle-list">
-          <button v-for="item in purposeOptions" :key="item" :class="['toggle-btn', { active: selectedPurpose === item }]" @click="selectPurpose(item)">
+          <button v-for="item in shoppingOptions" :key="item" :class="['toggle-btn', { active: selectedShopping === item }]" @click="selectShopping(item)">
             {{ $t(item) }}
           </button>
         </div>
       </div>
 
-      <div class="section">
+      <div v-if="selectedCategory" class="section">
         <div class="section-label">{{ $t('pref_section_free') }}</div>
         <textarea
           v-model="freeText"
@@ -66,11 +94,16 @@
   
   <script>
   import { i18nState, $t } from '../i18n';
-  import { getAuth } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
+import { getRegionOptions, getAvailableCategories, getCategoryLabel } from '../utils/regionMapping';
   export default {
     name: 'PreferenceInput',
     data() {
       return {
+        regionOptions: getRegionOptions(),
+        selectedRegion: '',
+        selectedCategory: '',
+        availableCategories: [],
         foodOptions: ['pref_food_mild', 'pref_food_seafood', 'pref_food_vegan'],
         shoppingOptions: ['pref_shop_dutyfree', 'pref_shop_souvenir', 'pref_shop_local'],
         attractionOptions: ['pref_attraction_nature', 'pref_attraction_city', 'pref_attraction_culture'],
@@ -87,13 +120,16 @@
     },
     computed: {
       canProceed() {
-        // 최소 하나의 카테고리는 선택되어야 함
-        return this.selectedFood || this.selectedShopping || this.selectedAttraction || this.selectedSNS || this.selectedPurpose;
+        // 지역 선택과 카테고리 선택이 필요함
+        return this.selectedRegion && this.selectedCategory;
       },
       $t() { return $t; },
     },
 
     mounted() {
+      this.selectedRegion = '';
+      this.selectedCategory = '';
+      this.availableCategories = [];
       this.selectedFood = '';
       this.selectedShopping = '';
       this.selectedAttraction = '';
@@ -102,22 +138,32 @@
       this.freeText = '';
     },
 
-    methods: {
-      selectFood(item) {
-        this.selectedFood = item;
-      },
-      selectShopping(item) {
-        this.selectedShopping = item;
-      },
-      selectAttraction(item) {
-        this.selectedAttraction = item;
-      },
-      selectSNS(item) {
-        this.selectedSNS = item;
-      },
-      selectPurpose(item) {
-        this.selectedPurpose = item;
-      },
+      methods: {
+    selectFood(item) {
+      this.selectedFood = item;
+    },
+    selectShopping(item) {
+      this.selectedShopping = item;
+    },
+    selectAttraction(item) {
+      this.selectedAttraction = item;
+    },
+    selectSNS(item) {
+      this.selectedSNS = item;
+    },
+    selectPurpose(item) {
+      this.selectedPurpose = item;
+    },
+    onRegionChange() {
+      this.selectedCategory = ''; // 지역 변경 시 카테고리 초기화
+      this.availableCategories = getAvailableCategories(this.selectedRegion);
+    },
+    selectCategory(category) {
+      this.selectedCategory = category;
+    },
+    getCategoryDisplayName(category) {
+      return getCategoryLabel(category);
+    },
       async savePreferences() {
         const auth = getAuth();
         const user = auth.currentUser;
@@ -128,6 +174,8 @@
         }
 
         const preferences = {
+          region: this.selectedRegion,
+          category: this.selectedCategory,
           food: this.selectedFood,
           shopping: this.selectedShopping,
           attraction: this.selectedAttraction,
@@ -172,10 +220,22 @@
         
         const saved = await this.savePreferences();
         if (saved) {
-          this.$router.push('/recommend');
+          this.$router.push({
+            path: '/recommend',
+            query: { 
+              region: this.selectedRegion,
+              category: this.selectedCategory
+            }
+          });
         } else {
           // 저장 실패 시에도 추천 페이지로 이동 (선택사항)
-          this.$router.push('/recommend');
+          this.$router.push({
+            path: '/recommend',
+            query: { 
+              region: this.selectedRegion,
+              category: this.selectedCategory
+            }
+          });
         }
       },
     },
@@ -250,6 +310,63 @@
     color: #fff;
   }
   
+  .region-selector {
+    width: 100%;
+  }
+  
+  .region-dropdown {
+    width: 100%;
+    padding: 1rem 1.5rem;
+    font-size: 1.2rem;
+    border: 2px solid #cbd5e1;
+    border-radius: 14px;
+    background: #fff;
+    color: #1e293b;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  
+  .region-dropdown:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  }
+  
+  .region-dropdown option {
+    padding: 0.5rem;
+    font-size: 1.1rem;
+  }
+
+  .category-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .category-btn {
+    flex: 1;
+    padding: 0.8rem 1.2rem;
+    border: none;
+    border-radius: 24px;
+    background: #e2e8f0;
+    color: #222;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .category-btn:hover {
+    border-color: #a5b4fc;
+    color: #1e3a8a;
+  }
+
+  .category-btn.active {
+    background: #2563eb;
+    color: #fff;
+  }
+  
   .free-input {
     width: 100%;
     max-width: 500px;
@@ -297,5 +414,65 @@
     background: #cbd5e1;
     color: #fff;
     cursor: not-allowed;
+  }
+  
+  /* 모바일 반응형 */
+  @media (max-width: 768px) {
+    .pref-container {
+      width: 100%;
+      margin: 20px auto;
+      padding: 40px 20px 60px 20px;
+      border-radius: 20px;
+    }
+    
+    .title {
+      font-size: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    
+    .subtitle {
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+    }
+    
+    .section {
+      max-width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    
+    .section-label {
+      font-size: 1.1rem;
+      margin-bottom: 0.8rem;
+    }
+    
+    .toggle-list {
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+    
+    .toggle-btn {
+      padding: 0.8rem 0.6rem;
+      font-size: 1rem;
+    }
+    
+    .region-dropdown {
+      padding: 0.8rem 1.2rem;
+      font-size: 1rem;
+    }
+
+    .category-btn {
+      padding: 0.6rem 1rem;
+      font-size: 0.9rem;
+    }
+    
+    .free-input {
+      padding: 1rem 1.2rem;
+      font-size: 1rem;
+    }
+    
+    .recommend-btn {
+      padding: 1.2rem 0;
+      font-size: 1.1rem;
+    }
   }
   </style>
