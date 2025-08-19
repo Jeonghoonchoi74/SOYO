@@ -264,6 +264,23 @@ export default {
 
         // 리뷰 저장 (리뷰가 있는 경우에만)
         if (place.reviewText && place.reviewText.trim()) {
+          // 사용자 선호도에서 region 가져오기
+          let userRegion = '전국'; // 기본값
+          try {
+            const preferencesResponse = await fetch('http://localhost:5000/api/get_user_preferences', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ uid: user.uid })
+            });
+            
+            const preferencesResult = await preferencesResponse.json();
+            if (preferencesResult.success && preferencesResult.preferences && preferencesResult.preferences.region) {
+              userRegion = preferencesResult.preferences.region;
+            }
+          } catch (error) {
+            console.warn('사용자 선호도 조회 실패, 기본값 사용:', error);
+          }
+
           const response = await fetch('http://localhost:5000/api/save_review', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -276,7 +293,7 @@ export default {
               review: place.reviewText.trim(),
               rating: place.rating || 0,
               isPublic: place.isPublic || false,
-              region: '부산', // 기본값으로 부산 설정 나중에는 가져올예정
+              region: userRegion, // 사용자 선호도에서 가져온 region 사용
               userName: user.displayName || user.email
             })
           });
