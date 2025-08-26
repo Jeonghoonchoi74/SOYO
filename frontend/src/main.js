@@ -12,7 +12,7 @@ import Test from './components/test.vue'
 const routes = [
   { path: '/auth', component: AuthPage },
   { path: '/', component: Home },
-  { path: '/destination', component: DestinationCategory },
+  { path: '/destination', redirect: '/preference' },
   { path: '/preference', component: PreferenceInput },
   { path: '/recommend', component: () => import('./components/RecommendResult.vue') }, // 추후 구현
   { path: '/bookmarks', component: () => import('./components/BookmarkList.vue') }, // 북마크 페이지

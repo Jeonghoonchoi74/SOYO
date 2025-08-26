@@ -1,7 +1,14 @@
 <template>
-  <div class="bookmark-container">
-    <button class="back-home-btn" @click="goHome">{{ $t('bookmark_back_home') }}</button>
-    <h2 class="title">{{ $t('bookmark_title') }}</h2>
+  <div class="bookmark-page">
+    <div class="bookmark-header">
+      <button class="back-btn" @click="goHome">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7" />
+        </svg>
+        {{ $t('bookmark_back_home') }}
+      </button>
+      <h2 class="title">{{ $t('bookmark_title') }}</h2>
+    </div>
     <div class="bookmark-list">
       <template v-if="bookmarked.length > 0">
         <div v-for="(place, idx) in bookmarked" :key="idx" class="bookmark-card">
@@ -395,23 +402,55 @@ export default {
 </script>
 
 <style scoped>
-.bookmark-container {
-  width: 800px;
-  margin: 60px auto;
-  padding: 64px 80px 96px 80px;
-  border-radius: 32px;
-  background: #f8fafc;
+/* 네이버 지식iN 스타일 - Community.vue 베이스 */
+.bookmark-page {
+  min-height: 100vh;
+  background: #F7F8FA;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  width: 100vw;
+  max-width: 100vw;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  padding: 20px;
+}
+
+.bookmark-header {
+  background: white;
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  gap: 16px;
+}
+
+.back-btn {
+  background: #F7F8FA;
+  color: #495057;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.back-btn:hover {
+  background: #4A69E2;
+  color: white;
+  border-color: #4A69E2;
 }
 
 .title {
-  font-size: 2rem;
-  font-weight: 800;
-  margin-bottom: 3rem;
-  text-align: left;
-  color: #1e293b;
+  font-size: 20px;
+  font-weight: 600;
+  color: #212529;
+  margin: 0;
 }
 
 .section {
@@ -422,62 +461,35 @@ export default {
 
 .bookmark-list {
   width: 100%;
-  max-width: 900px;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
-  margin-bottom: 3.5rem;
+  gap: 12px;
 }
 
 .bookmark-card {
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  border-radius: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  padding: 2rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 16px;
   display: flex;
   align-items: flex-start;
-  gap: 2rem;
-  border: 1px solid #e2e8f0;
-  transition: all 0.3s ease;
+  gap: 12px;
+  border: 1px solid #e9ecef;
+  transition: all 0.2s ease;
   position: relative;
-  overflow: hidden;
-}
-
-.bookmark-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #3b82f6, #10b981, #f59e0b);
-  opacity: 0;
-  transition: opacity 0.3s ease;
 }
 
 .bookmark-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-  border-color: #cbd5e1;
-}
-
-.bookmark-card:hover::before {
-  opacity: 1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: #4A69E2;
 }
 
 .place-img {
-  width: 140px;
-  height: 140px;
+  width: 80px;
+  height: 80px;
   object-fit: cover;
-  border-radius: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transition: all 0.3s ease;
+  border-radius: 8px;
   flex-shrink: 0;
-}
-
-.bookmark-card:hover .place-img {
-  transform: scale(1.02);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
 
 .place-info {
@@ -487,10 +499,10 @@ export default {
 }
 
 .place-name {
-  font-size: 1.4rem;
-  font-weight: 800;
-  margin-bottom: 0.6rem;
-  color: #1e293b;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #ff6b35;
   text-align: left;
   line-height: 1.3;
   background: linear-gradient(135deg, #1e293b 0%, #475569 100%);
@@ -1022,20 +1034,46 @@ export default {
   color: #475569;
 }
 
-@media (min-width: 600px) {
-  .bookmark-container {
-    max-width: 600px;
-    margin: 40px auto;
-    padding: 40px 32px 64px 32px;
-    border-radius: 24px;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+/* 반응형 */
+@media (max-width: 768px) {
+  .bookmark-page {
+    padding: 12px;
   }
-}
-
-@media (min-width: 900px) {
-  .bookmark-container {
-    max-width: 800px;
-    padding: 48px 64px 80px 64px;
+  
+  .bookmark-header {
+    padding: 16px 20px;
+    margin-bottom: 12px;
+  }
+  
+  .back-btn {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+  
+  .title {
+    font-size: 18px;
+  }
+  
+  .bookmark-list {
+    gap: 8px;
+  }
+  
+  .bookmark-card {
+    padding: 12px;
+    gap: 8px;
+  }
+  
+  .place-img {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .place-name {
+    font-size: 15px;
+  }
+  
+  .place-desc {
+    font-size: 13px;
   }
 }
 </style>

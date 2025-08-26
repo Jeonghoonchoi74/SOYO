@@ -1,45 +1,56 @@
 <template>
-  <div class="auth-container">
-    <div class="auth-tabs">
-      <button :class="{active: mode==='login'}" @click="mode='login'">{{ $t('login') }}</button>
-      <button :class="{active: mode==='signup'}" @click="mode='signup'">{{ $t('signup') }}</button>
+  <div class="auth-page">
+    <div class="auth-content">
+      <div class="auth-tabs">
+        <button :class="{active: mode==='login'}" @click="mode='login'">{{ $t('login') }}</button>
+        <button :class="{active: mode==='signup'}" @click="mode='signup'">{{ $t('signup') }}</button>
+      </div>
+      
+      <form class="auth-form" @submit.prevent="onSubmit">
+        <div class="form-group">
+          <label for="email">{{ $t('email') }}</label>
+          <input id="email" v-model="email" type="email" required :placeholder="$t('input_email')" />
+        </div>
+        
+        <div class="form-group">
+          <label for="password">{{ $t('password') }}</label>
+          <input id="password" v-model="password" type="password" required :placeholder="$t('input_password')" />
+        </div>
+        
+        <div v-if="mode==='signup'" class="form-group">
+          <label for="name">{{ $t('name') }}</label>
+          <input id="name" v-model="name" type="text" required :placeholder="$t('input_name')" />
+        </div>
+        
+        <div v-if="mode==='signup'" class="form-group">
+          <label for="password2">{{ $t('password_confirm') }}</label>
+          <input id="password2" v-model="password2" type="password" required :placeholder="$t('input_password_confirm')" />
+        </div>
+        
+        <div v-if="mode==='signup'" class="form-group">
+          <label for="lang">{{ $t('select_language') }}</label>
+          <select id="lang" v-model="signupLang" required>
+            <option value="ko">{{ $t('lang_ko') }}</option>
+            <option value="en">{{ $t('lang_en') }}</option>
+            <option value="zh">{{ $t('lang_zh') }}</option>
+            <option value="ja">{{ $t('lang_ja') }}</option>
+          </select>
+        </div>
+        
+        <div v-if="error" class="error-msg">{{ error }}</div>
+        
+        <button class="auth-btn" type="submit" :disabled="loading">
+          {{ mode==='login' ? $t('login') : $t('signup') }}
+        </button>
+        
+        <div class="divider">{{ $t('or') }}</div>
+        
+        <button class="google-btn" type="button" @click="googleLogin" :disabled="loading">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="google-icon" />
+          {{ $t('login_with_google') }}
+        </button>
+      </form>
     </div>
-    <form class="auth-form" @submit.prevent="onSubmit">
-      <div class="form-group">
-        <label for="email">{{ $t('email') }}</label>
-        <input id="email" v-model="email" type="email" required :placeholder="$t('input_email')" />
-      </div>
-      <div class="form-group">
-        <label for="password">{{ $t('password') }}</label>
-        <input id="password" v-model="password" type="password" required :placeholder="$t('input_password')" />
-      </div>
-      <div v-if="mode==='signup'" class="form-group">
-        <label for="name">{{ $t('name') }}</label>
-        <input id="name" v-model="name" type="text" required :placeholder="$t('input_name')" />
-      </div>
-      <div v-if="mode==='signup'" class="form-group">
-        <label for="password2">{{ $t('password_confirm') }}</label>
-        <input id="password2" v-model="password2" type="password" required :placeholder="$t('input_password_confirm')" />
-      </div>
-      <div v-if="mode==='signup'" class="form-group">
-        <label for="lang">{{ $t('select_language') }}</label>
-        <select id="lang" v-model="signupLang" required>
-          <option value="ko">{{ $t('lang_ko') }}</option>
-          <option value="en">{{ $t('lang_en') }}</option>
-          <option value="zh">{{ $t('lang_zh') }}</option>
-          <option value="ja">{{ $t('lang_ja') }}</option>
-        </select>
-      </div>
-      <div v-if="error" class="error-msg">{{ error }}</div>
-      <button class="auth-btn" type="submit" :disabled="loading">
-        {{ mode==='login' ? $t('login') : $t('signup') }}
-      </button>
-      <div class="divider">{{ $t('or') }}</div>
-      <button class="google-btn" type="button" @click="googleLogin" :disabled="loading">
-        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="google-icon" />
-        {{ $t('login_with_google') }}
-      </button>
-    </form>
     
     <!-- Google 로그인 후 언어 설정 모달 -->
     <LanguageSetupModal 
@@ -196,127 +207,231 @@ export default {
 </script>
 
 <style scoped>
-.auth-container {
-  width: 480px;
-  margin: 100px auto;
-  padding: 48px 48px 56px 48px;
-  border-radius: 32px;
-  background: #f8fafc;
+/* 네이버 지식iN 스타일 - Community.vue 베이스 */
+.auth-page {
+  min-height: 100vh;
+  background: #F7F8FA;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  width: 100vw;
+  max-width: 100vw;
+  overflow-x: hidden;
+  box-sizing: border-box;
   display: flex;
-  flex-direction: column;
   align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.auth-content {
+  width: 100%;
+  max-width: 480px;
+  background: white;
+  border-radius: 16px;
+  padding: 40px 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   box-sizing: border-box;
 }
 .auth-tabs {
   display: flex;
-  gap: 1.5rem;
-  margin-bottom: 2.5rem;
+  gap: 8px;
+  margin-bottom: 32px;
 }
+
 .auth-tabs button {
-  font-size: 1.2rem;
-  font-weight: 700;
-  padding: 0.8rem 2.2rem;
-  border: none;
-  border-radius: 20px;
-  background: #e2e8f0;
-  color: #475569;
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  background: #f8f9fa;
+  color: #495057;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  transition: all 0.2s ease;
 }
+
 .auth-tabs button.active {
-  background: #2563eb;
-  color: #fff;
+  background: #4A69E2;
+  border-color: #4A69E2;
+  color: white;
 }
 .auth-form {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 20px;
 }
+
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 8px;
 }
+
 label {
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: #1e293b;
+  font-size: 14px;
+  font-weight: 500;
+  color: #212529;
 }
+
 input[type="email"],
 input[type="password"],
 input[type="text"],
 select {
-  padding: 1rem 1.2rem;
-  font-size: 1.1rem;
-  border: 2px solid #cbd5e1;
-  border-radius: 14px;
-  background: #fff;
-  color: #1e293b;
+  padding: 14px;
+  font-size: 14px;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  background: #F7F8FA;
+  color: #212529;
   outline: none;
-  transition: border 0.2s;
+  transition: all 0.2s ease;
+  font-family: inherit;
 }
+
 input:focus, select:focus {
-  border-color: #2563eb;
+  border-color: #4A69E2;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(74, 105, 226, 0.1);
 }
 .auth-btn {
   width: 100%;
-  padding: 1.2rem 0;
-  background: #2563eb;
-  color: #fff;
-  font-size: 1.2rem;
-  font-weight: 800;
+  padding: 16px;
+  background: #4A69E2;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
   border: none;
-  border-radius: 16px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
 }
+
 .auth-btn:disabled {
-  background: #cbd5e1;
+  background: #adb5bd;
   cursor: not-allowed;
 }
-.auth-btn:hover {
-  background: #1d4ed8;
+
+.auth-btn:hover:not(:disabled) {
+  background: #3B5BC7;
 }
 .divider {
   text-align: center;
-  color: #64748b;
-  margin: 1.2rem 0 0.5rem 0;
-  font-size: 1rem;
+  color: #6c757d;
+  margin: 16px 0;
+  font-size: 14px;
+  position: relative;
 }
+
+.divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #e9ecef;
+  z-index: 1;
+}
+
+.divider span {
+  background: white;
+  padding: 0 16px;
+  position: relative;
+  z-index: 2;
+}
+
 .google-btn {
   width: 100%;
-  padding: 1.1rem 0;
-  background: #fff;
-  color: #222;
-  font-size: 1.1rem;
-  font-weight: 700;
-  border: 2px solid #cbd5e1;
-  border-radius: 16px;
+  padding: 14px;
+  background: white;
+  color: #212529;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.7rem;
-  transition: background 0.2s, border 0.2s;
+  gap: 8px;
+  transition: all 0.2s ease;
 }
+
 .google-btn:disabled {
-  background: #f1f5f9;
-  color: #b0b0b0;
+  background: #f8f9fa;
+  color: #adb5bd;
   cursor: not-allowed;
 }
-.google-btn:hover {
-  background: #f1f5f9;
-  border-color: #2563eb;
+
+.google-btn:hover:not(:disabled) {
+  background: #f8f9fa;
+  border-color: #ff6b35;
 }
+
 .google-icon {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
 }
+
 .error-msg {
-  color: #ef4444;
-  font-size: 1rem;
-  margin-bottom: -1rem;
+  color: #dc3545;
+  font-size: 14px;
   text-align: center;
+  padding: 8px;
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 6px;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .auth-page {
+    padding: 12px;
+  }
+  
+  .auth-content {
+    padding: 32px 20px;
+  }
+  
+  .auth-tabs {
+    gap: 6px;
+    margin-bottom: 24px;
+  }
+  
+  .auth-tabs button {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  
+  .auth-form {
+    gap: 16px;
+  }
+  
+  .form-group {
+    gap: 6px;
+  }
+  
+  label {
+    font-size: 13px;
+  }
+  
+  input[type="email"],
+  input[type="password"],
+  input[type="text"],
+  select {
+    padding: 12px;
+    font-size: 13px;
+  }
+  
+  .auth-btn {
+    padding: 14px;
+    font-size: 15px;
+  }
+  
+  .google-btn {
+    padding: 12px;
+    font-size: 13px;
+  }
 }
 </style> 

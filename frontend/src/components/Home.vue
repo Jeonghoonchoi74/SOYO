@@ -1,24 +1,41 @@
 <template>
-  <div class="home-container">
-    <button v-if="isLoggedIn" class="logout-btn" @click="logout">{{ $t('logout') }}</button>
-    <div :class="['home-content', { blurred: showLoginModal }]">
+  <div class="home-page">
+    <div class="home-content">
       <h1 class="welcome" v-html="$t('welcome').replace(/\\n/g, '<br>')"></h1>
+      
       <div class="lang-select">
-        <button v-for="lang in languages" :key="lang.code" :class="['lang-btn', { active: selectedLang === lang.code }]" @click="selectLang(lang.code)">
+        <button v-for="lang in languages" :key="lang.code" 
+                :class="['lang-btn', { active: selectedLang === lang.code }]" 
+                @click="selectLang(lang.code)">
           {{ lang.label }}
         </button>
       </div>
+      
       <button class="start-btn" @click="start">{{ $t('start') }}</button>
+      
       <div v-if="isLoggedIn" class="nav-buttons">
-        <button class="nav-btn" @click="goToBookmarks">북마크</button>
-        <button class="nav-btn" @click="goToCommunity">커뮤니티</button>
+        <button class="nav-btn" @click="goToBookmarks">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+          </svg>
+          북마크
+        </button>
+        <button class="nav-btn" @click="goToCommunity">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          커뮤니티
+        </button>
       </div>
     </div>
     
     <!-- 언어 선택 모달 -->
-    <div v-if="showLanguageModal" class="language-modal-overlay">
-      <div class="language-modal">
-        <!-- <h2 class="language-title">언어를 선택해주세요</h2> -->
+    <div v-if="showLanguageModal" class="language-modal-overlay" @click="closeLanguageModal">
+      <div class="language-modal" @click.stop>
+        <div class="modal-header">
+          <h3>언어를 선택해주세요</h3>
+          <button class="close-btn" @click="closeLanguageModal">×</button>
+        </div>
         <div class="language-options">
           <button class="language-option" @click="selectLanguage('ko')">
             <span class="flag">🇰🇷</span>
@@ -41,14 +58,27 @@
     </div>
     
     <!-- 로그인 필요 모달 -->
-    <div v-if="showLoginModal" class="modal-overlay">
-      <div class="modal-box">
-        <div class="modal-title" v-html="$t('login_required').replace(/\\n/g, '<br>')"></div>
+    <div v-if="showLoginModal" class="modal-overlay" @click="closeLoginModal">
+      <div class="modal-box" @click.stop>
+        <div class="modal-header">
+          <h3 v-html="$t('login_required').replace(/\\n/g, '<br>')"></h3>
+          <button class="close-btn" @click="closeLoginModal">×</button>
+        </div>
         <div class="modal-actions">
           <button class="modal-btn" @click="goAuth">{{ $t('login_signup') }}</button>
         </div>
       </div>
     </div>
+
+    <!-- 로그아웃 버튼 -->
+    <button v-if="isLoggedIn" class="logout-btn" @click="logout">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+        <polyline points="16,17 21,12 16,7" />
+        <line x1="21" y1="12" x2="9" y2="12" />
+      </svg>
+      로그아웃
+    </button>
   </div>
 </template>
 
@@ -176,7 +206,7 @@ export default {
       i18nState.lang = code;
     },
     start() {
-      this.$router.push('/destination');
+      this.$router.push('/preference');
     },
     goToBookmarks() {
       this.$router.push('/bookmarks');
@@ -195,185 +225,247 @@ export default {
       i18nState.lang = 'ko';
       this.$router.push('/');
     },
+    closeLanguageModal() {
+      this.showLanguageModal = false;
+    },
+    closeLoginModal() {
+      this.showLoginModal = false;
+    }
   },
 };
 </script>
 
 <style scoped>
-/* 전체 레이아웃 */
-.home-container {
-  width: 800px;
-  margin: 60px auto;
-  padding: 64px 80px 96px 80px;
-  border-radius: 32px;
-  background: #f8fafc;
+/* 네이버 지식iN 스타일 - Community.vue 베이스 */
+.home-page {
+  min-height: 100vh;
+  background: #F7F8FA;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  width: 100vw;
+  max-width: 100vw;
+  overflow-x: hidden;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
-  text-align: center;
-  position: relative;
+  justify-content: center;
+  padding: 20px;
 }
 
+.home-content {
+  width: 100%;
+  max-width: 480px;
+  background: white;
+  border-radius: 16px;
+  padding: 40px 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  box-sizing: border-box;
+}
 
 .logout-btn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: #fff;
-  color: #2563eb;
-  border: 2px solid #2563eb;
-  border-radius: 10px;
-  padding: 0.7rem 1.5rem;
-  font-size: 1.05rem;
-  font-weight: 700;
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: white;
+  color: #4A69E2;
+  border: 1px solid #4A69E2;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
-  z-index: 10;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
 }
+
 .logout-btn:hover {
-  background: #2563eb;
-  color: #fff;
+  background: #4A69E2;
+  color: white;
 }
 /* 환영 메시지 */
 .welcome {
-  color: #1e293b;
-  font-size: 2.2rem;
-  font-weight: 800;
-  line-height: 1.5;
-  margin-bottom: 3.5rem;
+  color: #212529;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.4;
+  margin-bottom: 32px;
 }
 
 /* 언어 선택 버튼 그룹 */
 .lang-select {
   display: flex;
-  gap: 1.2rem;
-  margin-bottom: 3.5rem;
+  gap: 8px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
 }
 
 /* 언어 선택 버튼 */
 .lang-btn {
-  padding: 1rem 0;
-  border: 2px solid #e2e8f0;
-  border-radius: 24px;
-  background: #fff;
-  color: #475569;
-  font-size: 1.2rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
   flex: 1;
+  min-width: 80px;
+  padding: 12px 16px;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  background: #f8f9fa;
+  color: #495057;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .lang-btn:hover {
-  border-color: #3b82f6;
-  color: #3b82f6;
+  background: #e9ecef;
+  color: #212529;
 }
 
 /* 활성화된 언어 버튼 */
 .lang-btn.active {
-  background: #3b82f6;
-  border-color: #3b82f6;
-  color: #fff;
+  background: #4A69E2;
+  border-color: #4A69E2;
+  color: white;
 }
 
 /* 시작하기 버튼 (CTA) */
 .start-btn {
   width: 100%;
-  max-width: 420px;
-  padding: 1.4rem 0;
-  background: #2563eb;
-  color: #fff;
-  font-size: 1.3rem;
-  font-weight: 800;
+  padding: 16px;
+  background: #4A69E2;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
   border: none;
-  border-radius: 16px;
-  box-shadow: 0 6px 24px rgba(37,99,235,0.12);
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  margin-bottom: 24px;
 }
 
 .start-btn:hover {
-  background: #1d4ed8;
-  transform: translateY(-2px);
+  background: #3B5BC7;
+  transform: translateY(-1px);
 }
 
 .start-btn:active {
-  background: #1e40af;
   transform: translateY(0);
 }
 
 /* 네비게이션 버튼들 */
 .nav-buttons {
   display: flex;
-  gap: 1rem;
-  margin-top: 2rem;
+  gap: 12px;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 .nav-btn {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  padding: 0.8rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 600;
+  background: #f8f9fa;
+  color: #495057;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .nav-btn:hover {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+  background: #4A69E2;
+  color: white;
+  border-color: #4A69E2;
 }
 
-.nav-btn:active {
-  transform: translateY(0);
-}
-
-/* 모달 팝업 스타일 */
+/* 모달 팝업 스타일 - Community.vue 베이스 */
 .modal-overlay {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.25);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 3000;
+  padding: 20px;
+  color: #212529;
 }
+
 .modal-box {
-  background: #fff;
-  border-radius: 20px;
-  padding: 2.5rem 2.5rem 2rem 2.5rem;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.10);
-  min-width: 320px;
-  text-align: center;
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 85vh;
+  overflow-y: auto;
+  color: #212529;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  position: relative;
+  z-index: 3001;
 }
-.modal-title {
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 2rem;
-}
-.modal-actions {
+
+.modal-header {
   display: flex;
-  gap: 1.2rem;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 24px 20px 24px;
+  border-bottom: 1px solid #f1f3f4;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #212529;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #adb5bd;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
   justify-content: center;
 }
-.modal-btn {
-  padding: 0.8rem 2.2rem;
-  font-size: 1.1rem;
-  font-weight: 700;
-  border: none;
-  border-radius: 12px;
-  background: #2563eb;
-  color: #fff;
-  cursor: pointer;
-  transition: background 0.2s;
+
+.close-btn:hover {
+  color: #212529;
 }
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 20px 24px 24px 24px;
+}
+
+.modal-btn {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  background: #4A69E2;
+  color: white;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
 .modal-btn:hover {
-  background: #1d4ed8;
+  background: #3B5BC7;
 }
 .home-content {
   transition: filter 0.2s;
@@ -384,60 +476,113 @@ export default {
   user-select: none;
 }
 
-/* 언어 선택 모달 스타일 */
+/* 언어 선택 모달 스타일 - Community.vue 베이스 */
 .language-modal-overlay {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.25);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 3000;
+  padding: 20px;
+  color: #212529;
 }
+
 .language-modal {
-  background: #fff;
-  border-radius: 24px;
-  padding: 3rem 2.5rem 2.5rem 2.5rem;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-  min-width: 400px;
-  text-align: center;
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 85vh;
+  overflow-y: auto;
+  color: #212529;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  position: relative;
+  z-index: 3001;
 }
 
 .language-options {
+  padding: 20px 24px 24px 24px;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 12px;
 }
+
 .language-option {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1.2rem 1.5rem;
-  background: #f8fafc;
-  border: 2px solid #e2e8f0;
-  border-radius: 16px;
+  gap: 12px;
+  padding: 16px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #1e293b;
+  transition: all 0.2s ease;
+  font-size: 16px;
+  font-weight: 500;
+  color: #212529;
 }
+
 .language-option:hover {
-  background: #2563eb;
-  color: #fff;
-  border-color: #2563eb;
+  background: #4A69E2;
+  color: white;
+  border-color: #4A69E2;
 }
-.language-option:hover .flag,
-.language-option:hover .lang-name {
-  color: #fff;
-}
+
 .flag {
-  font-size: 1.5rem;
-  color: #1e293b;
+  font-size: 20px;
+  color: inherit;
 }
+
 .lang-name {
   flex: 1;
   text-align: left;
-  color: #1e293b;
+  color: inherit;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .home-content {
+    padding: 32px 20px;
+    margin: 0 12px;
+  }
+  
+  .welcome {
+    font-size: 20px;
+    margin-bottom: 24px;
+  }
+  
+  .lang-select {
+    gap: 6px;
+    margin-bottom: 24px;
+  }
+  
+  .lang-btn {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  
+  .start-btn {
+    padding: 14px;
+    font-size: 15px;
+  }
+  
+  .nav-buttons {
+    gap: 8px;
+  }
+  
+  .nav-btn {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  
+  .modal-overlay,
+  .language-modal-overlay {
+    padding: 12px;
+  }
 }
 </style>

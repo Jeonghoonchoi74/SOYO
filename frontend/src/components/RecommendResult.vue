@@ -1,6 +1,7 @@
 <template>
-      <div class="recommend-container">
-      <div class="header">
+  <div class="recommend-page">
+    <div class="recommend-content">
+      <div class="recommend-header">
         <h2 class="title">{{ $t('recommend_title') }}</h2>
         <p class="region-info">{{ getDisplayName(region) }} 지역 {{ getCategoryLabel(category) }} 추천</p>
       </div>
@@ -99,7 +100,13 @@
     
     <button class="bookmark-list-btn" @click="goBookmark">{{ $t('recommend_bookmark_btn') }}</button>
     
-    <button class="back-home-btn" @click="goHome">{{ $t('recommend_back_home') }}</button>
+    <!-- Floating 버튼 -->
+    <button class="floating-back-btn" @click="goHome">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+      </svg>
+      메인으로
+    </button>
     
     <!-- 상세 모달 -->
     <div v-if="selectedPlace" class="modal-overlay" @click="closeModal">
@@ -195,6 +202,17 @@
             <div v-if="selectedPlace.overview" class="info-section">
               <p v-html="selectedPlace.overview" style="margin-top: 12px; color: #222; font-size: 1.13rem; line-height: 1.7; text-align: left;"></p>
             </div>
+            
+            <!-- 지도 섹션 -->
+            <div v-if="selectedPlace.addr1" class="info-section">
+              <h3>위치</h3>
+              <GoogleMap 
+                :address="selectedPlace.addr1" 
+                :title="selectedPlace.title"
+                :zoom="16"
+              />
+            </div>
+            
             <!-- 상세정보 섹션 -->
             <div v-if="selectedPlace.detail_intro2?.eventintro || selectedPlace.detail_intro2?.eventtext" class="info-section">
               <h3>상세 정보</h3>
@@ -215,7 +233,8 @@
       </div>
     </div>
     
-    <div v-if="showModal" class="custom-modal">{{ modalMessage }}</div>
+      <div v-if="showModal" class="custom-modal">{{ modalMessage }}</div>
+    </div>
   </div>
 </template>
 
@@ -225,9 +244,13 @@ import { getAuth } from 'firebase/auth';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { getDisplayName } from '../utils/regionMapping';
+import GoogleMap from './GoogleMap.vue';
 
 export default {
   name: 'RecommendResult',
+  components: {
+    GoogleMap
+  },
   data() {
     return {
       region: '서울', // 기본값, 쿼리 파라미터에서 업데이트됨
@@ -482,6 +505,9 @@ export default {
     loadMore() {
       if (this.loading || !this.hasMoreItems) return;
       
+      // 현재 스크롤 위치 저장
+      const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      
       this.loading = true;
       
       setTimeout(() => {
@@ -497,6 +523,11 @@ export default {
         this.bookmarkDisabled = Array(this.displayedPlaces.length).fill(false);
         
         this.loading = false;
+        
+        // DOM 업데이트 후 스크롤 위치 복원
+        this.$nextTick(() => {
+          window.scrollTo(0, currentScrollTop);
+        });
       }, 300); // 로딩 효과를 위한 지연
     },
     
@@ -661,56 +692,77 @@ export default {
 </script>
 
 <style scoped>
-.recommend-container {
-  width: 800px;
-  margin: 60px auto;
-  padding: 64px 80px 96px 80px;
-  border-radius: 32px;
-  background: #f8fafc;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+/* 네이버 지식iN 스타일 - Community.vue 베이스 */
+.recommend-page {
+  min-height: 100vh;
+  background: #F7F8FA;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  width: 100vw;
+  max-width: 100vw;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  padding: 20px;
 }
 
-.header {
+.recommend-content {
   width: 100%;
-  margin-bottom: 30px;
+  max-width: 480px;
+  background: white;
+  border-radius: 16px;
+  padding: 40px 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+  margin: 0 auto;
+}
+
+.recommend-header {
   text-align: center;
-}
-
-.region-info {
-  font-size: 1.1rem;
-  color: #64748b;
-  margin-top: 0.5rem;
-  font-weight: 600;
-}
-
-.back-home-btn {
-  display: block;
-  margin: 2rem auto 0 auto;
-  background: #64748b;
-  color: #fff;
-  border: none;
-  border-radius: 14px;
-  padding: 1.1rem 0;
-  width: 100%;
-  max-width: 420px;
-  font-size: 1.2rem;
-  font-weight: 800;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.back-home-btn:hover {
-  background: #475569;
+  margin-bottom: 32px;
 }
 
 .title {
-  font-size: 2rem;
-  font-weight: 800;
-  margin-bottom: 3rem;
-  text-align: center;
-  color: #1e293b;
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #212529;
+}
+
+.region-info {
+  font-size: 16px;
+  color: #6c757d;
+  margin-top: 0;
+  font-weight: 500;
+}
+
+.floating-back-btn {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background: #4A69E2;
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(74, 105, 226, 0.3);
+  transition: all 0.3s ease;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.floating-back-btn:hover {
+  background: #3B5BC7;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(74, 105, 226, 0.4);
+}
+
+.floating-back-btn:active {
+  transform: translateY(0);
 }
 
 .loading {
@@ -921,26 +973,24 @@ export default {
 
 .bookmark-list-btn {
   width: 100%;
-  max-width: 420px;
-  padding: 1.4rem 0;
-  background: #2563eb;
-  color: #fff;
-  font-size: 1.3rem;
-  font-weight: 800;
+  padding: 16px;
+  background: #4A69E2;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
   border: none;
-  border-radius: 16px;
-  box-shadow: 0 6px 24px rgba(37,99,235,0.12);
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  margin-bottom: 12px;
 }
 
 .bookmark-list-btn:hover {
-  background: #1d4ed8;
-  transform: translateY(-2px);
+  background: #3B5BC7;
+  transform: translateY(-1px);
 }
 
 .bookmark-list-btn:active {
-  background: #1e40af;
   transform: translateY(0);
 }
 
@@ -1142,68 +1192,77 @@ export default {
 
 /* overview 관련 커스텀 스타일 제거 (overview-item, info-title 등) */
 
-/* 모바일 반응형 */
+/* 반응형 */
 @media (max-width: 768px) {
-  .recommend-container {
-    width: 100%;
-    margin: 20px auto;
-    padding: 40px 20px 60px 20px;
-    border-radius: 20px;
+  .recommend-page {
+    padding: 12px;
+  }
+  
+  .recommend-content {
+    padding: 32px 20px;
+  }
+  
+  .recommend-header {
+    margin-bottom: 24px;
   }
   
   .title {
-    font-size: 1.5rem;
-    margin-bottom: 2rem;
+    font-size: 20px;
+    margin-bottom: 6px;
   }
   
   .region-info {
-    font-size: 1rem;
-    margin-top: 0.3rem;
+    font-size: 14px;
   }
   
   .places-grid {
     grid-template-columns: 1fr;
-    gap: 1.5rem;
+    gap: 12px;
   }
   
   .place-card {
-    padding: 1rem;
+    padding: 12px;
   }
   
   .place-title {
-    font-size: 1.1rem;
+    font-size: 16px;
   }
   
   .modal-content {
-    margin: 10px;
+    margin: 12px;
     max-height: 95vh;
   }
   
   .modal-header {
-    padding: 15px 20px;
+    padding: 16px 20px;
   }
   
   .modal-title {
-    font-size: 1.1rem;
+    font-size: 18px;
   }
   
   .modal-body {
-    padding: 15px;
+    padding: 16px 20px;
   }
   
   .modal-image {
-    height: 200px;
+    height: 180px;
   }
   
   .info-grid {
     grid-template-columns: 1fr;
   }
-  .overview-item {
-    font-size: 0.97rem;
-    padding: 12px 6px;
+  
+  .floating-back-btn {
+    bottom: 20px;
+    right: 20px;
+    padding: 10px 16px;
+    font-size: 13px;
   }
-  .info-title {
-    font-size: 1rem;
+  
+  /* 모바일에서 지도 높이 조정 */
+  .google-map-container {
+    height: 200px;
   }
 }
 </style>

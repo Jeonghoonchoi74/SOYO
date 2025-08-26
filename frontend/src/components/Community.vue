@@ -716,7 +716,7 @@ export default {
 /* 네이버 지식iN 스타일 */
 .community-page {
   min-height: 100vh;
-  background: #f8f9fa;
+  background: #F7F8FA;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   width: 100vw;
   max-width: 100vw;
@@ -772,7 +772,7 @@ export default {
 }
 
 .region-item.active {
-  background: #ff6b35;
+  background: #4A69E2;
   color: white;
   font-weight: 500;
 }
@@ -828,8 +828,8 @@ export default {
 }
 
 .tab-btn.active {
-  color: #ff6b35;
-  border-bottom-color: #ff6b35;
+  color: #4A69E2;
+  border-bottom-color: #4A69E2;
 }
 
 /* 메인 컨텐츠 */
@@ -888,7 +888,7 @@ export default {
 
 .place-title {
   font-weight: 600;
-  color: #ff6b35;
+  color: #4A69E2;
   font-size: 16px;
   line-height: 1.4;
 }
@@ -958,8 +958,8 @@ export default {
 }
 
 .action-btn.active {
-  color: #ff6b35;
-  border-color: #ff6b35;
+  color: #4A69E2;
+  border-color: #4A69E2;
 }
 
 .action-btn.delete-btn {
@@ -1048,11 +1048,11 @@ export default {
 
 .comment-input textarea:focus {
   outline: none;
-  border-color: #ff6b35;
+  border-color: #4A69E2;
 }
 
 .comment-submit {
-  background: #ff6b35;
+  background: #4A69E2;
   color: white;
   border: none;
   border-radius: 6px;
@@ -1074,7 +1074,7 @@ export default {
   right: 20px;
   width: 56px;
   height: 56px;
-  background: #ff6b35;
+  background: #4A69E2;
   color: white;
   border: none;
   border-radius: 50%;
@@ -1082,7 +1082,7 @@ export default {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+  box-shadow: 0 4px 12px rgba(74, 105, 226, 0.3);
   z-index: 1000;
 }
 
@@ -1266,7 +1266,7 @@ export default {
 }
 
 .submit-btn {
-  background: #ff6b35;
+  background: #4A69E2;
   color: white;
 }
 
