@@ -81,6 +81,7 @@
 <script>
 import { i18nState, $t } from '../i18n';
 import { getAuth } from 'firebase/auth';
+import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import { getRegionOptions, getAvailableCategories, getCategoryLabel } from '../utils/regionMapping';
 
 export default {
@@ -273,6 +274,16 @@ export default {
     async recommend() {
       if (this.isSaving) return;
       
+      // Free Text가 있고 사용자 언어가 한국어가 아닐 때만 번역 API 호출
+      if (this.freeText && this.freeText.trim()) {
+        const userLanguage = await this.getUserLanguage();
+        if (userLanguage && userLanguage !== 'ko') {
+          await this.translateFreeText();
+        } else {
+          console.log('사용자 언어가 한국어이므로 번역을 건너뜁니다.');
+        }
+      }
+      
       const saved = await this.savePreferences();
       if (saved) {
         this.$router.push({
@@ -291,6 +302,79 @@ export default {
             category: this.selectedCategory
           }
         });
+      }
+    },
+
+    // 사용자 언어 설정 가져오기
+    async getUserLanguage() {
+      const auth = getAuth();
+      const user = auth.currentUser;
+      
+      if (!user) {
+        console.error('사용자가 로그인되지 않았습니다.');
+        return null;
+      }
+
+      try {
+        // Firestore에서 사용자 언어 설정 조회
+        const db = getFirestore();
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          const userLanguage = userData.lang;
+          console.log('사용자 언어 설정:', userLanguage);
+          return userLanguage;
+        } else {
+          console.log('Firestore에 사용자 데이터가 없음');
+          return null;
+        }
+      } catch (error) {
+        console.error('사용자 언어 설정 조회 중 오류:', error);
+        return null;
+      }
+    },
+
+    // Free Text 번역 함수
+    async translateFreeText() {
+      const auth = getAuth();
+      const user = auth.currentUser;
+      
+      if (!user) {
+        console.error('사용자가 로그인되지 않았습니다.');
+        return;
+      }
+
+      try {
+        console.log('번역 요청 시작:', this.freeText);
+        
+        const response = await fetch('http://localhost:5001/translate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text: this.freeText,
+            target_lang: 'ko',
+            uid: user.uid
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        
+        if (result.translated_text) {
+          console.log('원본 텍스트:', this.freeText);
+          console.log('번역된 텍스트 (한국어):', result.translated_text);
+        } else {
+          console.error('번역 결과가 없습니다:', result);
+        }
+        
+      } catch (error) {
+        console.error('번역 API 호출 중 오류 발생:', error);
       }
     },
   },
