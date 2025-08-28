@@ -1,22 +1,22 @@
-// DB에 저장되는 지역명과 사용자에게 표시되는 지역명 매핑
+// DB에 저장되는 지역명과 다국어 키 매핑
 export const regionMapping = {
-  '강원특별자치도': '강원도',
-  '경기도': '경기도',
-  '경상남도': '경상남도',
-  '경상북도': '경상북도',
-  '광주': '광주',
-  '대구': '대구',
-  '대전': '대전',
-  '부산': '부산',
-  '서울': '서울',
-  '세종특별자치시': '세종',
-  '울산': '울산',
-  '인천': '인천',
-  '전라남도': '전라남도',
-  '전북특별자치도': '전라북도',
-  '제주도': '제주도',
-  '충청남도': '충청남도',
-  '충청북도': '충청북도'
+  '강원특별자치도': 'region_gangwon',
+  '경기도': 'region_gyeonggi',
+  '경상남도': 'region_gyeongnam',
+  '경상북도': 'region_gyeongbuk',
+  '광주': 'region_gwangju',
+  '대구': 'region_daegu',
+  '대전': 'region_daejeon',
+  '부산': 'region_busan',
+  '서울': 'region_seoul',
+  '세종특별자치시': 'region_sejong',
+  '울산': 'region_ulsan',
+  '인천': 'region_incheon',
+  '전라남도': 'region_jeonnam',
+  '전북특별자치도': 'region_jeonbuk',
+  '제주도': 'region_jeju',
+  '충청남도': 'region_chungnam',
+  '충청북도': 'region_chungbuk'
 };
 
 // 지역별 사용 가능한 카테고리
@@ -40,14 +40,14 @@ export const regionCategories = {
   '충청북도': ['events', 'foods', 'tourist_attraction']
 };
 
-// 카테고리 표시명 매핑
+// 카테고리 표시명 매핑 (다국어 키)
 export const categoryLabels = {
-  'events': '행사/축제',
-  'foods': '맛집',
-  'tourist_attraction': '관광지'
+  'events': 'category_events',
+  'foods': 'category_foods',
+  'tourist_attraction': 'category_tourist_attraction'
 };
 
-// DB 지역명을 사용자 표시명으로 변환
+// DB 지역명을 다국어 키로 변환
 export function getDisplayName(dbRegionName) {
   return regionMapping[dbRegionName] || dbRegionName;
 }
@@ -59,7 +59,7 @@ export function getDbRegionName(displayName) {
   return entry ? entry[0] : displayName;
 }
 
-// 지역 옵션 배열 생성
+// 지역 옵션 배열 생성 (다국어 키 사용)
 export function getRegionOptions() {
   return Object.entries(regionMapping).map(([value, label]) => ({
     value,

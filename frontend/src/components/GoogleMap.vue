@@ -1,18 +1,25 @@
 <template>
   <div class="google-map-container">
-    <div ref="mapContainer" class="map-container"></div>
+    <div ref="mapContainer" class="map-container" @click="openGoogleMaps"></div>
     <div v-if="loading" class="map-loading">
       <div class="spinner"></div>
-      <p>지도를 불러오는 중...</p>
+      <p>{{ $t('map_loading') }}</p>
     </div>
     <div v-if="error" class="map-error">
       <p>{{ error }}</p>
+    </div>
+    <div class="map-overlay" @click="openGoogleMaps">
+      <div class="overlay-content">
+        <span class="overlay-text">{{ $t('map_google_maps_view') }}</span>
+        <span class="overlay-icon">🗺️</span>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
 import { GOOGLE_MAPS_API_KEY, MAP_DEFAULT_CONFIG, MARKER_DEFAULT_CONFIG } from '../config/maps';
+import { $t } from '../i18n';
 
 export default {
   name: 'GoogleMap',
@@ -51,6 +58,7 @@ export default {
     }
   },
   methods: {
+    $t,
     // Google Maps API 로드
     loadGoogleMapsAPI() {
       return new Promise((resolve, reject) => {
@@ -64,7 +72,7 @@ export default {
 
         // API 키가 설정되어 있는지 확인
         if (!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY === 'YOUR_GOOGLE_MAPS_API_KEY') {
-          this.error = 'Google Maps API 키가 설정되지 않았습니다.';
+          this.error = this.$t('map_api_key_error');
           this.loading = false;
           reject(new Error('API key not configured'));
           return;
@@ -83,7 +91,7 @@ export default {
         };
         
         script.onerror = () => {
-          this.error = 'Google Maps API를 불러오는데 실패했습니다.';
+          this.error = this.$t('map_load_error');
           this.loading = false;
           reject(new Error('Failed to load Google Maps API'));
         };
@@ -136,23 +144,42 @@ export default {
 
             this.loading = false;
           } else {
-            this.error = '주소를 찾을 수 없습니다.';
+            this.error = this.$t('map_address_not_found');
             this.loading = false;
           }
         });
-      } catch (err) {
-        console.error('지도 초기화 오류:', err);
-        this.error = '지도를 불러오는데 실패했습니다.';
-        this.loading = false;
-      }
+             } catch (err) {
+         console.error('지도 초기화 오류:', err);
+         this.error = this.$t('map_error');
+         this.loading = false;
+       }
     },
 
-    // 지도 새로고침 (주소 변경 시)
-    refreshMap() {
-      if (this.mapLoaded) {
-        this.initializeMap();
-      }
-    }
+         // 지도 새로고침 (주소 변경 시)
+     refreshMap() {
+       if (this.mapLoaded) {
+         this.initializeMap();
+       }
+     },
+     
+     // Google Maps 앱/웹사이트로 이동
+     openGoogleMaps() {
+       try {
+         // 주소를 URL 인코딩
+         const encodedAddress = encodeURIComponent(this.address);
+         
+         // Google Maps URL 생성
+         const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+         
+         // 새 탭에서 Google Maps 열기
+         window.open(googleMapsUrl, '_blank');
+         
+         console.log('Google Maps로 이동:', googleMapsUrl);
+       } catch (error) {
+         console.error('Google Maps 열기 실패:', error);
+         alert('Google Maps를 열 수 없습니다.');
+       }
+     }
   },
   watch: {
     // 주소가 변경되면 지도 새로고침
@@ -237,10 +264,63 @@ export default {
   100% { transform: rotate(360deg); }
 }
 
+/* Google Maps 오버레이 */
+.map-overlay {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+  z-index: 20;
+  backdrop-filter: blur(4px);
+}
+
+.map-overlay:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.overlay-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #2563eb;
+}
+
+.overlay-text {
+  white-space: nowrap;
+}
+
+.overlay-icon {
+  font-size: 14px;
+}
+
 /* 모바일 반응형 */
 @media (max-width: 768px) {
   .google-map-container {
     height: 250px;
+  }
+  
+  .map-overlay {
+    top: 8px;
+    right: 8px;
+    padding: 6px 10px;
+  }
+  
+  .overlay-content {
+    font-size: 11px;
+    gap: 4px;
+  }
+  
+  .overlay-icon {
+    font-size: 12px;
   }
 }
 </style>

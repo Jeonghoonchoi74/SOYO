@@ -8,7 +8,7 @@
     
     <div v-if="loading" class="loading">
       <div class="spinner"></div>
-      <p>추천 장소를 불러오는 중...</p>
+      <p>{{ $t('recommend_loading') }}</p>
     </div>
     
     <div v-else-if="error" class="error">
@@ -16,7 +16,7 @@
     </div>
     
     <div v-else-if="places.length === 0" class="no-data">
-      <p>추천할 장소가 없습니다.</p>
+      <p>{{ $t('recommend_no_data') }}</p>
     </div>
     
     <div v-else class="places-grid">
@@ -40,7 +40,7 @@
             @error="handleImageError"
           />
           <div v-else class="no-image">
-            <span>이미지 없음</span>
+            <span>{{ $t('recommend_no_image') }}</span>
           </div>
         </div>
         
@@ -49,31 +49,31 @@
           
           <div class="place-info">
             <div class="info-item">
-              <span class="label">주소:</span>
+              <span class="label">{{ $t('recommend_address') }}</span>
               <span class="value">{{ place.addr1 }}</span>
             </div>
             
             <div v-if="category === 'events' && place.eventstartdate && place.eventenddate" class="info-item">
-              <span class="label">기간:</span>
+              <span class="label">{{ $t('recommend_period') }}</span>
               <span class="value">
                 {{ formatDate(place.eventstartdate) }} ~ {{ formatDate(place.eventenddate) }}
               </span>
             </div>
             
             <div v-if="place.tel" class="info-item">
-              <span class="label">연락처:</span>
+              <span class="label">{{ $t('recommend_contact') }}</span>
               <span class="value">{{ formatTelForCard(place.tel) }}</span>
             </div>
             
             <!-- foods 카테고리 추가 정보 -->
             <div v-if="category === 'foods' && place.firstmenu" class="info-item">
-              <span class="label">대표메뉴:</span>
+              <span class="label">{{ $t('recommend_representative_menu') }}</span>
               <span class="value">{{ place.firstmenu }}</span>
             </div>
             
             <!-- tourist_attraction 카테고리 추가 정보 -->
             <div v-if="category === 'tourist_attraction' && place.infocenter" class="info-item">
-              <span class="label">문의처:</span>
+              <span class="label">{{ $t('recommend_inquiry') }}</span>
               <span class="value">{{ place.infocenter }}</span>
             </div>
           </div>
@@ -88,13 +88,13 @@
     </div>
     
     <div class="summary">
-      <p>총 {{ places.length }}개의 추천 장소 중 {{ displayedPlaces.length }}개를 보여주고 있습니다.</p>
+      <p>{{ $t('recommend_summary').replace('{count}', places.length).replace('{displayed}', displayedPlaces.length) }}</p>
     </div>
     
     <div v-if="hasMoreItems" class="load-more-container">
       <div class="loading-indicator" v-if="loading">
         <div class="spinner"></div>
-        <p>추천 장소를 불러오는 중...</p>
+        <p>{{ $t('recommend_more_loading') }}</p>
       </div>
     </div>
     
@@ -105,7 +105,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
       </svg>
-      메인으로
+      {{ $t('recommend_back_main') }}
     </button>
     
     <!-- 상세 모달 -->
@@ -124,71 +124,71 @@
               :alt="selectedPlace.title"
             />
             <div v-else class="no-image">
-              <span>이미지 없음</span>
+              <span>{{ $t('recommend_no_image') }}</span>
             </div>
           </div>
           
           <div class="modal-info">
             <div class="info-section">
-              <h3>장소 정보</h3>
+              <h3>{{ $t('recommend_detail_info') }}</h3>
               <div class="info-grid">
                 <div class="info-item">
-                  <span class="label">주소:</span>
+                  <span class="label">{{ $t('recommend_address') }}</span>
                   <span class="value">{{ selectedPlace.addr1 }}</span>
                 </div>
                 <div v-if="selectedPlace.addr2" class="info-item">
-                  <span class="label">상세주소:</span>
+                  <span class="label">{{ $t('recommend_detail_address') }}</span>
                   <span class="value">{{ selectedPlace.addr2 }}</span>
                 </div>
 
                 <div v-if="category === 'events' && selectedPlace.eventstartdate && selectedPlace.eventenddate" class="info-item">
-                  <span class="label">기간:</span>
+                  <span class="label">{{ $t('recommend_period') }}</span>
                   <span class="value">
                     {{ formatDate(selectedPlace.eventstartdate) }} ~ {{ formatDate(selectedPlace.eventenddate) }}
                   </span>
                 </div>
                 <div v-if="selectedPlace.tel" class="info-item">
-                  <span class="label">연락처:</span>
+                  <span class="label">{{ $t('recommend_contact') }}</span>
                   <span class="value" v-html="formatTelForDetail(selectedPlace.tel)"></span>
                 </div>
                 
                 <div v-if="selectedPlace.detail_intro2?.usetimefestival" class="info-item">
-                  <span class="label">이용 시간:</span>
+                  <span class="label">{{ $t('recommend_usage_time') }}</span>
                   <span class="value" v-html="formatPlaytime(selectedPlace.detail_intro2.usetimefestival)"></span>
                 </div>
                 
                 <div v-if="selectedPlace.detail_intro2?.playtime" class="info-item">
-                  <span class="label">공연 시간:</span>
+                  <span class="label">{{ $t('recommend_performance_time') }}</span>
                   <span class="value" v-html="formatPlaytime(selectedPlace.detail_intro2.playtime)"></span>
                 </div>
                 
                 <div v-if="selectedPlace.detail_intro2?.spendtimefestival" class="info-item">
-                  <span class="label">소요 시간:</span>
+                  <span class="label">{{ $t('recommend_duration') }}</span>
                   <span class="value">{{ selectedPlace.detail_intro2.spendtimefestival }}</span>
                 </div>
                 
                 <div v-if="selectedPlace.detail_intro2?.agelimit" class="info-item">
-                  <span class="label">연령 제한:</span>
+                  <span class="label">{{ $t('recommend_age_limit') }}</span>
                   <span class="value" v-html="formatPlaytime(selectedPlace.detail_intro2.agelimit)"></span>
                 </div>
                 
                 <div v-if="selectedPlace.detail_intro2?.bookingplace" class="info-item">
-                  <span class="label">예약 장소:</span>
+                  <span class="label">{{ $t('recommend_booking_place') }}</span>
                   <span class="value">{{ selectedPlace.detail_intro2.bookingplace }}</span>
                 </div>
                 
                 <div v-if="selectedPlace.detail_intro2?.discountinfofestival" class="info-item">
-                  <span class="label">할인 정보:</span>
+                  <span class="label">{{ $t('recommend_discount_info') }}</span>
                   <span class="value">{{ selectedPlace.detail_intro2.discountinfofestival }}</span>
                 </div>
                 
                 <div v-if="selectedPlace.detail_intro2?.festivalgrade" class="info-item">
-                  <span class="label">행사 등급:</span>
+                  <span class="label">{{ $t('recommend_event_grade') }}</span>
                   <span class="value">{{ selectedPlace.detail_intro2.festivalgrade }}</span>
                 </div>
                 
                 <div class="info-item">
-                  <span class="label">상태:</span>
+                  <span class="label">{{ $t('recommend_status') }}</span>
                   <span class="value">
                     <span :class="getStatusClass(selectedPlace)" class="status-badge">
                       {{ getStatusText(selectedPlace) }}
@@ -205,7 +205,7 @@
             
             <!-- 지도 섹션 -->
             <div v-if="selectedPlace.addr1" class="info-section">
-              <h3>위치</h3>
+              <h3>{{ $t('recommend_location') }}</h3>
               <GoogleMap 
                 :address="selectedPlace.addr1" 
                 :title="selectedPlace.title"
@@ -215,7 +215,7 @@
             
             <!-- 상세정보 섹션 -->
             <div v-if="selectedPlace.detail_intro2?.eventintro || selectedPlace.detail_intro2?.eventtext" class="info-section">
-              <h3>상세 정보</h3>
+              <h3>{{ $t('recommend_detail_info') }}</h3>
               <div class="detail-content">
                 <div v-if="selectedPlace.detail_intro2.eventintro" class="detail-item">
                   <h4>행사 소개</h4>
@@ -296,6 +296,7 @@ export default {
         this.removeScrollListener();
       },
   methods: {
+    $t,
     // 지역명 표시 함수
     getDisplayName(dbRegionName) {
       return getDisplayName(dbRegionName);
@@ -305,11 +306,11 @@ export default {
     getCategoryLabel(category) {
       switch (category) {
         case 'events':
-          return '행사/축제';
+          return this.$t('category_events');
         case 'foods':
-          return '맛집';
+          return this.$t('category_foods');
         case 'tourist_attraction':
-          return '관광지';
+          return this.$t('category_tourist_attraction');
         default:
           return category;
       }
@@ -326,7 +327,7 @@ export default {
 
     // 날짜 형식 변환 (YYYYMMDD -> YYYY-MM-DD)
     formatDate(dateString) {
-      if (!dateString || dateString.length !== 8) return '날짜 정보 없음';
+      if (!dateString || dateString.length !== 8) return this.$t('recommend_date_info_missing');
       return `${dateString.substring(0, 4)}-${dateString.substring(4, 6)}-${dateString.substring(6, 8)}`;
     },
 
@@ -382,14 +383,14 @@ export default {
       const startDate = place.eventstartdate;
       const endDate = place.eventenddate;
       
-      if (!startDate || !endDate) return '날짜 정보 없음';
+      if (!startDate || !endDate) return this.$t('recommend_status_unknown');
       
       if (currentDate < startDate) {
-        return '예정';
+        return this.$t('recommend_status_upcoming');
       } else if (currentDate >= startDate && currentDate <= endDate) {
-        return '진행중';
+        return this.$t('recommend_status_ongoing');
       } else {
-        return '종료';
+        return this.$t('recommend_status_ended');
       }
     },
 
@@ -421,7 +422,7 @@ export default {
         const user = auth.currentUser;
         
         if (!user) {
-          this.error = '로그인이 필요합니다. 먼저 로그인해주세요.';
+          this.error = this.$t('recommend_login_required');
           this.loading = false;
           return;
         }
@@ -607,7 +608,7 @@ export default {
       } else {
         // 실패 시 롤백
         this.places[idx].bookmarked = wasBookmarked;
-        this.showModalMessage('북마크 처리 중 오류가 발생했습니다.');
+        this.showModalMessage(this.$t('recommend_bookmark_error'));
       }
       setTimeout(() => {
         this.bookmarkDisabled[idx] = false;

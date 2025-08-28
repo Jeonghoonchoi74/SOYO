@@ -6,7 +6,7 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
           </svg>
-          좋아요/북마크
+          {{ $t('bookmark_btn') }}
         </button>
         <h2 class="title">{{ $t('pref_title') }}</h2>
         <p class="subtitle">{{ $t('pref_subtitle') }}</p>
@@ -18,7 +18,7 @@
           <select v-model="selectedRegion" class="region-dropdown" @change="onRegionChange">
             <option value="" disabled>{{ $t('pref_region_placeholder') }}</option>
             <option v-for="region in regionOptions" :key="region.value" :value="region.value">
-              {{ region.label }}
+              {{ $t(region.label) }}
             </option>
           </select>
         </div>
@@ -37,52 +37,7 @@
           </div>
         </div>
         
-        <!-- 카테고리별 선호도 섹션들 -->
-        <div v-if="selectedCategory === 'events'" class="form-group">
-          <label class="section-label">{{ $t('pref_section_purpose') }}</label>
-          <div class="toggle-list">
-            <button v-for="item in purposeOptions" :key="item" :class="['toggle-btn', { active: selectedPurpose === item }]" @click="selectPurpose(item)">
-              {{ $t(item) }}
-            </button>
-          </div>
-        </div>
-        
-        <div v-if="selectedCategory === 'foods'" class="form-group">
-          <label class="section-label">{{ $t('pref_section_food') }}</label>
-          <div class="toggle-list">
-            <button v-for="item in foodOptions" :key="item" :class="['toggle-btn', { active: selectedFood === item }]" @click="selectFood(item)">
-              {{ $t(item) }}
-            </button>
-          </div>
-        </div>
-        
-        <div v-if="selectedCategory === 'tourist_attraction'" class="form-group">
-          <label class="section-label">{{ $t('pref_section_attraction') }}</label>
-          <div class="toggle-list">
-            <button v-for="item in attractionOptions" :key="item" :class="['toggle-btn', { active: selectedAttraction === item }]" @click="selectAttraction(item)">
-              {{ $t(item) }}
-            </button>
-          </div>
-        </div>
-        
-        <!-- 공통 섹션들 -->
-        <div v-if="selectedCategory" class="form-group">
-          <label class="section-label">{{ $t('pref_section_sns') }}</label>
-          <div class="toggle-list">
-            <button v-for="item in snsOptions" :key="item" :class="['toggle-btn', { active: selectedSNS === item }]" @click="selectSNS(item)">
-              {{ $t(item) }}
-            </button>
-          </div>
-        </div>
 
-        <div v-if="selectedCategory" class="form-group">
-          <label class="section-label">{{ $t('pref_section_shopping') }}</label>
-          <div class="toggle-list">
-            <button v-for="item in shoppingOptions" :key="item" :class="['toggle-btn', { active: selectedShopping === item }]" @click="selectShopping(item)">
-              {{ $t(item) }}
-            </button>
-          </div>
-        </div>
 
         <div v-if="selectedCategory" class="form-group">
           <label class="section-label">{{ $t('pref_section_free') }}</label>
@@ -95,7 +50,7 @@
         </div>
   
         <button class="recommend-btn" :disabled="!canProceed || isSaving" @click="recommend">
-          {{ isSaving ? '저장 중...' : $t('pref_recommend_btn') }}
+          {{ isSaving ? $t('location_modal_saving') : $t('pref_recommend_btn') }}
         </button>
       </div>
     </div>
@@ -104,19 +59,19 @@
     <div v-if="showLocationModal" class="modal-overlay" @click="closeModal">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
-          <h3>위치 정보 요청</h3>
+          <h3>{{ $t('location_modal_title') }}</h3>
           <button class="close-btn" @click="closeModal">×</button>
         </div>
         <div class="modal-body">
-          <h4>원활한 사용을 위해 위치 정보를 요구합니다</h4>
+          <h4>{{ $t('location_modal_subtitle') }}</h4>
           <div class="benefit-item">
             <span class="benefit-icon">✅</span>
-            <span>방문한 장소 자동 확인</span>
+            <span>{{ $t('location_modal_benefit') }}</span>
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn-secondary" @click="denyLocation">나중에</button>
-          <button class="btn-primary" @click="requestLocation">위치 정보 허용</button>
+          <button class="btn-secondary" @click="denyLocation">{{ $t('location_modal_later') }}</button>
+          <button class="btn-primary" @click="requestLocation">{{ $t('location_modal_allow') }}</button>
         </div>
       </div>
     </div>
@@ -136,16 +91,6 @@ export default {
       selectedRegion: '',
       selectedCategory: '',
       availableCategories: [],
-      foodOptions: ['pref_food_mild', 'pref_food_seafood', 'pref_food_vegan'],
-      shoppingOptions: ['pref_shop_dutyfree', 'pref_shop_souvenir', 'pref_shop_local'],
-      attractionOptions: ['pref_attraction_nature', 'pref_attraction_city', 'pref_attraction_culture'],
-      snsOptions: ['pref_sns_life_shot', 'pref_sns_casual', 'pref_sns_artistic'],
-      purposeOptions: ['pref_purpose_healing', 'pref_purpose_food', 'pref_purpose_culture', 'pref_purpose_activity'],
-      selectedFood: '',
-      selectedShopping: '',
-      selectedAttraction: '',
-      selectedSNS: '',
-      selectedPurpose: '',
       freeText: '',
       isSaving: false,
       showLocationModal: false,
@@ -164,11 +109,6 @@ export default {
     this.selectedRegion = '';
     this.selectedCategory = '';
     this.availableCategories = [];
-    this.selectedFood = '';
-    this.selectedShopping = '';
-    this.selectedAttraction = '';
-    this.selectedSNS = '';
-    this.selectedPurpose = '';
     this.freeText = '';
     
     // 위치 권한 확인
@@ -176,26 +116,13 @@ export default {
   },
 
   methods: {
+    $t,
     // 북마크 페이지로 이동
     goBookmark() {
       this.$router.push('/bookmarks');
     },
 
-    selectFood(item) {
-      this.selectedFood = item;
-    },
-    selectShopping(item) {
-      this.selectedShopping = item;
-    },
-    selectAttraction(item) {
-      this.selectedAttraction = item;
-    },
-    selectSNS(item) {
-      this.selectedSNS = item;
-    },
-    selectPurpose(item) {
-      this.selectedPurpose = item;
-    },
+
     onRegionChange() {
       this.selectedCategory = ''; // 지역 변경 시 카테고리 초기화
       this.availableCategories = getAvailableCategories(this.selectedRegion);
@@ -204,7 +131,7 @@ export default {
       this.selectedCategory = category;
     },
     getCategoryDisplayName(category) {
-      return getCategoryLabel(category);
+      return this.$t(getCategoryLabel(category));
     },
 
     // 위치 권한 확인
@@ -309,11 +236,6 @@ export default {
       const preferences = {
         region: this.selectedRegion,
         category: this.selectedCategory,
-        food: this.selectedFood,
-        shopping: this.selectedShopping,
-        attraction: this.selectedAttraction,
-        sns: this.selectedSNS,
-        purpose: this.selectedPurpose,
         freeText: this.freeText,
       };
 
