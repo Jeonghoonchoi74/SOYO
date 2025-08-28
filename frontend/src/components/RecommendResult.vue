@@ -45,12 +45,12 @@
         </div>
         
         <div class="place-content">
-          <h3 class="place-title">{{ place.title }}</h3>
+          <h3 class="place-title">{{ place.displayTitle || place.title }}</h3>
           
           <div class="place-info">
             <div class="info-item">
               <span class="label">{{ $t('recommend_address') }}</span>
-              <span class="value">{{ place.addr1 }}</span>
+              <span class="value">{{ place.displayAddress || place.addr1 }}</span>
             </div>
             
             <div v-if="category === 'events' && place.eventstartdate && place.eventenddate" class="info-item">
@@ -71,8 +71,8 @@
               <span class="value">{{ place.firstmenu }}</span>
             </div>
             
-            <!-- tourist_attraction 카테고리 추가 정보 -->
-            <div v-if="category === 'tourist_attraction' && place.infocenter" class="info-item">
+                    <!-- tourist attraction 카테고리 추가 정보 -->
+        <div v-if="category === 'tourist attraction' && place.infocenter" class="info-item">
               <span class="label">{{ $t('recommend_inquiry') }}</span>
               <span class="value">{{ place.infocenter }}</span>
             </div>
@@ -112,7 +112,7 @@
     <div v-if="selectedPlace" class="modal-overlay" @click="closeModal">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
-          <h2 class="modal-title">{{ selectedPlace.title }}</h2>
+          <h2 class="modal-title">{{ selectedPlace.displayTitle || selectedPlace.title }}</h2>
           <button class="modal-close" @click="closeModal">&times;</button>
         </div>
         
@@ -134,7 +134,7 @@
               <div class="info-grid">
                 <div class="info-item">
                   <span class="label">{{ $t('recommend_address') }}</span>
-                  <span class="value">{{ selectedPlace.addr1 }}</span>
+                  <span class="value">{{ selectedPlace.displayAddress || selectedPlace.addr1 }}</span>
                 </div>
                 <div v-if="selectedPlace.addr2" class="info-item">
                   <span class="label">{{ $t('recommend_detail_address') }}</span>
@@ -187,6 +187,43 @@
                   <span class="value">{{ selectedPlace.detail_intro2.festivalgrade }}</span>
                 </div>
                 
+                <!-- foods 카테고리 추가 정보 -->
+                <div v-if="category === 'foods' && selectedPlace.firstmenu" class="info-item">
+                  <span class="label">{{ $t('recommend_representative_menu') }}</span>
+                  <span class="value">{{ selectedPlace.firstmenu }}</span>
+                </div>
+                
+                <div v-if="category === 'foods' && selectedPlace.treatmenu" class="info-item">
+                  <span class="label">{{ $t('recommend_menu') }}</span>
+                  <span class="value">{{ selectedPlace.treatmenu }}</span>
+                </div>
+                
+                <div v-if="category === 'foods' && selectedPlace.opentimefood" class="info-item">
+                  <span class="label">{{ $t('recommend_opening_hours') }}</span>
+                  <span class="value">{{ selectedPlace.opentimefood }}</span>
+                </div>
+                
+                <div v-if="category === 'foods' && selectedPlace.restdatefood" class="info-item">
+                  <span class="label">{{ $t('recommend_rest_day') }}</span>
+                  <span class="value">{{ selectedPlace.restdatefood }}</span>
+                </div>
+                
+                <!-- tourist attraction 카테고리 추가 정보 -->
+                <div v-if="category === 'tourist attraction' && selectedPlace.infocenter" class="info-item">
+                  <span class="label">{{ $t('recommend_inquiry') }}</span>
+                  <span class="value">{{ selectedPlace.infocenter }}</span>
+                </div>
+                
+                <div v-if="category === 'tourist attraction' && selectedPlace.usetime" class="info-item">
+                  <span class="label">{{ $t('recommend_usage_time') }}</span>
+                  <span class="value">{{ selectedPlace.usetime }}</span>
+                </div>
+                
+                <div v-if="category === 'tourist attraction' && selectedPlace.restdate" class="info-item">
+                  <span class="label">{{ $t('recommend_rest_day') }}</span>
+                  <span class="value">{{ selectedPlace.restdate }}</span>
+                </div>
+                
                 <div class="info-item">
                   <span class="label">{{ $t('recommend_status') }}</span>
                   <span class="value">
@@ -199,8 +236,8 @@
             </div>
             
             <!-- overview(개요) 섹션: 제목 없이 overview만 -->
-            <div v-if="selectedPlace.overview" class="info-section">
-              <p v-html="selectedPlace.overview" style="margin-top: 12px; color: #222; font-size: 1.13rem; line-height: 1.7; text-align: left;"></p>
+            <div v-if="selectedPlace.displaySummary || selectedPlace.overview" class="info-section">
+              <p v-html="selectedPlace.displaySummary || selectedPlace.overview" style="margin-top: 12px; color: #222; font-size: 1.13rem; line-height: 1.7; text-align: left;"></p>
             </div>
             
             <!-- 지도 섹션 -->
@@ -241,7 +278,7 @@
 <script>
 import { i18nState, $t } from '../i18n';
 import { getAuth } from 'firebase/auth';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { getDisplayName } from '../utils/regionMapping';
 import GoogleMap from './GoogleMap.vue';
@@ -276,6 +313,7 @@ export default {
         // 쿼리 파라미터에서 지역 정보 가져오기
         const regionFromQuery = this.$route.query.region;
         const categoryFromQuery = this.$route.query.category;
+        const searchQueryFromQuery = this.$route.query.searchQuery;
         
         if (regionFromQuery) {
           this.region = regionFromQuery;
@@ -284,7 +322,13 @@ export default {
           this.category = categoryFromQuery;
         }
         
-        await this.fetchRecommendPlaces();
+        // 검색 쿼리가 있으면 추천 API 사용, 없으면 기존 방식
+        if (searchQueryFromQuery && searchQueryFromQuery.trim()) {
+          await this.searchWithRecommendAPI(searchQueryFromQuery);
+        } else {
+          await this.fetchRecommendPlaces();
+        }
+        
         await this.loadUserBookmarks();
         
         // 무한스크롤 이벤트 리스너 추가
@@ -309,7 +353,7 @@ export default {
           return this.$t('category_events');
         case 'foods':
           return this.$t('category_foods');
-        case 'tourist_attraction':
+        case 'tourist attraction':
           return this.$t('category_tourist_attraction');
         default:
           return category;
@@ -373,41 +417,360 @@ export default {
                endDate >= currentDate;
       }
       
-      // foods, tourist_attraction 카테고리는 모든 데이터 표시
+              // foods, tourist attraction 카테고리는 모든 데이터 표시
       return true;
     },
 
     // 행사 상태 텍스트 반환
     getStatusText(place) {
-      const currentDate = this.getCurrentDate();
-      const startDate = place.eventstartdate;
-      const endDate = place.eventenddate;
-      
-      if (!startDate || !endDate) return this.$t('recommend_status_unknown');
-      
-      if (currentDate < startDate) {
-        return this.$t('recommend_status_upcoming');
-      } else if (currentDate >= startDate && currentDate <= endDate) {
-        return this.$t('recommend_status_ongoing');
-      } else {
-        return this.$t('recommend_status_ended');
+      // events 카테고리인 경우 날짜 기반 상태 표시
+      if (this.category === 'events') {
+        const currentDate = this.getCurrentDate();
+        const startDate = place.eventstartdate;
+        const endDate = place.eventenddate;
+        
+        if (!startDate || !endDate) return this.$t('recommend_status_unknown');
+        
+        if (currentDate < startDate) {
+          return this.$t('recommend_status_upcoming');
+        } else if (currentDate >= startDate && currentDate <= endDate) {
+          return this.$t('recommend_status_ongoing');
+        } else {
+          return this.$t('recommend_status_ended');
+        }
       }
+      
+      // foods, tourist attraction 카테고리는 상시 운영 표시
+      return this.$t('recommend_status_always_open');
     },
 
     // 행사 상태에 따른 CSS 클래스 반환
     getStatusClass(place) {
-      const currentDate = this.getCurrentDate();
-      const startDate = place.eventstartdate;
-      const endDate = place.eventenddate;
+      // events 카테고리인 경우 날짜 기반 상태 표시
+      if (this.category === 'events') {
+        const currentDate = this.getCurrentDate();
+        const startDate = place.eventstartdate;
+        const endDate = place.eventenddate;
+        
+        if (!startDate || !endDate) return 'unknown';
+        
+        if (currentDate < startDate) {
+          return 'upcoming';
+        } else if (currentDate >= startDate && currentDate <= endDate) {
+          return 'ongoing';
+        } else {
+          return 'ended';
+        }
+      }
       
-      if (!startDate || !endDate) return 'unknown';
-      
-      if (currentDate < startDate) {
-        return 'upcoming';
-      } else if (currentDate >= startDate && currentDate <= endDate) {
-        return 'ongoing';
+      // foods, tourist attraction 카테고리는 상시 운영 표시
+      return 'always-open';
+    },
+
+    // 사용자 언어 감지 함수
+    async getUserLanguage() {
+      try {
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (!user) return 'ko';
+        
+        // Firestore에서 사용자 언어 설정 조회
+        const { getFirestore, doc, getDoc } = await import('firebase/firestore');
+        const db = getFirestore();
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          const userLanguage = userData.lang;
+          console.log('사용자 언어 설정:', userLanguage);
+          return userLanguage || 'ko';
+        } else {
+          console.log('Firestore에 사용자 데이터가 없음');
+          return 'ko';
+        }
+      } catch (error) {
+        console.error('사용자 언어 감지 오류:', error);
+        return 'ko';
+      }
+    },
+
+    // 번역 API 호출 함수
+    async translateText(text, targetLang = 'ko') {
+      try {
+        const response = await fetch('http://localhost:5001/translate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text: text,
+            target_language: targetLang
+          }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          return result.translated_text;
+        } else {
+          console.error('번역 API 오류:', response.status);
+          return text; // 번역 실패시 원본 반환
+        }
+      } catch (error) {
+        console.error('번역 중 오류:', error);
+        return text; // 오류시 원본 반환
+      }
+    },
+
+    // 추천 API를 통한 검색
+    async searchWithRecommendAPI(searchQuery) {
+      try {
+        this.loading = true;
+        this.error = null;
+        
+        // 사용자 로그인 상태 확인
+        const auth = getAuth();
+        const user = auth.currentUser;
+        
+        if (!user) {
+          this.error = this.$t('recommend_login_required');
+          this.loading = false;
+          return;
+        }
+        
+        // 사용자 언어 확인 및 번역
+        const userLanguage = await this.getUserLanguage();
+        let finalQuery = searchQuery;
+        
+        if (userLanguage !== 'ko') {
+          console.log('사용자 언어가 한국어가 아니므로 번역을 진행합니다.');
+          finalQuery = await this.translateText(searchQuery, 'ko');
+          console.log(`번역 결과: ${searchQuery} → ${finalQuery}`);
+        }
+        
+        console.log('추천 API 검색 시작:', finalQuery);
+        
+        // 5002번 포트 추천 API 호출
+        const response = await fetch('http://localhost:5002/search', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            uid: user.uid,
+            query: finalQuery
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('추천 API 결과:', result);
+        
+        if (result && Array.isArray(result)) {
+          // 사용자 설정 region과 category와 일치하는 결과만 필터링
+          const filteredResults = result.filter(item => 
+            item.region === this.region && item.category === this.category
+          );
+          
+          console.log(`전체 결과: ${result.length}개, 지역 및 카테고리 필터링 후: ${filteredResults.length}개`);
+          
+          // Firebase에서 상세 정보 가져오기
+          const detailedPlaces = [];
+          console.log(`필터링된 결과 ${filteredResults.length}개 처리 시작`);
+          
+          for (const item of filteredResults) {
+            console.log(`Firebase 조회 중: ${item.id}, ${item.region}, ${item.category}`);
+            const firebaseData = await this.getFirebaseData(
+              item.id, 
+              item.region, 
+              item.category
+            );
+            if (firebaseData) {
+              console.log(`Firebase 데이터 추가: ${item.id}`, firebaseData);
+              detailedPlaces.push({
+                ...firebaseData,
+                bookmarked: false
+              });
+            } else {
+              console.log(`Firebase 데이터 없음: ${item.id}`);
+            }
+          }
+          
+          console.log(`최종 상세 장소 ${detailedPlaces.length}개`, detailedPlaces);
+          this.places = detailedPlaces;
+          this.loadInitialItems();
+          
+        } else {
+          console.error('추천 API 응답 형식 오류:', result);
+          this.error = '검색 결과를 처리할 수 없습니다.';
+        }
+        
+      } catch (err) {
+        console.error('추천 API 검색 오류:', err);
+        this.error = '검색 서비스에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.';
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // Firebase에서 상세 데이터 가져오기 (언어별 라우팅 + 폴백 + 크로스 카테고리 검색)
+    async getFirebaseData(contentId, region, category) {
+      try {
+        // 사용자 언어 확인
+        const userLanguage = await this.getUserLanguage();
+        const lang = userLanguage || 'ko';
+        
+        console.log(`Firebase 데이터 조회 - 언어: ${lang}, 지역: ${region}, 카테고리: ${category}, ID: ${contentId}`);
+        
+        // events 카테고리가 아닌 경우 한국어로 조회
+        const searchLang = (category === 'events') ? lang : 'ko';
+        
+        // 1. 적절한 언어로 먼저 시도
+        let docRef = collection(db, 'api_data', searchLang, region, category, 'items');
+        let q = query(docRef, where('contentid', '==', contentId));
+        let querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          const doc = querySnapshot.docs[0];
+          const data = doc.data();
+          
+          console.log(`Firebase 데이터 조회 성공 (${searchLang}) - ID: ${contentId}`, data);
+          
+          // 언어별 필드 매핑 (사용자 언어 기준)
+          const mappedData = this.mapLanguageFields(data, lang);
+          console.log(`매핑된 데이터 - ID: ${contentId}`, mappedData);
+          
+          return mappedData;
+        } else {
+          console.log(`Firebase 데이터 없음 (${searchLang}) - ID: ${contentId}, 지역: ${region}, 카테고리: ${category}`);
+          
+          // 2. 한국어로 폴백 시도 (events 카테고리가 아니거나 사용자 언어가 한국어가 아닌 경우)
+          if (searchLang !== 'ko') {
+            console.log(`한국어 폴백 시도 - ID: ${contentId}`);
+            
+            docRef = collection(db, 'api_data', 'ko', region, category, 'items');
+            q = query(docRef, where('contentid', '==', contentId));
+            querySnapshot = await getDocs(q);
+            
+            if (!querySnapshot.empty) {
+              const doc = querySnapshot.docs[0];
+              const data = doc.data();
+              
+              console.log(`Firebase 데이터 조회 성공 (ko 폴백) - ID: ${contentId}`, data);
+              
+              // 한국어 필드 매핑
+              const mappedData = this.mapLanguageFields(data, 'ko');
+              console.log(`매핑된 데이터 (ko 폴백) - ID: ${contentId}`, mappedData);
+              
+              return mappedData;
+            } else {
+              console.log(`한국어 폴백도 실패 - ID: ${contentId}`);
+            }
+          }
+          
+          // 3. 크로스 카테고리 검색 (다른 카테고리에서 찾기)
+          console.log(`크로스 카테고리 검색 시도 - ID: ${contentId}`);
+          const allCategories = ['foods', 'events', 'tourist attraction'];
+          
+          for (const searchCategory of allCategories) {
+            if (searchCategory === category) continue; // 이미 시도한 카테고리는 건너뛰기
+            
+            // events 카테고리가 아닌 경우 한국어로 조회
+            const crossSearchLang = (searchCategory === 'events') ? lang : 'ko';
+            
+            try {
+              docRef = collection(db, 'api_data', crossSearchLang, region, searchCategory, 'items');
+              q = query(docRef, where('contentid', '==', contentId));
+              querySnapshot = await getDocs(q);
+              
+              if (!querySnapshot.empty) {
+                const doc = querySnapshot.docs[0];
+                const data = doc.data();
+                
+                console.log(`Firebase 데이터 조회 성공 (크로스 카테고리: ${searchCategory}, 언어: ${crossSearchLang}) - ID: ${contentId}`, data);
+                
+                // 언어별 필드 매핑 (사용자 언어 기준)
+                const mappedData = this.mapLanguageFields(data, lang);
+                console.log(`매핑된 데이터 (크로스 카테고리) - ID: ${contentId}`, mappedData);
+                
+                return mappedData;
+              }
+            } catch (error) {
+              console.log(`크로스 카테고리 검색 오류 (${searchCategory}):`, error);
+            }
+          }
+          
+          // 4. 한국어 크로스 카테고리 검색 (사용자 언어가 한국어가 아닌 경우)
+          if (lang !== 'ko') {
+            console.log(`한국어 크로스 카테고리 검색 시도 - ID: ${contentId}`);
+            
+            for (const searchCategory of allCategories) {
+              if (searchCategory === category) continue;
+              
+              try {
+                docRef = collection(db, 'api_data', 'ko', region, searchCategory, 'items');
+                q = query(docRef, where('contentid', '==', contentId));
+                querySnapshot = await getDocs(q);
+                
+                if (!querySnapshot.empty) {
+                  const doc = querySnapshot.docs[0];
+                  const data = doc.data();
+                  
+                  console.log(`Firebase 데이터 조회 성공 (한국어 크로스 카테고리: ${searchCategory}) - ID: ${contentId}`, data);
+                  
+                  // 한국어 필드 매핑
+                  const mappedData = this.mapLanguageFields(data, 'ko');
+                  console.log(`매핑된 데이터 (한국어 크로스 카테고리) - ID: ${contentId}`, mappedData);
+                  
+                  return mappedData;
+                }
+              } catch (error) {
+                console.log(`한국어 크로스 카테고리 검색 오류 (${searchCategory}):`, error);
+              }
+            }
+          }
+          
+          console.log(`모든 검색 시도 실패 - ID: ${contentId}`);
+          
+          // 5. 데이터가 없는 경우 기본 정보 반환
+          console.log(`기본 정보 생성 - ID: ${contentId}`);
+          return {
+            contentid: contentId,
+            displayTitle: `장소 ${contentId}`,
+            displayAddress: `${region} ${category}`,
+            displaySummary: '상세 정보를 불러올 수 없습니다.',
+            title: `장소 ${contentId}`,
+            addr1: `${region} ${category}`,
+            overview: '상세 정보를 불러올 수 없습니다.'
+          };
+        }
+        return null;
+      } catch (error) {
+        console.error('Firebase 데이터 조회 오류:', error);
+        return null;
+      }
+    },
+
+    // 언어별 필드 매핑 함수
+    mapLanguageFields(data, lang) {
+      if (lang === 'ko') {
+        // 한국어: 기본 필드 사용 (overview 우선, 없으면 빈 문자열)
+        return {
+          ...data,
+          displayTitle: data.title || '',
+          displayAddress: data.addr1 || '',
+          displaySummary: data.overview || ''
+        };
       } else {
-        return 'ended';
+        // 다국어: 번역된 필드 사용 (summary 우선, overview 대체)
+        return {
+          ...data,
+          displayTitle: data.translated_eventtitle || data.title || '',
+          displayAddress: data.translated_addr || data.addr1 || '',
+          displaySummary: data.summary || data.overview || ''
+        };
       }
     },
 
@@ -427,14 +790,25 @@ export default {
           return;
         }
         
-        // Firebase에서 해당 지역의 행사 데이터 가져오기
-        const seoulCollectionRef = collection(db, 'api_data', 'ko', this.region, this.category, 'items');
+        // 사용자 언어 확인
+        const userLanguage = await this.getUserLanguage();
+        const lang = userLanguage || 'ko';
+        
+        // events 카테고리가 아닌 경우 한국어로 조회
+        const searchLang = (this.category === 'events') ? lang : 'ko';
+        
+        console.log(`기존 방식 데이터 조회 - 언어: ${lang}, 조회 언어: ${searchLang}, 지역: ${this.region}, 카테고리: ${this.category}`);
+        
+        // Firebase에서 해당 지역의 데이터 가져오기 (카테고리별 언어 라우팅)
+        const seoulCollectionRef = collection(db, 'api_data', searchLang, this.region, this.category, 'items');
         const querySnapshot = await getDocs(seoulCollectionRef);
         
         const allPlaces = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          allPlaces.push(data);
+          // 언어별 필드 매핑 적용
+          const mappedData = this.mapLanguageFields(data, lang);
+          allPlaces.push(mappedData);
         });
         
         // 카테고리별 필터링 및 정렬
@@ -458,7 +832,7 @@ export default {
             return (a.eventstartdate || '') - (b.eventstartdate || '');
           });
         } else {
-          // foods, tourist_attraction 카테고리: 제목순으로 정렬
+          // foods, tourist attraction 카테고리: 제목순으로 정렬
           sortedPlaces = targetPlaces.sort((a, b) => {
             return (a.title || '').localeCompare(b.title || '', 'ko');
           });
@@ -491,10 +865,13 @@ export default {
 
     // 초기 항목 로드
     loadInitialItems() {
+      console.log(`loadInitialItems 호출 - 전체 장소 ${this.places.length}개`);
       this.currentPage = 1;
       this.displayedPlaces = this.places.slice(0, this.itemsPerPage);
       this.hasMoreItems = this.places.length > this.itemsPerPage;
       this.bookmarkDisabled = Array(this.displayedPlaces.length).fill(false);
+      
+      console.log(`표시할 장소 ${this.displayedPlaces.length}개`, this.displayedPlaces);
       
       // 초기 로드 후 스크롤 이벤트 리스너 다시 추가 (데이터 로드 완료 후)
       this.$nextTick(() => {
@@ -579,12 +956,14 @@ export default {
           
           // 각 장소의 북마크 상태를 실제 데이터로 업데이트
           this.places.forEach((place, idx) => {
-            this.places[idx].bookmarked = bookmarkedPlaces.includes(place.title);
+            const placeTitle = place.displayTitle || place.title;
+            this.places[idx].bookmarked = bookmarkedPlaces.includes(placeTitle);
           });
           
           // displayedPlaces도 업데이트
           this.displayedPlaces.forEach((place, idx) => {
-            this.displayedPlaces[idx].bookmarked = bookmarkedPlaces.includes(place.title);
+            const placeTitle = place.displayTitle || place.title;
+            this.displayedPlaces[idx].bookmarked = bookmarkedPlaces.includes(placeTitle);
           });
         }
       } catch (error) {
@@ -625,8 +1004,8 @@ export default {
             uid: user.uid,
             contentId: this.places[idx].contentid, // contentId 사용
             bookmark: value,
-            name: this.places[idx].title,
-            desc: this.places[idx].addr1,
+            name: this.places[idx].displayTitle || this.places[idx].title,
+            desc: this.places[idx].displayAddress || this.places[idx].addr1,
             image: this.places[idx].firstimage,
             region: this.region,
           };
@@ -963,6 +1342,11 @@ export default {
 .status-badge.unknown {
   background: #ffc107;
   color: #212529;
+}
+
+.status-badge.always-open {
+  background: #17a2b8;
+  color: white;
 }
 
 .summary {

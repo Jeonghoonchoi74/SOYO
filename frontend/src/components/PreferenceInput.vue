@@ -284,13 +284,28 @@ export default {
         }
       }
       
+      // 검색 쿼리 준비
+      let searchQuery = '';
+      if (this.freeText && this.freeText.trim()) {
+        const userLanguage = await this.getUserLanguage();
+        if (userLanguage && userLanguage !== 'ko') {
+          // 번역된 텍스트 사용
+          const translatedResult = await this.translateFreeText();
+          searchQuery = translatedResult || this.freeText;
+        } else {
+          console.log('사용자 언어가 한국어이므로 번역을 건너뜁니다.');
+          searchQuery = this.freeText;
+        }
+      }
+      
       const saved = await this.savePreferences();
       if (saved) {
         this.$router.push({
           path: '/recommend',
           query: { 
             region: this.selectedRegion,
-            category: this.selectedCategory
+            category: this.selectedCategory,
+            searchQuery: searchQuery
           }
         });
       } else {
@@ -299,7 +314,8 @@ export default {
           path: '/recommend',
           query: { 
             region: this.selectedRegion,
-            category: this.selectedCategory
+            category: this.selectedCategory,
+            searchQuery: searchQuery
           }
         });
       }
@@ -342,7 +358,7 @@ export default {
       
       if (!user) {
         console.error('사용자가 로그인되지 않았습니다.');
-        return;
+        return this.freeText;
       }
 
       try {
@@ -369,12 +385,15 @@ export default {
         if (result.translated_text) {
           console.log('원본 텍스트:', this.freeText);
           console.log('번역된 텍스트 (한국어):', result.translated_text);
+          return result.translated_text;
         } else {
           console.error('번역 결과가 없습니다:', result);
+          return this.freeText;
         }
         
       } catch (error) {
         console.error('번역 API 호출 중 오류 발생:', error);
+        return this.freeText;
       }
     },
   },
