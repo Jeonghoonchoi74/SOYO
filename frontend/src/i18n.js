@@ -192,6 +192,8 @@ export const messages = {
     location_modal_saving: '저장 중...',
     // 북마크 버튼
     bookmark_btn: '좋아요/북마크',
+    // 커뮤니티 버튼
+    community_btn: '커뮤니티',
   },
   en: {
     welcome: 'Every moment of your trip,\nwith AI Travel Assistant',
@@ -384,6 +386,7 @@ export const messages = {
     location_modal_saving: 'Saving...',
     // Bookmark button
     bookmark_btn: 'Likes/Bookmarks',
+    community_btn: 'Community',
   },
   zh: {
     welcome: '旅行的每一刻，\n与AI旅行助手同行',
@@ -576,6 +579,7 @@ export const messages = {
     location_modal_saving: '保存中...',
     // 书签按钮
     bookmark_btn: '喜欢/书签',
+    community_btn: '社区',
   },
   ja: {
     welcome: '旅のすべての瞬間を\nAI旅行アシスタントと共に',
@@ -768,6 +772,7 @@ export const messages = {
     location_modal_saving: '保存中...',
     // ブックマークボタン
     bookmark_btn: 'いいね/ブックマーク',
+    community_btn: 'コミュニティ',
   },
 };
 

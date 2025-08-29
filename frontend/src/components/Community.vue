@@ -16,7 +16,14 @@
         </svg>
         인기순
       </button>
-
+      
+      <!-- 메인으로 돌아가기 버튼 -->
+      <button class="home-btn" @click="goHome">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+        </svg>
+        메인으로
+      </button>
     </div>
 
     <!-- 지역 선택 스크롤 -->
@@ -661,7 +668,7 @@ export default {
       try {
         // regionMapping.js에서 지역 목록 가져오기
         const regionOptions = getRegionOptions();
-        this.regions = ['전국', ...regionOptions.map(option => getDisplayName(option.value))];
+        this.regions = ['전국', ...regionOptions.map(option => this.$t(getDisplayName(option.value)))];
         this.selectedRegion = '전국';
       } catch (error) {
         console.error('지역 로드 오류:', error);
@@ -830,6 +837,33 @@ export default {
 .tab-btn.active {
   color: #4A69E2;
   border-bottom-color: #4A69E2;
+}
+
+/* 메인으로 돌아가기 버튼 */
+.home-btn {
+  background: #4A69E2;
+  color: white;
+  border: none;
+  padding: 12px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: 8px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-weight: 500;
+}
+
+.home-btn:hover {
+  background: #3B5BC7;
+  transform: translateY(-1px);
+}
+
+.home-btn:active {
+  transform: translateY(0);
 }
 
 /* 메인 컨텐츠 */
