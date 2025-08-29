@@ -21,30 +21,30 @@ export const regionMapping = {
 
 // 지역별 사용 가능한 카테고리
 export const regionCategories = {
-  '강원특별자치도': ['events', 'tourist_attraction'],
+  '강원특별자치도': ['events', 'tourist attraction'],
   '경기도': ['events'],
-  '경상남도': ['events', 'foods', 'tourist_attraction'],
-  '경상북도': ['events', 'foods', 'tourist_attraction'],
-  '광주': ['events', 'foods', 'tourist_attraction'],
-  '대구': ['events', 'foods', 'tourist_attraction'],
-  '대전': ['events', 'foods', 'tourist_attraction'],
-  '부산': ['events', 'foods', 'tourist_attraction'],
+  '경상남도': ['events', 'foods', 'tourist attraction'],
+  '경상북도': ['events', 'foods', 'tourist attraction'],
+  '광주': ['events', 'foods', 'tourist attraction'],
+  '대구': ['events', 'foods', 'tourist attraction'],
+  '대전': ['events', 'foods', 'tourist attraction'],
+  '부산': ['events', 'foods', 'tourist attraction'],
   '서울': ['events'],
-  '세종특별자치시': ['events', 'foods', 'tourist_attraction'],
-  '울산': ['events', 'foods', 'tourist_attraction'],
-  '인천': ['events', 'foods', 'tourist_attraction'],
-  '전라남도': ['events', 'foods', 'tourist_attraction'],
-  '전북특별자치도': ['events', 'foods', 'tourist_attraction'],
+  '세종특별자치시': ['events', 'foods', 'tourist attraction'],
+  '울산': ['events', 'foods', 'tourist attraction'],
+  '인천': ['events', 'foods', 'tourist attraction'],
+  '전라남도': ['events', 'foods', 'tourist attraction'],
+  '전북특별자치도': ['events', 'foods', 'tourist attraction'],
   '제주도': ['events'],
-  '충청남도': ['events', 'foods', 'tourist_attraction'],
-  '충청북도': ['events', 'foods', 'tourist_attraction']
+  '충청남도': ['events', 'foods', 'tourist attraction'],
+  '충청북도': ['events', 'foods', 'tourist attraction']
 };
 
 // 카테고리 표시명 매핑 (다국어 키)
 export const categoryLabels = {
   'events': 'category_events',
   'foods': 'category_foods',
-  'tourist_attraction': 'category_tourist_attraction'
+  'tourist attraction': 'category_tourist_attraction'
 };
 
 // DB 지역명을 다국어 키로 변환

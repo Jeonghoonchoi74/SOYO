@@ -3,7 +3,7 @@
     <div class="recommend-content">
       <div class="recommend-header">
         <h2 class="title">{{ $t('recommend_title') }}</h2>
-        <p class="region-info">{{ getDisplayName(region) }} 지역 {{ getCategoryLabel(category) }} 추천</p>
+        <p class="region-info">{{ $t(getDisplayName(region)) }} 지역 {{ $t(getCategoryLabel(category)) }} 추천</p>
       </div>
     
     <div v-if="loading" class="loading">
@@ -95,6 +95,9 @@
       <div class="loading-indicator" v-if="loading">
         <div class="spinner"></div>
         <p>{{ $t('recommend_more_loading') }}</p>
+      </div>
+      <div v-else class="load-more-hint">
+        <p>↓ 더 많은 추천 장소 보기</p>
       </div>
     </div>
     
@@ -300,14 +303,14 @@ export default {
       showModal: false,
       modalMessage: '',
       bookmarkDisabled: [],
-      itemsPerPage: 12, // 무한스크롤을 위해 더 많은 항목을 한 번에 로드
+      itemsPerPage: 6, // 무한스크롤을 위해 적당한 개수씩 로드
       currentPage: 1,
       hasMoreItems: true,
       scrollHandler: null, // 스크롤 핸들러 참조 저장
     };
   },
   computed: {
-    $t() { return $t; },
+    // $t는 methods에서만 정의
   },
       async mounted() {
         // 쿼리 파라미터에서 지역 정보 가져오기
@@ -322,10 +325,28 @@ export default {
           this.category = categoryFromQuery;
         }
         
-        // 검색 쿼리가 있으면 추천 API 사용, 없으면 기존 방식
-        if (searchQueryFromQuery && searchQueryFromQuery.trim()) {
+        // localStorage에서 검색 결과 확인
+        const tempSearchResults = localStorage.getItem('tempSearchResults');
+        let searchResultsFromStorage = null;
+        
+        if (tempSearchResults) {
+          try {
+            searchResultsFromStorage = JSON.parse(tempSearchResults);
+            // 사용 후 삭제
+            localStorage.removeItem('tempSearchResults');
+          } catch (error) {
+            console.error('검색 결과 파싱 오류:', error);
+          }
+        }
+        
+        if (searchResultsFromStorage && Array.isArray(searchResultsFromStorage)) {
+          // localStorage에서 전달된 검색 결과가 있으면 처리
+          await this.processSearchResults(searchResultsFromStorage);
+        } else if (searchQueryFromQuery && searchQueryFromQuery.trim()) {
+          // 검색 쿼리가 있으면 추천 API 사용
           await this.searchWithRecommendAPI(searchQueryFromQuery);
         } else {
+          // 기존 방식으로 데이터 가져오기
           await this.fetchRecommendPlaces();
         }
         
@@ -410,14 +431,30 @@ export default {
         const startDate = place.eventstartdate;
         const endDate = place.eventenddate;
         const currentDate = this.getCurrentDate();
-        const targetEndDate = '20251231';
         
-        return startDate && endDate && 
-               startDate <= targetEndDate && 
-               endDate >= currentDate;
+        // 날짜 정보가 없는 경우는 제외
+        if (!startDate || !endDate) {
+          console.log(`날짜 정보 없음 제외: ${place.title || place.displayTitle}`);
+          return false;
+        }
+        
+        // 종료일이 현재 날짜보다 이전인 경우 제외 (이미 끝난 행사)
+        if (endDate < currentDate) {
+          console.log(`종료된 행사 제외: ${place.title || place.displayTitle} (종료일: ${endDate})`);
+          return false;
+        }
+        
+        // 시작일이 너무 먼 미래인 경우 제외 (2025년 이후)
+        const maxStartDate = '20251231';
+        if (startDate > maxStartDate) {
+          console.log(`너무 먼 미래 행사 제외: ${place.title || place.displayTitle} (시작일: ${startDate})`);
+          return false;
+        }
+        
+        return true;
       }
       
-              // foods, tourist attraction 카테고리는 모든 데이터 표시
+      // foods, tourist attraction 카테고리는 모든 데이터 표시
       return true;
     },
 
@@ -599,7 +636,16 @@ export default {
           }
           
           console.log(`최종 상세 장소 ${detailedPlaces.length}개`, detailedPlaces);
-          this.places = detailedPlaces;
+          
+          // events 카테고리인 경우 날짜 필터링 적용
+          if (this.category === 'events') {
+            const filteredPlaces = detailedPlaces.filter(this.isInTargetPeriod);
+            console.log(`날짜 필터링 후: ${filteredPlaces.length}개 (${detailedPlaces.length - filteredPlaces.length}개 제외)`);
+            this.places = filteredPlaces;
+          } else {
+            this.places = detailedPlaces;
+          }
+          
           this.loadInitialItems();
           
         } else {
@@ -610,6 +656,64 @@ export default {
       } catch (err) {
         console.error('추천 API 검색 오류:', err);
         this.error = '검색 서비스에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.';
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // 라우터 state에서 전달된 검색 결과 처리
+    async processSearchResults(searchResults) {
+      try {
+        this.loading = true;
+        this.error = null;
+        
+        console.log('라우터 state에서 전달된 검색 결과 처리:', searchResults);
+        
+        // 사용자 설정 region과 category와 일치하는 결과만 필터링
+        const filteredResults = searchResults.filter(item => 
+          item.region === this.region && item.category === this.category
+        );
+        
+        console.log(`전체 결과: ${searchResults.length}개, 지역 및 카테고리 필터링 후: ${filteredResults.length}개`);
+        
+        // Firebase에서 상세 정보 가져오기
+        const detailedPlaces = [];
+        console.log(`필터링된 결과 ${filteredResults.length}개 처리 시작`);
+        
+        for (const item of filteredResults) {
+          console.log(`Firebase 조회 중: ${item.id}, ${item.region}, ${item.category}`);
+          const firebaseData = await this.getFirebaseData(
+            item.id, 
+            item.region, 
+            item.category
+          );
+          if (firebaseData) {
+            console.log(`Firebase 데이터 추가: ${item.id}`, firebaseData);
+            detailedPlaces.push({
+              ...firebaseData,
+              bookmarked: false
+            });
+          } else {
+            console.log(`Firebase 데이터 없음: ${item.id}`);
+          }
+        }
+        
+                  console.log(`최종 상세 장소 ${detailedPlaces.length}개`, detailedPlaces);
+          
+          // events 카테고리인 경우 날짜 필터링 적용
+          if (this.category === 'events') {
+            const filteredPlaces = detailedPlaces.filter(this.isInTargetPeriod);
+            console.log(`날짜 필터링 후: ${filteredPlaces.length}개 (${detailedPlaces.length - filteredPlaces.length}개 제외)`);
+            this.places = filteredPlaces;
+          } else {
+            this.places = detailedPlaces;
+          }
+          
+          this.loadInitialItems();
+        
+      } catch (err) {
+        console.error('검색 결과 처리 오류:', err);
+        this.error = '검색 결과를 처리하는 중 오류가 발생했습니다.';
       } finally {
         this.loading = false;
       }
@@ -854,7 +958,7 @@ export default {
         if (err.code === 'permission-denied') {
           this.error = '데이터 접근 권한이 없습니다. 관리자에게 문의해주세요.';
         } else if (err.code === 'not-found') {
-          this.error = `${this.getDisplayName(this.region)} 지역의 데이터를 찾을 수 없습니다.`;
+          this.error = `${this.$t(this.getDisplayName(this.region))} 지역의 데이터를 찾을 수 없습니다.`;
         } else {
           this.error = '추천 장소 정보를 불러오는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
         }
@@ -883,11 +987,9 @@ export default {
     loadMore() {
       if (this.loading || !this.hasMoreItems) return;
       
-      // 현재 스크롤 위치 저장
-      const currentScrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      
       this.loading = true;
       
+      // 부드러운 로딩을 위한 지연
       setTimeout(() => {
         const startIndex = this.currentPage * this.itemsPerPage;
         const endIndex = startIndex + this.itemsPerPage;
@@ -902,11 +1004,8 @@ export default {
         
         this.loading = false;
         
-        // DOM 업데이트 후 스크롤 위치 복원
-        this.$nextTick(() => {
-          window.scrollTo(0, currentScrollTop);
-        });
-      }, 300); // 로딩 효과를 위한 지연
+        console.log(`추가 로드: ${newItems.length}개, 총 ${this.displayedPlaces.length}개 표시 중`);
+      }, 200); // 더 빠른 로딩
     },
     
     // 스크롤 이벤트 리스너 추가
@@ -1403,6 +1502,19 @@ export default {
 .loading-indicator p {
   font-size: 0.9rem;
   margin: 0;
+}
+
+.load-more-hint {
+  text-align: center;
+  padding: 1rem 0;
+  color: #64748b;
+  font-size: 0.9rem;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.load-more-hint:hover {
+  opacity: 1;
 }
 
 /* 모달 스타일 */

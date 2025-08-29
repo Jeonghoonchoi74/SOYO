@@ -274,6 +274,14 @@ export default {
     async recommend() {
       if (this.isSaving) return;
       
+      const auth = getAuth();
+      const user = auth.currentUser;
+      
+      if (!user) {
+        console.error('사용자가 로그인되지 않았습니다.');
+        return;
+      }
+      
       // Free Text가 있고 사용자 언어가 한국어가 아닐 때만 번역 API 호출
       if (this.freeText && this.freeText.trim()) {
         const userLanguage = await this.getUserLanguage();
@@ -298,8 +306,43 @@ export default {
         }
       }
       
-      const saved = await this.savePreferences();
-      if (saved) {
+      try {
+        // 새로운 검색 API 호출
+        const finalQuery = searchQuery || `${this.selectedRegion} ${this.getCategoryDisplayName(this.selectedCategory)}`;
+        console.log('검색 API 요청:', {
+          uid: user.uid,
+          query: finalQuery,
+          region: this.selectedRegion,
+          category: this.selectedCategory
+        });
+        
+        const response = await fetch('http://localhost:5002/search', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            uid: user.uid,
+            query: finalQuery,
+            region: this.selectedRegion,
+            category: this.selectedCategory
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const searchResults = await response.json();
+        console.log('검색 결과:', searchResults);
+        
+        // 검색 결과를 localStorage에 임시 저장
+        localStorage.setItem('tempSearchResults', JSON.stringify(searchResults));
+        
+        // 선호도 저장
+        const saved = await this.savePreferences();
+        
+        // 추천 페이지로 이동
         this.$router.push({
           path: '/recommend',
           query: { 
@@ -308,8 +351,12 @@ export default {
             searchQuery: searchQuery
           }
         });
-      } else {
-        // 저장 실패 시에도 추천 페이지로 이동 (선택사항)
+        
+      } catch (error) {
+        console.error('검색 API 호출 중 오류 발생:', error);
+        
+        // API 호출 실패 시에도 선호도 저장 후 추천 페이지로 이동
+        const saved = await this.savePreferences();
         this.$router.push({
           path: '/recommend',
           query: { 
