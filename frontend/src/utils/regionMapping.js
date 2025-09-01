@@ -21,6 +21,7 @@ export const regionMapping = {
 
 // 지역별 사용 가능한 카테고리
 export const regionCategories = {
+  '전국': ['events', 'foods', 'tourist attraction'],
   '강원특별자치도': ['events', 'tourist attraction'],
   '경기도': ['events'],
   '경상남도': ['events', 'foods', 'tourist attraction'],
@@ -61,10 +62,16 @@ export function getDbRegionName(displayName) {
 
 // 지역 옵션 배열 생성 (다국어 키 사용)
 export function getRegionOptions() {
-  return Object.entries(regionMapping).map(([value, label]) => ({
+  const regions = Object.entries(regionMapping).map(([value, label]) => ({
     value,
     label
   })).sort((a, b) => a.label.localeCompare(b.label, 'ko'));
+  
+  // 전국 옵션을 맨 앞에 추가
+  return [
+    { value: '전국', label: 'region_nationwide' },
+    ...regions
+  ];
 }
 
 // 지역별 사용 가능한 카테고리 가져오기

@@ -2,12 +2,6 @@
   <div class="preference-page">
     <div class="preference-content">
       <div class="preference-header">
-        <button class="bookmark-btn" @click="goBookmark">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-          </svg>
-          {{ $t('bookmark_btn') }}
-        </button>
         <h2 class="title">{{ $t('pref_title') }}</h2>
         <p class="subtitle">{{ $t('pref_subtitle') }}</p>
       </div>
@@ -118,10 +112,6 @@ export default {
 
   methods: {
     $t,
-    // 북마크 페이지로 이동
-    goBookmark() {
-      this.$router.push('/bookmarks');
-    },
 
 
     onRegionChange() {
@@ -477,29 +467,7 @@ export default {
   position: relative;
 }
 
-.bookmark-btn {
-  position: absolute;
-  top: -20px;
-  right: -20px;
-  background: white;
-  color: #4A69E2;
-  border: 1px solid #4A69E2;
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.2s ease;
-}
 
-.bookmark-btn:hover {
-  background: #4A69E2;
-  color: white;
-}
 
 .title {
   font-size: 24px;
@@ -866,13 +834,7 @@ export default {
     font-size: 15px;
   }
 
-  .bookmark-btn {
-    position: relative;
-    top: 0;
-    right: 0;
-    margin-bottom: 16px;
-    align-self: flex-end;
-  }
+
 
   .modal-overlay {
     padding: 12px;

@@ -51,7 +51,7 @@ export const messages = {
     dest_category_culture: '문화/행사',
     dest_category_transport: '교통정보',
     dest_next_btn: '다음',
-    pref_title: '거의 다 왔어요!',
+    pref_title: '여행 비서 SOYO 에게 맡겨주세요',
     pref_subtitle: '더 정확한 추천을 위해 취향을 알려주세요.',
     pref_section_region: '📍 여행 지역',
     pref_section_category: '🎯 카테고리 선택',
@@ -166,6 +166,7 @@ export const messages = {
     category_foods: '맛집',
     category_tourist_attraction: '관광지',
     // 지역명
+    region_nationwide: '전국',
     region_seoul: '서울',
     region_busan: '부산',
     region_daegu: '대구',
@@ -360,6 +361,7 @@ export const messages = {
     category_foods: 'Restaurants',
     category_tourist_attraction: 'Tourist Attractions',
     // Region names
+    region_nationwide: 'Nationwide',
     region_seoul: 'Seoul',
     region_busan: 'Busan',
     region_daegu: 'Daegu',
@@ -553,6 +555,7 @@ export const messages = {
     category_foods: '美食',
     category_tourist_attraction: '旅游景点',
     // 地区名
+    region_nationwide: '全国',
     region_seoul: '首尔',
     region_busan: '釜山',
     region_daegu: '大邱',
@@ -746,6 +749,7 @@ export const messages = {
     category_foods: 'グルメ',
     category_tourist_attraction: '観光地',
     // 地域名
+    region_nationwide: '全国',
     region_seoul: 'ソウル',
     region_busan: '釜山',
     region_daegu: '大邱',

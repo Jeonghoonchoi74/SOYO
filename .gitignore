@@ -154,3 +154,8 @@ venv.bak/
 dmypy.json
 
 data insertion/*
+consolidated_food_keywords_with_region.json
+keyword insertion.py
+region_mapping.py
+consolidated_keywords_with_region.json
+README_keyword_insertion.md
