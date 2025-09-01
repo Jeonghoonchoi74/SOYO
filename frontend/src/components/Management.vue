@@ -1,7 +1,10 @@
 <template>
-  <div class="management-container">
-    <button class="back-btn" @click="goBack">{{ $t('management_back') }}</button>
-    <h2 class="title">{{ $t('management_title') }}</h2>
+  <div class="management-page">
+    <div class="management-content">
+      <div class="management-header">
+        <button class="back-btn" @click="goBack">{{ $t('management_back') }}</button>
+        <h2 class="title">{{ $t('management_title') }}</h2>
+      </div>
     
     <!-- 통계 섹션 -->
     <div class="stats-section">
@@ -35,8 +38,7 @@
         </div>
       </div>
     </div>
-    
-
+  </div>
   </div>
 </template>
 
@@ -102,167 +104,219 @@ export default {
 </script>
 
 <style scoped>
-.management-container {
-  width: 800px;
-  margin: 60px auto;
-  padding: 64px 80px 96px 80px;
-  border-radius: 32px;
-  background: #f8fafc;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+/* 네이버 지식iN 스타일 - Community.vue 베이스 */
+.management-page {
+  min-height: 100vh;
+  background: #F7F8FA;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  width: 100vw;
+  max-width: 100vw;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  padding: 20px;
+}
+
+.management-content {
+  width: 100%;
+  max-width: 480px;
+  background: white;
+  border-radius: 16px;
+  padding: 40px 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+  margin: 0 auto;
+}
+
+.management-header {
+  text-align: center;
+  margin-bottom: 32px;
 }
 
 .back-btn {
-  display: block;
-  margin: 0 auto 2.5rem auto;
-  background: #64748b;
-  color: #fff;
-  border: none;
-  border-radius: 14px;
-  padding: 1.1rem 0;
   width: 100%;
-  max-width: 420px;
-  font-size: 1.2rem;
-  font-weight: 800;
+  padding: 16px;
+  background: #4A69E2;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
+  margin-bottom: 16px;
 }
 
 .back-btn:hover {
-  background: #475569;
+  background: #3B5BC7;
 }
 
 .title {
-  font-size: 2rem;
-  font-weight: 800;
-  margin-bottom: 3rem;
-  text-align: center;
-  color: #1e293b;
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 0;
+  color: #212529;
 }
 
 .section-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #334155;
-  margin-bottom: 2rem;
-  border-left: 4px solid #7c3aed;
-  padding-left: 1rem;
+  font-size: 20px;
+  font-weight: 600;
+  color: #212529;
+  margin-bottom: 24px;
+  border-left: 4px solid #4A69E2;
+  padding-left: 16px;
 }
 
 .stats-section {
   width: 100%;
-  max-width: 900px;
-  margin-bottom: 4rem;
+  margin-bottom: 32px;
 }
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 3rem;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
 }
 
 .stat-card {
-  background: #fff;
-  border-radius: 16px;
-  padding: 2rem;
+  background: #F7F8FA;
+  border-radius: 12px;
+  padding: 20px;
   text-align: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  border: 1px solid #e2e8f0;
+  border: 1px solid #e9ecef;
 }
 
 .stat-number {
-  font-size: 2.5rem;
-  font-weight: 800;
-  color: #7c3aed;
-  margin-bottom: 0.5rem;
+  font-size: 28px;
+  font-weight: 700;
+  color: #4A69E2;
+  margin-bottom: 8px;
 }
 
 .stat-label {
-  font-size: 1rem;
-  color: #64748b;
-  font-weight: 600;
+  font-size: 14px;
+  color: #6c757d;
+  font-weight: 500;
 }
 
 .place-stats {
-  background: #fff;
-  border-radius: 16px;
-  padding: 2rem;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  border: 1px solid #e2e8f0;
+  background: #F7F8FA;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #e9ecef;
 }
 
 .place-stats h4 {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #334155;
-  margin-bottom: 1.5rem;
+  font-size: 18px;
+  font-weight: 600;
+  color: #212529;
+  margin-bottom: 16px;
 }
 
 .place-stats-list {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 8px;
 }
 
 .place-stat-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.8rem 1rem;
-  background: #f8fafc;
+  padding: 12px 16px;
+  background: white;
   border-radius: 8px;
+  border: 1px solid #e9ecef;
 }
 
 .place-name {
-  font-weight: 600;
-  color: #475569;
+  font-weight: 500;
+  color: #495057;
+  font-size: 14px;
 }
 
 .place-count {
-  background: #7c3aed;
-  color: #fff;
-  padding: 0.3rem 0.8rem;
-  border-radius: 20px;
-  font-size: 0.9rem;
+  background: #4A69E2;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
   font-weight: 600;
 }
 
 .no-data {
   text-align: center;
-  padding: 2rem;
-  color: #64748b;
+  padding: 24px;
+  color: #6c757d;
   font-style: italic;
 }
 
 .no-data p {
   margin: 0;
-  font-size: 1rem;
+  font-size: 14px;
 }
 
+/* 반응형 */
 @media (max-width: 768px) {
-  .management-container {
-    width: 95%;
-    margin: 20px auto;
-    padding: 32px 20px 64px 20px;
-    border-radius: 20px;
+  .management-page {
+    padding: 12px;
+  }
+  
+  .management-content {
+    padding: 32px 20px;
+  }
+  
+  .management-header {
+    margin-bottom: 24px;
+  }
+  
+  .title {
+    font-size: 20px;
+  }
+  
+  .back-btn {
+    padding: 14px;
+    font-size: 15px;
+    margin-bottom: 12px;
   }
   
   .stats-grid {
     grid-template-columns: 1fr;
-    gap: 1rem;
+    gap: 8px;
   }
   
-  .review-header {
-    flex-direction: column;
-    text-align: left;
-    gap: 1rem;
+  .stat-card {
+    padding: 16px;
   }
   
-  .place-img {
-    width: 120px;
-    height: 120px;
+  .stat-number {
+    font-size: 24px;
+  }
+  
+  .stat-label {
+    font-size: 13px;
+  }
+  
+  .place-stats {
+    padding: 16px;
+  }
+  
+  .place-stats h4 {
+    font-size: 16px;
+    margin-bottom: 12px;
+  }
+  
+  .place-stat-item {
+    padding: 10px 12px;
+  }
+  
+  .place-name {
+    font-size: 13px;
+  }
+  
+  .place-count {
+    font-size: 11px;
+    padding: 3px 8px;
   }
 }
 </style> 
