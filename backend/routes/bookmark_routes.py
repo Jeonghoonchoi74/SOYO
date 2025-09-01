@@ -11,6 +11,29 @@ db = get_db()
 async def save_bookmark(request: Request):
     data = await request.json()
     print("북마크 저장 요청 데이터:", data)
+    print("전체 데이터 키들:", list(data.keys()))
+    print("상세 정보 확인:")
+    print(f"  address: {data.get('address')}")
+    print(f"  detailAddress: {data.get('detailAddress')}")
+    print(f"  contact: {data.get('contact')}")
+    print(f"  openingHours: {data.get('openingHours')}")
+    print(f"  restDay: {data.get('restDay')}")
+    print(f"  representativeMenu: {data.get('representativeMenu')}")
+    print(f"  menu: {data.get('menu')}")
+    print(f"  eventStartDate: {data.get('eventStartDate')}")
+    print(f"  eventEndDate: {data.get('eventEndDate')}")
+    print(f"  eventIntro: {data.get('eventIntro')}")
+    print(f"  eventContent: {data.get('eventContent')}")
+    print(f"  inquiry: {data.get('inquiry')}")
+    print(f"  usageTime: {data.get('usageTime')}")
+    print(f"  performanceTime: {data.get('performanceTime')}")
+    print(f"  duration: {data.get('duration')}")
+    print(f"  ageLimit: {data.get('ageLimit')}")
+    print(f"  bookingPlace: {data.get('bookingPlace')}")
+    print(f"  discountInfo: {data.get('discountInfo')}")
+    print(f"  eventGrade: {data.get('eventGrade')}")
+    print(f"  status: {data.get('status')}")
+    print(f"  category: {data.get('category')}")
     
     uid = data.get('uid')
     content_id = data.get('contentId')
@@ -19,6 +42,29 @@ async def save_bookmark(request: Request):
     desc = data.get('desc')
     image = data.get('image')
     region = data.get('region', '전국')
+    
+    # 상세 정보 추가
+    address = data.get('address')
+    detail_address = data.get('detailAddress')
+    contact = data.get('contact')
+    opening_hours = data.get('openingHours')
+    rest_day = data.get('restDay')
+    representative_menu = data.get('representativeMenu')
+    menu = data.get('menu')
+    event_start_date = data.get('eventStartDate')
+    event_end_date = data.get('eventEndDate')
+    event_intro = data.get('eventIntro')
+    event_content = data.get('eventContent')
+    inquiry = data.get('inquiry')
+    usage_time = data.get('usageTime')
+    performance_time = data.get('performanceTime')
+    duration = data.get('duration')
+    age_limit = data.get('ageLimit')
+    booking_place = data.get('bookingPlace')
+    discount_info = data.get('discountInfo')
+    event_grade = data.get('eventGrade')
+    status = data.get('status')
+    category = data.get('category')
     
     print(f"파싱된 데이터: uid={uid}, content_id={content_id}, region={region}")
     
@@ -32,7 +78,29 @@ async def save_bookmark(request: Request):
             'desc': desc,
             'image': image,
             'region': region,
-            'createdAt': firestore.SERVER_TIMESTAMP
+            'createdAt': firestore.SERVER_TIMESTAMP,
+            # 상세 정보 추가
+            'address': address,
+            'detailAddress': detail_address,
+            'contact': contact,
+            'openingHours': opening_hours,
+            'restDay': rest_day,
+            'representativeMenu': representative_menu,
+            'menu': menu,
+            'eventStartDate': event_start_date,
+            'eventEndDate': event_end_date,
+            'eventIntro': event_intro,
+            'eventContent': event_content,
+            'inquiry': inquiry,
+            'usageTime': usage_time,
+            'performanceTime': performance_time,
+            'duration': duration,
+            'ageLimit': age_limit,
+            'bookingPlace': booking_place,
+            'discountInfo': discount_info,
+            'eventGrade': event_grade,
+            'status': status,
+            'category': category
         }
         
         await asyncio.to_thread(
@@ -41,12 +109,38 @@ async def save_bookmark(request: Request):
             merge=True
         )
         
-        # 2. 사용자별 북마크 저장
+        # 2. 사용자별 북마크 저장 (모든 상세 정보 포함)
         user_bookmark_data = {
             'bookmark': bookmark,
             'createdAt': firestore.SERVER_TIMESTAMP,
             'title': name,
-            'contentid': content_id
+            'contentid': content_id,
+            # 상세 정보 추가
+            'name': name,
+            'desc': desc,
+            'image': image,
+            'region': region,
+            'address': address,
+            'detailAddress': detail_address,
+            'contact': contact,
+            'openingHours': opening_hours,
+            'restDay': rest_day,
+            'representativeMenu': representative_menu,
+            'menu': menu,
+            'eventStartDate': event_start_date,
+            'eventEndDate': event_end_date,
+            'eventIntro': event_intro,
+            'eventContent': event_content,
+            'inquiry': inquiry,
+            'usageTime': usage_time,
+            'performanceTime': performance_time,
+            'duration': duration,
+            'ageLimit': age_limit,
+            'bookingPlace': booking_place,
+            'discountInfo': discount_info,
+            'eventGrade': event_grade,
+            'status': status,
+            'category': category
         }
         
         await asyncio.to_thread(
@@ -77,63 +171,63 @@ async def get_user_bookmarks(request: Request):
             content_id = bookmark_doc.id
             print(f"북마크 처리 중: content_id={content_id}")
             
-            # 장소 정보 가져오기
-            place_info_doc = await asyncio.to_thread(
-                db.collection('places').document(content_id).collection('info').document('details').get
+            # 북마크 문서에서 직접 정보 가져오기
+            bookmark_data = bookmark_doc.to_dict()
+            print(f"북마크 데이터: {bookmark_data}")
+            
+            # 사용자의 리뷰 정보 가져오기
+            user_review_doc = await asyncio.to_thread(
+                db.collection('places').document(content_id).collection('reviews').document(uid).get
             )
             
-            print(f"장소 정보 존재 여부: {place_info_doc.exists}")
+            bookmark_info = {
+                'contentId': content_id,
+                'name': bookmark_data.get('name'),
+                'desc': bookmark_data.get('desc'),
+                'image': bookmark_data.get('image'),
+                'region': bookmark_data.get('region', '전국'),
+                'bookmark': True,
+                'createdAt': bookmark_data.get('createdAt'),
+                # 상세 정보 추가
+                'address': bookmark_data.get('address'),
+                'detailAddress': bookmark_data.get('detailAddress'),
+                'contact': bookmark_data.get('contact'),
+                'openingHours': bookmark_data.get('openingHours'),
+                'restDay': bookmark_data.get('restDay'),
+                'representativeMenu': bookmark_data.get('representativeMenu'),
+                'menu': bookmark_data.get('menu'),
+                'eventStartDate': bookmark_data.get('eventStartDate'),
+                'eventEndDate': bookmark_data.get('eventEndDate'),
+                'eventIntro': bookmark_data.get('eventIntro'),
+                'eventContent': bookmark_data.get('eventContent'),
+                'inquiry': bookmark_data.get('inquiry'),
+                'usageTime': bookmark_data.get('usageTime'),
+                'performanceTime': bookmark_data.get('performanceTime'),
+                'duration': bookmark_data.get('duration'),
+                'ageLimit': bookmark_data.get('ageLimit'),
+                'bookingPlace': bookmark_data.get('bookingPlace'),
+                'discountInfo': bookmark_data.get('discountInfo'),
+                'eventGrade': bookmark_data.get('eventGrade'),
+                'status': bookmark_data.get('status'),
+                'category': bookmark_data.get('category')
+            }
             
-            if place_info_doc.exists:
-                place_info = place_info_doc.to_dict()
-                print(f"장소 정보: {place_info}")
-                
-                # 사용자의 리뷰 정보 가져오기
-                user_review_doc = await asyncio.to_thread(
-                    db.collection('places').document(content_id).collection('reviews').document(uid).get
-                )
-                
-                bookmark_data = {
-                    'contentId': content_id,
-                    'name': place_info.get('name'),
-                    'desc': place_info.get('desc'),
-                    'image': place_info.get('image'),
-                    'region': place_info.get('region', '전국'),
-                    'bookmark': True,
-                    'createdAt': bookmark_doc.to_dict().get('createdAt')
-                }
-                
-                # 리뷰 정보가 있으면 추가
-                if user_review_doc.exists:
-                    review_data = user_review_doc.to_dict()
-                    bookmark_data.update({
-                        'rating': review_data.get('rating', 0),
-                        'review': review_data.get('review', ''),
-                        'isPublic': review_data.get('isPublic', False)
-                    })
-                else:
-                    bookmark_data.update({
-                        'rating': 0,
-                        'review': '',
-                        'isPublic': False
-                    })
-                
-                bookmarks.append(bookmark_data)
+            # 리뷰 정보가 있으면 추가
+            if user_review_doc.exists:
+                review_data = user_review_doc.to_dict()
+                bookmark_info.update({
+                    'rating': review_data.get('rating', 0),
+                    'review': review_data.get('review', ''),
+                    'isPublic': review_data.get('isPublic', False)
+                })
             else:
-                print(f"장소 정보가 없음: content_id={content_id}")
-                bookmark_data = {
-                    'contentId': content_id,
-                    'name': '알 수 없는 장소',
-                    'desc': '',
-                    'image': '',
-                    'region': '전국',
-                    'bookmark': True,
+                bookmark_info.update({
                     'rating': 0,
                     'review': '',
-                    'isPublic': False,
-                    'createdAt': bookmark_doc.to_dict().get('createdAt')
-                }
-                bookmarks.append(bookmark_data)
+                    'isPublic': False
+                })
+            
+            bookmarks.append(bookmark_info)
         
         print(f"최종 북마크 개수: {len(bookmarks)}")
         return {'success': True, 'bookmarks': bookmarks}

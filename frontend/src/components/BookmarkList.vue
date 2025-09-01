@@ -1,11 +1,18 @@
 <template>
-  <div class="bookmark-container">
-    <button class="back-home-btn" @click="goHome">{{ $t('bookmark_back_home') }}</button>
-    <h2 class="title">{{ $t('bookmark_title') }}</h2>
+  <div class="bookmark-page">
+    <div class="bookmark-header">
+      <button class="back-btn" @click="goHome">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7" />
+        </svg>
+        {{ $t('bookmark_back_home') }}
+      </button>
+      <h2 class="title">{{ $t('bookmark_title') }}</h2>
+    </div>
     <div class="bookmark-list">
       <template v-if="bookmarked.length > 0">
         <div v-for="(place, idx) in bookmarked" :key="idx" class="bookmark-card">
-          <img :src="place.image" class="place-img" :alt="$t('bookmark_place_img_alt')" />
+          <img :src="place.image" class="place-img" :alt="$t('bookmark_place_img_alt')" @click="showPlaceDetail(place)" />
           <div class="place-info">
             <div class="place-name">{{ place.name }}</div>
             <div class="place-desc">{{ place.desc }}</div>
@@ -131,6 +138,125 @@
     </div>
 
     <div v-if="showModal" class="custom-modal">{{ modalMessage }}</div>
+
+    <!-- 장소 상세 정보 모달 -->
+    <div v-if="showDetailModal" class="detail-modal-overlay" @click="closeDetailModal">
+      <div class="detail-modal-content" @click.stop>
+        <div class="detail-modal-header">
+          <h3 class="detail-modal-title">{{ selectedPlace?.name }}</h3>
+          <button class="detail-modal-close" @click="closeDetailModal">×</button>
+        </div>
+        <div class="detail-modal-body">
+          <div class="detail-image-container">
+            <img :src="selectedPlace?.image" :alt="selectedPlace?.name" class="detail-image" />
+          </div>
+          <div class="detail-info">
+            <div class="detail-section">
+              <h4 class="detail-section-title">📝 설명</h4>
+              <p class="detail-description">{{ selectedPlace?.desc }}</p>
+            </div>
+            
+            <div v-if="selectedPlace?.address" class="detail-section">
+              <h4 class="detail-section-title">📍 주소</h4>
+              <p class="detail-address">{{ selectedPlace?.address }}</p>
+            </div>
+            
+            <div v-if="selectedPlace?.detailAddress" class="detail-section">
+              <h4 class="detail-section-title">📍 상세주소</h4>
+              <p class="detail-address">{{ selectedPlace?.detailAddress }}</p>
+            </div>
+            
+            <div v-if="selectedPlace?.contact" class="detail-section">
+              <h4 class="detail-section-title">📞 연락처</h4>
+              <p class="detail-contact">{{ selectedPlace?.contact }}</p>
+            </div>
+            
+            <div v-if="selectedPlace?.openingHours" class="detail-section">
+              <h4 class="detail-section-title">🕒 영업시간</h4>
+              <p class="detail-hours">{{ selectedPlace?.openingHours }}</p>
+            </div>
+            
+            <div v-if="selectedPlace?.restDay" class="detail-section">
+              <h4 class="detail-section-title">📅 휴무일</h4>
+              <p class="detail-rest-day">{{ selectedPlace?.restDay }}</p>
+            </div>
+            
+            <div v-if="selectedPlace?.representativeMenu" class="detail-section">
+              <h4 class="detail-section-title">🍽️ 대표메뉴</h4>
+              <p class="detail-menu">{{ selectedPlace?.representativeMenu }}</p>
+            </div>
+            
+            <div v-if="selectedPlace?.menu" class="detail-section">
+              <h4 class="detail-section-title">🍽️ 메뉴</h4>
+              <p class="detail-menu">{{ selectedPlace?.menu }}</p>
+            </div>
+            
+            <div v-if="selectedPlace?.eventStartDate && selectedPlace?.eventEndDate" class="detail-section">
+              <h4 class="detail-section-title">📅 행사기간</h4>
+              <p class="detail-period">{{ selectedPlace?.eventStartDate }} ~ {{ selectedPlace?.eventEndDate }}</p>
+            </div>
+            
+            <div v-if="selectedPlace?.eventIntro" class="detail-section">
+              <h4 class="detail-section-title">🎪 행사소개</h4>
+              <p class="detail-intro">{{ selectedPlace?.eventIntro }}</p>
+            </div>
+            
+            <div v-if="selectedPlace?.eventContent" class="detail-section">
+              <h4 class="detail-section-title">📋 행사내용</h4>
+              <p class="detail-content">{{ selectedPlace?.eventContent }}</p>
+            </div>
+            
+            <div v-if="selectedPlace?.inquiry" class="detail-section">
+              <h4 class="detail-section-title">📞 문의처</h4>
+              <p class="detail-inquiry">{{ selectedPlace?.inquiry }}</p>
+            </div>
+            
+            <div v-if="selectedPlace?.usageTime" class="detail-section">
+              <h4 class="detail-section-title">⏰ 이용시간</h4>
+              <p class="detail-usage-time">{{ selectedPlace?.usageTime }}</p>
+            </div>
+            
+            <div v-if="selectedPlace?.performanceTime" class="detail-section">
+              <h4 class="detail-section-title">🎭 공연시간</h4>
+              <p class="detail-performance-time">{{ selectedPlace?.performanceTime }}</p>
+            </div>
+            
+            <div v-if="selectedPlace?.duration" class="detail-section">
+              <h4 class="detail-section-title">⏱️ 소요시간</h4>
+              <p class="detail-duration">{{ selectedPlace?.duration }}</p>
+            </div>
+            
+            <div v-if="selectedPlace?.ageLimit" class="detail-section">
+              <h4 class="detail-section-title">👥 연령제한</h4>
+              <p class="detail-age-limit">{{ selectedPlace?.ageLimit }}</p>
+            </div>
+            
+            <div v-if="selectedPlace?.bookingPlace" class="detail-section">
+              <h4 class="detail-section-title">📋 예약처</h4>
+              <p class="detail-booking-place">{{ selectedPlace?.bookingPlace }}</p>
+            </div>
+            
+            <div v-if="selectedPlace?.discountInfo" class="detail-section">
+              <h4 class="detail-section-title">💰 할인정보</h4>
+              <p class="detail-discount">{{ selectedPlace?.discountInfo }}</p>
+            </div>
+            
+            <div v-if="selectedPlace?.eventGrade" class="detail-section">
+              <h4 class="detail-section-title">⭐ 등급</h4>
+              <p class="detail-grade">{{ selectedPlace?.eventGrade }}</p>
+            </div>
+            
+            <div v-if="selectedPlace?.status" class="detail-section">
+              <h4 class="detail-section-title">📊 상태</h4>
+              <p class="detail-status">{{ selectedPlace?.status }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="detail-modal-footer">
+          <button class="detail-modal-btn" @click="closeDetailModal">닫기</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -145,6 +271,8 @@ export default {
       showModal: false,
       modalMessage: '',
       showDeleteConfirm: false,
+      showDetailModal: false,
+      selectedPlace: null,
     };
   },
   async mounted() {
@@ -390,28 +518,68 @@ export default {
     setTempRating(place, rating) {
       place.tempRating = rating;
     },
+    showPlaceDetail(place) {
+      this.selectedPlace = place;
+      this.showDetailModal = true;
+    },
+    closeDetailModal() {
+      this.showDetailModal = false;
+      this.selectedPlace = null;
+    },
   },
 };
 </script>
 
 <style scoped>
-.bookmark-container {
-  width: 800px;
-  margin: 60px auto;
-  padding: 64px 80px 96px 80px;
-  border-radius: 32px;
-  background: #f8fafc;
+/* 네이버 지식iN 스타일 - Community.vue 베이스 */
+.bookmark-page {
+  min-height: 100vh;
+  background: #F7F8FA;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  width: 100vw;
+  max-width: 100vw;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  padding: 20px;
+}
+
+.bookmark-header {
+  background: white;
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  gap: 16px;
+}
+
+.back-btn {
+  background: #F7F8FA;
+  color: #495057;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.back-btn:hover {
+  background: #4A69E2;
+  color: white;
+  border-color: #4A69E2;
 }
 
 .title {
-  font-size: 2rem;
-  font-weight: 800;
-  margin-bottom: 3rem;
-  text-align: left;
-  color: #1e293b;
+  font-size: 20px;
+  font-weight: 600;
+  color: #212529;
+  margin: 0;
 }
 
 .section {
@@ -422,62 +590,42 @@ export default {
 
 .bookmark-list {
   width: 100%;
-  max-width: 900px;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
-  margin-bottom: 3.5rem;
+  gap: 12px;
 }
 
 .bookmark-card {
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  border-radius: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  padding: 2rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 16px;
   display: flex;
   align-items: flex-start;
-  gap: 2rem;
-  border: 1px solid #e2e8f0;
-  transition: all 0.3s ease;
+  gap: 12px;
+  border: 1px solid #e9ecef;
+  transition: all 0.2s ease;
   position: relative;
-  overflow: hidden;
-}
-
-.bookmark-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #3b82f6, #10b981, #f59e0b);
-  opacity: 0;
-  transition: opacity 0.3s ease;
 }
 
 .bookmark-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-  border-color: #cbd5e1;
-}
-
-.bookmark-card:hover::before {
-  opacity: 1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: #4A69E2;
 }
 
 .place-img {
-  width: 140px;
-  height: 140px;
+  width: 80px;
+  height: 80px;
   object-fit: cover;
-  border-radius: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transition: all 0.3s ease;
+  border-radius: 8px;
   flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.bookmark-card:hover .place-img {
-  transform: scale(1.02);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+.place-img:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .place-info {
@@ -487,10 +635,10 @@ export default {
 }
 
 .place-name {
-  font-size: 1.4rem;
-  font-weight: 800;
-  margin-bottom: 0.6rem;
-  color: #1e293b;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #ff6b35;
   text-align: left;
   line-height: 1.3;
   background: linear-gradient(135deg, #1e293b 0%, #475569 100%);
@@ -1022,20 +1170,272 @@ export default {
   color: #475569;
 }
 
-@media (min-width: 600px) {
-  .bookmark-container {
-    max-width: 600px;
-    margin: 40px auto;
-    padding: 40px 32px 64px 32px;
-    border-radius: 24px;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+/* 반응형 */
+@media (max-width: 768px) {
+  .bookmark-page {
+    padding: 12px;
+  }
+  
+  .bookmark-header {
+    padding: 16px 20px;
+    margin-bottom: 12px;
+  }
+  
+  .back-btn {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+  
+  .title {
+    font-size: 18px;
+  }
+  
+  .bookmark-list {
+    gap: 8px;
+  }
+  
+  .bookmark-card {
+    padding: 12px;
+    gap: 8px;
+  }
+  
+  .place-img {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .place-name {
+    font-size: 15px;
+  }
+  
+  .place-desc {
+    font-size: 13px;
   }
 }
 
-@media (min-width: 900px) {
-  .bookmark-container {
-    max-width: 800px;
-    padding: 48px 64px 80px 64px;
+/* 장소 상세 정보 모달 스타일 */
+.detail-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 5000;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.detail-modal-content {
+  background: white;
+  border-radius: 20px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 24px 16px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.detail-modal-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.detail-modal-close {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.detail-modal-close:hover {
+  background: #f1f5f9;
+  color: #374151;
+}
+
+.detail-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.detail-image-container {
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  position: relative;
+}
+
+.detail-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.detail-info {
+  padding: 24px;
+}
+
+.detail-section {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.detail-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.detail-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #374151;
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detail-description,
+.detail-address,
+.detail-contact,
+.detail-hours,
+.detail-rest-day,
+.detail-menu,
+.detail-period,
+.detail-intro,
+.detail-content,
+.detail-inquiry,
+.detail-usage-time,
+.detail-performance-time,
+.detail-duration,
+.detail-age-limit,
+.detail-booking-place,
+.detail-discount,
+.detail-grade,
+.detail-status {
+  font-size: 0.95rem;
+  color: #4b5563;
+  line-height: 1.6;
+  margin: 0;
+  word-break: break-word;
+}
+
+.detail-modal-footer {
+  padding: 20px 24px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.detail-modal-btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.detail-modal-btn:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+  .detail-modal-overlay {
+    padding: 12px;
+  }
+  
+  .detail-modal-content {
+    max-height: 95vh;
+  }
+  
+  .detail-modal-header {
+    padding: 20px 20px 16px 20px;
+  }
+  
+  .detail-modal-title {
+    font-size: 1.3rem;
+  }
+  
+  .detail-info {
+    padding: 20px;
+  }
+  
+  .detail-section {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+  }
+  
+  .detail-section-title {
+    font-size: 0.95rem;
+    margin-bottom: 10px;
+  }
+  
+  .detail-description,
+  .detail-address,
+  .detail-contact,
+  .detail-hours,
+  .detail-rest-day,
+  .detail-menu,
+  .detail-period,
+  .detail-intro,
+  .detail-content,
+  .detail-inquiry,
+  .detail-usage-time,
+  .detail-performance-time,
+  .detail-duration,
+  .detail-age-limit,
+  .detail-booking-place,
+  .detail-discount,
+  .detail-grade,
+  .detail-status {
+    font-size: 0.9rem;
+  }
+  
+  .detail-modal-footer {
+    padding: 16px 20px;
+  }
+  
+  .detail-modal-btn {
+    padding: 10px 20px;
+    font-size: 0.95rem;
   }
 }
 </style>
