@@ -7,3 +7,9 @@ firebase-admin>=6.4.0
 google-cloud-firestore>=2.16.0
 google-auth
 google-cloud-core
+
+# firebase.json 준비
+# 실행 docker compose up -d --build
+# 로그 확인 docker logs -f summarizer
+# 중지 docker compose down
+# 재시작 docker compose restart summarizer
