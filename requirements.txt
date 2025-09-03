@@ -6,3 +6,7 @@ firebase-admin==6.5.0
 google-cloud-firestore==2.16.0
 google-auth==2.32.0
 tqdm
+
+# 실행 docker compose up -d summarizer
+# 실시간 로그 docker logs -f summarizer
+# 종료 docker stop summarizer
