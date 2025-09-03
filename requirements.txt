@@ -10,3 +10,4 @@ tqdm
 # 실행 docker compose up -d summarizer
 # 실시간 로그 docker compose logs -f summarizer
 # 종료 docker compose stop summarizer
+# 사용한 컨테이너 정리 docker compose rm -f summarizer
