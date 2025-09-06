@@ -131,7 +131,6 @@ export default {
       // 지역 선택과 카테고리 선택이 필요함
       return this.selectedRegion && this.selectedCategory;
     },
-    $t() { return $t; },
   },
 
   mounted() {
