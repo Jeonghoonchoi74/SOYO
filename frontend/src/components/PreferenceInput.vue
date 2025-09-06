@@ -9,12 +9,20 @@
       <div class="preference-form">
         <div class="form-group">
           <label class="section-label">{{ $t('pref_section_region') }}</label>
-          <select v-model="selectedRegion" class="region-dropdown" @change="onRegionChange">
-            <option value="" disabled>{{ $t('pref_region_placeholder') }}</option>
-            <option v-for="region in regionOptions" :key="region.value" :value="region.value">
-              {{ $t(region.label) }}
-            </option>
-          </select>
+          <button 
+            type="button" 
+            class="region-selector-btn" 
+            @click="openRegionModal"
+            :class="{ 'has-selection': selectedRegion }"
+          >
+            <span v-if="selectedRegion">
+              {{ getSelectedRegionDisplayName() }}
+            </span>
+            <span v-else class="placeholder">
+              {{ $t('pref_region_placeholder') }}
+            </span>
+            <span class="dropdown-icon">▼</span>
+          </button>
         </div>
         
         <div v-if="selectedRegion" class="form-group">
@@ -46,6 +54,31 @@
         <button class="recommend-btn" :disabled="!canProceed || isSaving" @click="recommend">
           {{ isSaving ? $t('location_modal_saving') : $t('pref_recommend_btn') }}
         </button>
+      </div>
+    </div>
+
+    <!-- 지역 선택 모달 -->
+    <div v-if="showRegionModal" class="modal-overlay" @click="closeRegionModal">
+      <div class="modal-content region-modal" @click.stop>
+        <div class="modal-header">
+          <h3>{{ $t('pref_section_region') }}</h3>
+          <button class="close-btn" @click="closeRegionModal">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="region-grid">
+            <button 
+              v-for="region in regionOptions" 
+              :key="region.value" 
+              :class="['region-option', { active: selectedRegion === region.value }]"
+              @click="selectRegion(region.value)"
+            >
+              {{ $t(region.label) }}
+            </button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-primary" @click="confirmRegionSelection">{{ $t('pref_confirm') }}</button>
+        </div>
       </div>
     </div>
 
@@ -88,6 +121,8 @@ export default {
       freeText: '',
       isSaving: false,
       showLocationModal: false,
+      showRegionModal: false,
+      tempSelectedRegion: '',
       locationPermission: null,
     };
   },
@@ -113,6 +148,32 @@ export default {
     $t,
 
 
+    // 지역 선택 관련 메서드들
+    openRegionModal() {
+      this.tempSelectedRegion = this.selectedRegion;
+      this.showRegionModal = true;
+    },
+    
+    closeRegionModal() {
+      this.showRegionModal = false;
+      this.tempSelectedRegion = '';
+    },
+    
+    selectRegion(regionValue) {
+      this.tempSelectedRegion = regionValue;
+    },
+    
+    confirmRegionSelection() {
+      this.selectedRegion = this.tempSelectedRegion;
+      this.onRegionChange();
+      this.closeRegionModal();
+    },
+    
+    getSelectedRegionDisplayName() {
+      const region = this.regionOptions.find(r => r.value === this.selectedRegion);
+      return region ? this.$t(region.label) : '';
+    },
+    
     onRegionChange() {
       this.selectedCategory = ''; // 지역 변경 시 카테고리 초기화
       this.availableCategories = getAvailableCategories(this.selectedRegion);
@@ -505,9 +566,9 @@ export default {
   color: #212529;
 }
 
-.region-dropdown {
+.region-selector-btn {
   width: 100%;
-  padding: 14px;
+  padding: 14px 16px;
   font-size: 14px;
   border: 1px solid #e9ecef;
   border-radius: 8px;
@@ -516,17 +577,37 @@ export default {
   outline: none;
   transition: all 0.2s ease;
   font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left;
 }
 
-.region-dropdown:focus {
+.region-selector-btn:hover {
   border-color: #4A69E2;
   background: white;
   box-shadow: 0 0 0 3px rgba(74, 105, 226, 0.1);
 }
 
-.region-dropdown option {
-  padding: 8px;
-  font-size: 14px;
+.region-selector-btn.has-selection {
+  background: white;
+  border-color: #4A69E2;
+  color: #4A69E2;
+}
+
+.region-selector-btn .placeholder {
+  color: #adb5bd;
+}
+
+.region-selector-btn .dropdown-icon {
+  font-size: 12px;
+  transition: transform 0.2s ease;
+  color: #6c757d;
+}
+
+.region-selector-btn:hover .dropdown-icon {
+  transform: rotate(180deg);
 }
 
 .category-selector {
@@ -777,6 +858,51 @@ export default {
   border-color: #adb5bd;
 }
 
+/* 지역 선택 모달 스타일 */
+.region-modal {
+  max-width: 600px;
+}
+
+.region-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.region-grid::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.region-option {
+  padding: 16px 20px;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  background: #f8f9fa;
+  color: #495057;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.region-option:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+  color: #212529;
+}
+
+.region-option.active {
+  background: #4A69E2;
+  border-color: #4A69E2;
+  color: white;
+  box-shadow: 0 2px 8px rgba(74, 105, 226, 0.3);
+}
+
 /* 반응형 */
 @media (max-width: 768px) {
   .preference-page {
@@ -862,6 +988,21 @@ export default {
   .btn-primary {
     width: 100%;
     padding: 14px 20px;
+  }
+  
+  .region-selector-btn {
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+  
+  .region-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .region-option {
+    padding: 12px 16px;
+    font-size: 14px;
   }
 }
 </style>
