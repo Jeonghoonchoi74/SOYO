@@ -32,7 +32,6 @@
 
 <script>
 import { i18nState, $t } from '../i18n';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
 
 export default {
   name: 'LanguageSetupModal',
@@ -81,21 +80,7 @@ export default {
           throw new Error('Failed to save user info via API');
         }
         
-        // 2. Firebase Firestore에도 직접 저장 (이중 보장)
-        try {
-          const db = getFirestore();
-          await setDoc(doc(db, 'users', this.user.uid), {
-            name: this.user.displayName || this.user.email?.split('@')[0] || 'User',
-            lang: this.selectedLang,
-            email: this.user.email,
-            provider: 'google',
-            createdAt: new Date(),
-            updatedAt: new Date()
-          }, { merge: true }); // merge: true로 기존 데이터와 병합
-        } catch (firestoreError) {
-          console.warn('Firestore 직접 저장 실패 (백엔드 API는 성공):', firestoreError);
-          // Firestore 저장 실패는 경고만 하고 계속 진행
-        }
+        // Backend API가 성공했으므로 추가 작업 불필요
         
         // i18n 상태 업데이트
         i18nState.lang = this.selectedLang;
@@ -106,21 +91,8 @@ export default {
       } catch (error) {
         console.error('사용자 정보 저장 실패:', error);
         
-        // 백엔드 API 실패 시 Firestore에만 저장 시도
-        try {
-          const db = getFirestore();
-          await setDoc(doc(db, 'users', this.user.uid), {
-            name: this.user.displayName || this.user.email?.split('@')[0] || 'User',
-            lang: this.selectedLang,
-            email: this.user.email,
-            provider: 'google',
-            createdAt: new Date(),
-            updatedAt: new Date()
-          }, { merge: true });
-          console.log('Firestore에 직접 저장 성공');
-        } catch (firestoreError) {
-          console.error('Firestore 직접 저장도 실패:', firestoreError);
-        }
+        // Backend API 실패 시 에러 처리
+        console.error('사용자 정보 저장이 실패했습니다. 잠시 후 다시 시도해주세요.');
         
         // 에러가 발생해도 언어는 설정하고 진행
         i18nState.lang = this.selectedLang;

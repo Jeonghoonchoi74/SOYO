@@ -75,7 +75,6 @@
 <script>
 import { i18nState, $t } from '../i18n';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
 import { getRegionOptions, getAvailableCategories, getCategoryLabel } from '../utils/regionMapping';
 
 export default {
@@ -306,7 +305,7 @@ export default {
           category: this.selectedCategory
         });
         
-        const response = await fetch('http://localhost:5002/search', {
+        const response = await fetch('http://localhost:5000/api/recommend/search', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -323,7 +322,8 @@ export default {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const searchResults = await response.json();
+        const result = await response.json();
+        const searchResults = result.data;
         console.log('검색 결과:', searchResults);
         
         // 검색 결과를 localStorage에 임시 저장
@@ -369,17 +369,22 @@ export default {
       }
 
       try {
-        // Firestore에서 사용자 언어 설정 조회
-        const db = getFirestore();
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          const userLanguage = userData.lang;
-          console.log('사용자 언어 설정:', userLanguage);
-          return userLanguage;
+        const response = await fetch('http://localhost:5000/api/firebase/get-user-language', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            uid: user.uid
+          }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('사용자 언어 설정:', result.language);
+          return result.language;
         } else {
-          console.log('Firestore에 사용자 데이터가 없음');
+          console.log('사용자 언어 조회 실패');
           return null;
         }
       } catch (error) {
@@ -401,14 +406,14 @@ export default {
       try {
         console.log('번역 요청 시작:', this.freeText);
         
-        const response = await fetch('http://localhost:5001/translate', {
+        const response = await fetch('http://localhost:5000/api/translate/', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             text: this.freeText,
-            target_lang: 'ko',
+            target_language: 'ko',
             uid: user.uid
           }),
         });

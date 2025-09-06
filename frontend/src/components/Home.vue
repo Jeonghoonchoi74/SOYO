@@ -86,7 +86,6 @@
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from '../firebase';
 import { i18nState, $t } from '../i18n';
-import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 
 export default {
   name: 'Home',
@@ -112,25 +111,33 @@ export default {
       this.isLoggedIn = !!user;
       if (user) {
         console.log('사용자 로그인됨:', user.uid, user.email);
-        // Firestore에서 lang 조회
+        // Backend API를 통해 사용자 언어 설정 조회
         try {
-          const db = getFirestore();
-          const userDoc = await getDoc(doc(db, 'users', user.uid));
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            console.log('Firestore에서 조회된 사용자 데이터:', userData);
-            if (userData.lang) {
-              i18nState.lang = userData.lang;
-              this.selectedLang = userData.lang;
-              console.log('언어 설정 적용:', userData.lang);
+          const response = await fetch('http://localhost:5000/api/firebase/get-user-language', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              uid: user.uid
+            }),
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            console.log('Backend에서 조회된 사용자 언어:', result.language);
+            if (result.language) {
+              i18nState.lang = result.language;
+              this.selectedLang = result.language;
+              console.log('언어 설정 적용:', result.language);
             } else {
               console.log('사용자 데이터에 언어 설정이 없음');
             }
           } else {
-            console.log('Firestore에 사용자 데이터가 없음');
+            console.log('사용자 언어 조회 실패');
           }
         } catch (e) {
-          console.error('Firestore 조회 실패:', e);
+          console.error('사용자 언어 조회 실패:', e);
         }
         this.showLanguageModal = false; // 이미 로그인된 경우 언어 선택 팝업 숨김
       } else {
@@ -174,31 +181,13 @@ export default {
           throw new Error('Failed to update user language via API');
         }
         
-        // Firebase Firestore에도 직접 업데이트 (이중 보장)
-        try {
-          const db = getFirestore();
-          await updateDoc(doc(db, 'users', uid), {
-            lang: langCode,
-            updatedAt: new Date()
-          });
-        } catch (firestoreError) {
-          console.warn('Firestore 직접 업데이트 실패 (백엔드 API는 성공):', firestoreError);
-        }
+        // Backend API가 성공했으므로 추가 작업 불필요
         
       } catch (error) {
         console.error('언어 설정 업데이트 실패:', error);
         
-        // 백엔드 API 실패 시 Firestore에만 업데이트 시도
-        try {
-          const db = getFirestore();
-          await updateDoc(doc(db, 'users', uid), {
-            lang: langCode,
-            updatedAt: new Date()
-          });
-          console.log('Firestore에 직접 언어 업데이트 성공');
-        } catch (firestoreError) {
-          console.error('Firestore 직접 업데이트도 실패:', firestoreError);
-        }
+        // Backend API 실패 시 에러 처리
+        console.error('언어 설정 업데이트가 실패했습니다. 잠시 후 다시 시도해주세요.');
       }
     },
     selectLang(code) {

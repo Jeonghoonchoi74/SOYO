@@ -8,6 +8,9 @@ from routes.review_routes import router as review_router
 from routes.comment_routes import router as comment_router
 from routes.like_routes import router as like_router
 from routes.statistics_routes import router as statistics_router
+from routes.translate_routes import router as translate_router
+from routes.recommend_routes import router as recommend_router
+from routes.firebase_routes import router as firebase_router
 
 # 데이터베이스 초기화
 from config.database import initialize_firebase
@@ -33,6 +36,9 @@ app.include_router(review_router)
 app.include_router(comment_router)
 app.include_router(like_router)
 app.include_router(statistics_router)
+app.include_router(translate_router)
+app.include_router(recommend_router)
+app.include_router(firebase_router)
 
 @app.get("/")
 async def root():

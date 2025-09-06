@@ -185,8 +185,6 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { collection, query, where, limit, getDocs } from 'firebase/firestore';
-import { db } from '../firebase.js';
 
 const festivals = ref([]);
 const loading = ref(true);
@@ -300,15 +298,25 @@ const fetchPresentFestivals = async () => {
     loading.value = true;
     error.value = null;
     
-    // Firebase에서 서울 행사 데이터 가져오기
-    const seoulCollectionRef = collection(db, 'api_data', 'ko', '부산', 'events', 'items'); // 나중에는 Prefercen Input 에서 받아온 값으로 변경 예정정
-    const querySnapshot = await getDocs(seoulCollectionRef);
-    
-    const allFestivals = [];
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      allFestivals.push(data);
+    // Backend API를 통해 행사 데이터 가져오기
+    const response = await fetch('http://localhost:5000/api/firebase/get-recommend-places', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        region: '부산', // 나중에는 Preference Input에서 받아온 값으로 변경 예정
+        category: 'events',
+        userLanguage: 'ko'
+      }),
     });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    const allFestivals = result.success ? result.data : [];
     
     // 2025년 4월부터 12월까지의 행사만 필터링
     const targetFestivals = allFestivals.filter(isInTargetPeriod);

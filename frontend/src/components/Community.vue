@@ -335,41 +335,35 @@ export default {
 
     async loadAvailablePlaces() {
       try {
-        // Firebase에서 직접 북마크 가져오기
-        const { collection, getDocs, query, where } = await import('firebase/firestore');
-        const { db } = await import('../firebase.js');
+        // Backend API를 통해 북마크와 리뷰 정보 가져오기
+        const [bookmarksRes, reviewsRes] = await Promise.all([
+          fetch('http://localhost:5000/api/get_user_bookmarks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ uid: this.currentUser.uid })
+          }),
+          fetch('http://localhost:5000/api/get_user_reviews', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ uid: this.currentUser.uid })
+          })
+        ]);
 
-        // 사용자의 북마크 가져오기
-        const bookmarksRef = collection(db, 'users', this.currentUser.uid, 'bookmarks');
-        const bookmarksSnapshot = await getDocs(bookmarksRef);
+        const bookmarksResult = await bookmarksRes.json();
+        const reviewsResult = await reviewsRes.json();
 
-        const bookmarks = [];
-        bookmarksSnapshot.forEach((doc) => {
-          const data = doc.data();
-          if (data.bookmark) { // 북마크된 것만
-            bookmarks.push({
-              name: data.name,
-              desc: data.desc,
-              image: data.image,
-              region: data.region || '전국'
-            });
-          }
-        });
+        if (bookmarksResult.success && reviewsResult.success) {
+          const bookmarks = bookmarksResult.bookmarks || [];
+          const reviews = reviewsResult.reviews || [];
 
-        // 사용자의 기존 리뷰 가져오기
-        const reviewsRef = collection(db, 'users', this.currentUser.uid, 'reviews');
-        const reviewsSnapshot = await getDocs(reviewsRef);
+          // 리뷰된 장소 이름들 Set으로 변환
+          const reviewedPlaces = new Set(reviews.map(review => review.placeId || review.name));
 
-        const reviewedPlaces = new Set();
-        reviewsSnapshot.forEach((doc) => {
-          const data = doc.data();
-          reviewedPlaces.add(data.placeId);
-        });
-
-        // 리뷰가 없는 북마크만 필터링
-        this.availablePlaces = bookmarks.filter(bookmark =>
-          !reviewedPlaces.has(bookmark.name) // bookmark.name이 placeId 역할
-        );
+          // 리뷰가 없는 북마크만 필터링
+          this.availablePlaces = bookmarks.filter(bookmark =>
+            !reviewedPlaces.has(bookmark.name)
+          );
+        }
 
         // console.log('Firebase에서 직접 가져온 북마크:', bookmarks);
         // console.log('리뷰 작성 가능한 장소:', this.availablePlaces);
