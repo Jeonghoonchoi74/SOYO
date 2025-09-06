@@ -193,6 +193,7 @@
 </template>
 
 <script>
+import { i18nState, $t } from '../i18n';
 import { getAuth } from 'firebase/auth';
 import { getRegionOptions, getDisplayName } from '../utils/regionMapping';
 
@@ -262,6 +263,7 @@ export default {
     document.removeEventListener('click', this.handleOutsideClick);
   },
   methods: {
+    $t,
     goHome() {
       this.$router.push('/');
     },
