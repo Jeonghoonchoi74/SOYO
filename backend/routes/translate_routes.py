@@ -11,6 +11,7 @@ async def translate_text(request: dict):
     """
     try:
         text = request.get("text", "")
+        source_lang = request.get("source_lang", "auto")
         target_language = request.get("target_language", "ko")
         uid = request.get("uid", "system")
         
@@ -23,6 +24,7 @@ async def translate_text(request: dict):
                 "http://localhost:5001/translate",
                 json={
                     "text": text,
+                    "source_lang": source_lang,
                     "target_lang": target_language,
                     "uid": uid
                 },

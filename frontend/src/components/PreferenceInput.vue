@@ -473,6 +473,7 @@ export default {
           },
           body: JSON.stringify({
             text: this.freeText,
+            source_lang: await this.getUserLanguage() || 'auto',
             target_language: 'ko',
             uid: user.uid
           }),
