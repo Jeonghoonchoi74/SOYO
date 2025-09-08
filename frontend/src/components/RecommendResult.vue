@@ -131,7 +131,17 @@
       <div class="modal-content" @click.stop>
         <div class="modal-header">
           <h2 class="modal-title">{{ selectedPlace.displayTitle || selectedPlace.title }}</h2>
-          <button class="modal-close" @click="closeModal">&times;</button>
+          <div class="modal-actions">
+            <button 
+              v-if="userLanguage !== 'ko' && !isTranslated" 
+              class="translate-btn" 
+              @click="translatePlaceContent"
+              :disabled="isTranslating"
+            >
+              {{ isTranslating ? $t('recommend_translating') : $t('recommend_translate') }}
+            </button>
+            <button class="modal-close" @click="closeModal">&times;</button>
+          </div>
         </div>
         
         <div class="modal-body">
@@ -152,22 +162,22 @@
               <div class="info-grid">
                 <div class="info-item">
                   <span class="label">{{ $t('recommend_address') }}</span>
-                  <span class="value">{{ selectedPlace.displayAddress || selectedPlace.addr1 }}</span>
+                  <span class="value">{{ getTranslatedContent('address', selectedPlace.displayAddress || selectedPlace.addr1) }}</span>
                 </div>
                 <div v-if="selectedPlace.addr2" class="info-item">
                   <span class="label">{{ $t('recommend_detail_address') }}</span>
-                  <span class="value">{{ selectedPlace.addr2 }}</span>
+                  <span class="value">{{ getTranslatedContent('detailAddress', selectedPlace.addr2) }}</span>
                 </div>
 
                 <div v-if="category === 'events' && selectedPlace.eventstartdate && selectedPlace.eventenddate" class="info-item">
                   <span class="label">{{ $t('recommend_period') }}</span>
                   <span class="value">
-                    {{ formatDate(selectedPlace.eventstartdate) }} ~ {{ formatDate(selectedPlace.eventenddate) }}
+                    {{ getTranslatedContent('eventPeriod', `${formatDate(selectedPlace.eventstartdate)} ~ ${formatDate(selectedPlace.eventenddate)}`) }}
                   </span>
                 </div>
                 <div v-if="selectedPlace.tel" class="info-item">
                   <span class="label">{{ $t('recommend_contact') }}</span>
-                  <span class="value" v-html="formatTelForDetail(selectedPlace.tel)"></span>
+                  <span class="value" v-html="getTranslatedContent('contact', formatTelForDetail(selectedPlace.tel))"></span>
                 </div>
                 
                 <div v-if="selectedPlace.detail_intro2?.usetimefestival" class="info-item">
@@ -208,38 +218,38 @@
                 <!-- foods 카테고리 추가 정보 -->
                 <div v-if="category === 'foods' && selectedPlace.firstmenu" class="info-item">
                   <span class="label">{{ $t('recommend_representative_menu') }}</span>
-                  <span class="value">{{ selectedPlace.firstmenu }}</span>
+                  <span class="value">{{ getTranslatedContent('representativeMenu', selectedPlace.firstmenu) }}</span>
                 </div>
                 
                 <div v-if="category === 'foods' && selectedPlace.treatmenu" class="info-item">
                   <span class="label">{{ $t('recommend_menu') }}</span>
-                  <span class="value">{{ selectedPlace.treatmenu }}</span>
+                  <span class="value">{{ getTranslatedContent('menu', selectedPlace.treatmenu) }}</span>
                 </div>
                 
                 <div v-if="category === 'foods' && selectedPlace.opentimefood" class="info-item">
                   <span class="label">{{ $t('recommend_opening_hours') }}</span>
-                  <span class="value">{{ selectedPlace.opentimefood }}</span>
+                  <span class="value">{{ getTranslatedContent('openingHours', selectedPlace.opentimefood) }}</span>
                 </div>
                 
                 <div v-if="category === 'foods' && selectedPlace.restdatefood" class="info-item">
                   <span class="label">{{ $t('recommend_rest_day') }}</span>
-                  <span class="value">{{ selectedPlace.restdatefood }}</span>
+                  <span class="value">{{ getTranslatedContent('closedDays', selectedPlace.restdatefood) }}</span>
                 </div>
                 
                 <!-- tourist attraction 카테고리 추가 정보 -->
                 <div v-if="category === 'tourist attraction' && selectedPlace.infocenter" class="info-item">
                   <span class="label">{{ $t('recommend_inquiry') }}</span>
-                  <span class="value">{{ selectedPlace.infocenter }}</span>
+                  <span class="value">{{ getTranslatedContent('inquiry', selectedPlace.infocenter) }}</span>
                 </div>
                 
                 <div v-if="category === 'tourist attraction' && selectedPlace.usetime" class="info-item">
                   <span class="label">{{ $t('recommend_usage_time') }}</span>
-                  <span class="value">{{ selectedPlace.usetime }}</span>
+                  <span class="value">{{ getTranslatedContent('usageTime', selectedPlace.usetime) }}</span>
                 </div>
                 
                 <div v-if="category === 'tourist attraction' && selectedPlace.restdate" class="info-item">
                   <span class="label">{{ $t('recommend_rest_day') }}</span>
-                  <span class="value">{{ selectedPlace.restdate }}</span>
+                  <span class="value">{{ getTranslatedContent('restDate', selectedPlace.restdate) }}</span>
                 </div>
                 
                 <div class="info-item">
@@ -255,7 +265,7 @@
             
             <!-- overview(개요) 섹션: 제목 없이 overview만 -->
             <div v-if="selectedPlace.displaySummary || selectedPlace.overview" class="info-section">
-              <p v-html="selectedPlace.displaySummary || selectedPlace.overview" style="margin-top: 12px; color: #222; font-size: 1.13rem; line-height: 1.7; text-align: left;"></p>
+              <p v-html="getTranslatedContent('summary', selectedPlace.displaySummary || selectedPlace.overview)" style="margin-top: 12px; color: #222; font-size: 1.13rem; line-height: 1.7; text-align: left;"></p>
             </div>
             
             <!-- 지도 섹션 -->
@@ -274,12 +284,12 @@
               <div class="detail-content">
                 <div v-if="selectedPlace.detail_intro2.eventintro" class="detail-item">
                   <h4>행사 소개</h4>
-                  <p>{{ selectedPlace.detail_intro2.eventintro }}</p>
+                  <p>{{ getTranslatedContent('detailInfo', selectedPlace.detail_intro2.eventintro) }}</p>
                 </div>
                 
                 <div v-if="selectedPlace.detail_intro2.eventtext" class="detail-item">
                   <h4>행사 내용</h4>
-                  <p>{{ selectedPlace.detail_intro2.eventtext }}</p>
+                  <p>{{ getTranslatedContent('detailInfo', selectedPlace.detail_intro2.eventtext) }}</p>
                 </div>
               </div>
             </div>
@@ -315,12 +325,19 @@ export default {
       showModal: false,
       modalMessage: '',
       bookmarkDisabled: [],
+      userLanguage: 'ko',
+      isTranslating: false,
+      translatedContent: null,
+      isTranslated: false, // Firebase에서 가져온 번역 상태
     };
   },
   computed: {
     // $t는 methods에서만 정의
   },
       async mounted() {
+        // 사용자 언어 설정 가져오기
+        this.userLanguage = await this.getUserLanguage();
+        
         // 쿼리 파라미터에서 지역 정보 가져오기
         const regionFromQuery = this.$route.query.region;
         const categoryFromQuery = this.$route.query.category;
@@ -563,6 +580,34 @@ export default {
         }
       } catch (error) {
         console.error('번역 중 오류:', error);
+        return text; // 오류시 원본 반환
+      }
+    },
+
+    // Gemini 번역 API 호출 함수
+    async translateWithGemini(text, sourceLang = 'ko', targetLang = 'en') {
+      try {
+        const response = await fetch('http://localhost:5000/api/gemini/translate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text: text,
+            source_lang: sourceLang,
+            target_lang: targetLang
+          }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          return result.translated_text;
+        } else {
+          console.error('Gemini 번역 API 오류:', response.status);
+          return text; // 번역 실패시 원본 반환
+        }
+      } catch (error) {
+        console.error('Gemini 번역 중 오류:', error);
         return text; // 오류시 원본 반환
       }
     },
@@ -1020,13 +1065,19 @@ export default {
     },
 
     // 모달 열기
-    openModal(place) {
+    async openModal(place) {
       this.selectedPlace = place;
+      this.userLanguage = await this.getUserLanguage();
+      
+      // 번역 상태 확인
+      await this.checkTranslationStatus();
     },
 
     // 모달 닫기
     closeModal() {
       this.selectedPlace = null;
+      this.translatedContent = null; // 번역된 내용 초기화
+      this.isTranslated = false; // 번역 상태 초기화
     },
 
     goBookmark() {
@@ -1035,6 +1086,146 @@ export default {
 
     goHome() {
       this.$router.push('/');
+    },
+
+    // 장소 내용 번역 함수
+    async translatePlaceContent() {
+      if (!this.selectedPlace || this.isTranslating) return;
+      
+      this.isTranslating = true;
+      
+      try {
+        // 번역할 내용들을 수집 (가게명 제외)
+        const contentToTranslate = {
+          // title: this.selectedPlace.displayTitle || this.selectedPlace.title,  // 가게명은 번역하지 않음
+          address: this.selectedPlace.displayAddress || this.selectedPlace.addr1,
+          summary: this.selectedPlace.displaySummary || this.selectedPlace.overview,
+          detailInfo: this.selectedPlace.detail_intro2?.eventintro || this.selectedPlace.detail_intro2?.eventtext,
+          // foods 카테고리 관련 정보
+          representativeMenu: this.selectedPlace.firstmenu,
+          menu: this.selectedPlace.treatmenu,
+          openingHours: this.selectedPlace.opentimefood,
+          closedDays: this.selectedPlace.restdatefood,
+          // tourist attraction 카테고리 관련 정보
+          usageTime: this.selectedPlace.usetime,
+          restDate: this.selectedPlace.restdate,
+          inquiry: this.selectedPlace.infocenter,
+          // events 카테고리 관련 정보
+          eventPeriod: this.selectedPlace.eventstartdate && this.selectedPlace.eventenddate ? 
+            `${this.selectedPlace.eventstartdate} ~ ${this.selectedPlace.eventenddate}` : null,
+          // 기타 정보
+          contact: this.selectedPlace.tel,
+          detailAddress: this.selectedPlace.addr2
+        };
+        
+        // 각 내용을 번역
+        const translatedContent = {};
+        
+        for (const [key, text] of Object.entries(contentToTranslate)) {
+          if (text && text.trim()) {
+            console.log(`번역 중: ${key} - ${text.substring(0, 50)}...`);
+            translatedContent[key] = await this.translateWithGemini(text, 'ko', this.userLanguage);
+          }
+        }
+        
+        // 번역된 내용을 저장
+        this.translatedContent = translatedContent;
+        
+        // Firebase에 번역 결과 저장
+        await this.saveTranslationToFirebase(translatedContent);
+        
+        // 모달 메시지 표시
+        this.showModalMessage('번역이 완료되었습니다.');
+        
+      } catch (error) {
+        console.error('번역 중 오류:', error);
+        this.showModalMessage('번역 중 오류가 발생했습니다.');
+      } finally {
+        this.isTranslating = false;
+      }
+    },
+
+    // 번역된 내용을 가져오는 함수
+    getTranslatedContent(key, originalText) {
+      if (this.translatedContent && this.translatedContent[key]) {
+        return this.translatedContent[key];
+      }
+      return originalText;
+    },
+
+    // 번역 상태 확인
+    async checkTranslationStatus() {
+      if (!this.selectedPlace || this.userLanguage === 'ko') {
+        this.isTranslated = false;
+        return;
+      }
+
+      try {
+        const auth = getAuth();
+        const user = auth.currentUser;
+        
+        if (!user) return;
+
+        const response = await fetch('http://localhost:5000/api/gemini/get-translation-status', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            content_id: this.selectedPlace.contentid,
+            target_lang: this.userLanguage,
+            region: this.region,
+            category: this.category
+          }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          this.isTranslated = result.isTranslated;
+          
+          // 이미 번역된 내용이 있다면 로드
+          if (result.isTranslated && result.translated_content) {
+            this.translatedContent = result.translated_content;
+          }
+        }
+      } catch (error) {
+        console.error('번역 상태 확인 중 오류:', error);
+        this.isTranslated = false;
+      }
+    },
+
+    // Firebase에 번역 결과 저장
+    async saveTranslationToFirebase(translatedContent) {
+      try {
+        const auth = getAuth();
+        const user = auth.currentUser;
+        
+        if (!user || !this.selectedPlace) return;
+
+        const response = await fetch('http://localhost:5000/api/gemini/save-translation', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            uid: user.uid,
+            content_id: this.selectedPlace.contentid,
+            translated_content: translatedContent,
+            target_lang: this.userLanguage,
+            region: this.region,
+            category: this.category
+          }),
+        });
+
+        if (response.ok) {
+          this.isTranslated = true;
+          console.log('번역 결과가 Firebase에 저장되었습니다.');
+        } else {
+          console.error('번역 결과 저장 실패');
+        }
+      } catch (error) {
+        console.error('Firebase 저장 중 오류:', error);
+      }
     },
   },
 };
@@ -1457,6 +1648,35 @@ export default {
   top: 0;
   background: white;
   z-index: 1;
+}
+
+.modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.translate-btn {
+  background: #4A69E2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.translate-btn:hover:not(:disabled) {
+  background: #3B5BC7;
+  transform: translateY(-1px);
+}
+
+.translate-btn:disabled {
+  background: #adb5bd;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .modal-title {

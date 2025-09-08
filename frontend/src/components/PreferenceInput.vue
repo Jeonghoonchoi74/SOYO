@@ -331,16 +331,6 @@ export default {
         return;
       }
       
-      // Free Text가 있고 사용자 언어가 한국어가 아닐 때만 번역 API 호출
-      if (this.freeText && this.freeText.trim()) {
-        const userLanguage = await this.getUserLanguage();
-        if (userLanguage && userLanguage !== 'ko') {
-          await this.translateFreeText();
-        } else {
-          console.log('사용자 언어가 한국어이므로 번역을 건너뜁니다.');
-        }
-      }
-      
       // 검색 쿼리 준비
       let searchQuery = '';
       if (this.freeText && this.freeText.trim()) {

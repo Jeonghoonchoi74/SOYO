@@ -3,3 +3,6 @@ uvicorn[standard]
 firebase_admin
 tqdm
 httpx
+google-generativeai
+python-dotenv
+requests
