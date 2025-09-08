@@ -246,16 +246,19 @@ const handleImageError = (event) => {
 
 // 현재부터 12월 31일까지의 행사 필터링
 const isInTargetPeriod = (festival) => {
-  const startDate = festival.eventstartdate;
-  const endDate = festival.eventenddate;
+  // 날짜 필터링 주석 처리 - 모든 데이터 표시
+  return true;
   
-  // 현재 날짜부터 12월 31일까지
-  const currentDate = getCurrentDate();
-  const targetEndDate = '20251231';
-  
-  return startDate && endDate && 
-         startDate <= targetEndDate && 
-         endDate >= currentDate;
+  // const startDate = festival.eventstartdate;
+  // const endDate = festival.eventenddate;
+  // 
+  // // 현재 날짜부터 12월 31일까지
+  // const currentDate = getCurrentDate();
+  // const targetEndDate = '20251231';
+  // 
+  // return startDate && endDate && 
+  //        startDate <= targetEndDate && 
+  //        endDate >= currentDate;
 };
 
 // 행사 상태 텍스트 반환

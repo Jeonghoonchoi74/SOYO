@@ -355,17 +355,24 @@ export default {
           category: this.selectedCategory
         });
         
+        // 전국 선택 시 지역 필터링 없이 요청
+        const requestBody = {
+          uid: user.uid,
+          query: finalQuery,
+          category: this.selectedCategory
+        };
+        
+        // 전국이 아닌 경우에만 region 필드 추가
+        if (this.selectedRegion !== '전국') {
+          requestBody.region = this.selectedRegion;
+        }
+        
         const response = await fetch('http://localhost:5000/api/recommend/search', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            uid: user.uid,
-            query: finalQuery,
-            region: this.selectedRegion,
-            category: this.selectedCategory
-          }),
+          body: JSON.stringify(requestBody),
         });
 
         if (!response.ok) {
@@ -382,14 +389,21 @@ export default {
         // 선호도 저장
         const saved = await this.savePreferences();
         
+        // 전국 선택 시 지역 필터링 없이 쿼리 파라미터 설정
+        const queryParams = {
+          category: this.selectedCategory,
+          searchQuery: searchQuery
+        };
+        
+        // 전국이 아닌 경우에만 region 파라미터 추가
+        if (this.selectedRegion !== '전국') {
+          queryParams.region = this.selectedRegion;
+        }
+        
         // 추천 페이지로 이동
         this.$router.push({
           path: '/recommend',
-          query: { 
-            region: this.selectedRegion,
-            category: this.selectedCategory,
-            searchQuery: searchQuery
-          }
+          query: queryParams
         });
         
       } catch (error) {
@@ -397,13 +411,21 @@ export default {
         
         // API 호출 실패 시에도 선호도 저장 후 추천 페이지로 이동
         const saved = await this.savePreferences();
+        
+        // 전국 선택 시 지역 필터링 없이 쿼리 파라미터 설정
+        const queryParams = {
+          category: this.selectedCategory,
+          searchQuery: searchQuery
+        };
+        
+        // 전국이 아닌 경우에만 region 파라미터 추가
+        if (this.selectedRegion !== '전국') {
+          queryParams.region = this.selectedRegion;
+        }
+        
         this.$router.push({
           path: '/recommend',
-          query: { 
-            region: this.selectedRegion,
-            category: this.selectedCategory,
-            searchQuery: searchQuery
-          }
+          query: queryParams
         });
       }
     },

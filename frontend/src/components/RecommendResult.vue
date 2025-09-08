@@ -343,8 +343,11 @@ export default {
         const categoryFromQuery = this.$route.query.category;
         const searchQueryFromQuery = this.$route.query.searchQuery;
         
+        // region 파라미터가 없으면 전국으로 설정 (전국 선택 시)
         if (regionFromQuery) {
           this.region = regionFromQuery;
+        } else {
+          this.region = '전국'; // 전국 선택 시 region 파라미터가 없으므로 전국으로 설정
         }
         if (categoryFromQuery) {
           this.category = categoryFromQuery;
@@ -447,36 +450,39 @@ export default {
 
     // 카테고리별 필터링 로직
     isInTargetPeriod(place) {
-      // events 카테고리인 경우 날짜 필터링 적용
-      if (this.category === 'events') {
-        const startDate = place.eventstartdate;
-        const endDate = place.eventenddate;
-        const currentDate = this.getCurrentDate();
-        
-        // 날짜 정보가 없는 경우는 제외
-        if (!startDate || !endDate) {
-          console.log(`날짜 정보 없음 제외: ${place.title || place.displayTitle}`);
-          return false;
-        }
-        
-        // 종료일이 현재 날짜보다 이전인 경우 제외 (이미 끝난 행사)
-        if (endDate < currentDate) {
-          console.log(`종료된 행사 제외: ${place.title || place.displayTitle} (종료일: ${endDate})`);
-          return false;
-        }
-        
-        // 시작일이 너무 먼 미래인 경우 제외 (2025년 이후)
-        const maxStartDate = '20251231';
-        if (startDate > maxStartDate) {
-          console.log(`너무 먼 미래 행사 제외: ${place.title || place.displayTitle} (시작일: ${startDate})`);
-          return false;
-        }
-        
-        return true;
-      }
-      
-      // foods, tourist attraction 카테고리는 모든 데이터 표시
+      // 날짜 필터링 주석 처리 - 모든 데이터 표시
       return true;
+      
+      // // events 카테고리인 경우 날짜 필터링 적용
+      // if (this.category === 'events') {
+      //   const startDate = place.eventstartdate;
+      //   const endDate = place.eventenddate;
+      //   const currentDate = this.getCurrentDate();
+      //   
+      //   // 날짜 정보가 없는 경우는 제외
+      //   if (!startDate || !endDate) {
+      //     console.log(`날짜 정보 없음 제외: ${place.title || place.displayTitle}`);
+      //     return false;
+      //   }
+      //   
+      //   // 종료일이 현재 날짜보다 이전인 경우 제외 (이미 끝난 행사)
+      //   if (endDate < currentDate) {
+      //     console.log(`종료된 행사 제외: ${place.title || place.displayTitle} (종료일: ${endDate})`);
+      //     return false;
+      //   }
+      //   
+      //   // 시작일이 너무 먼 미래인 경우 제외 (2025년 이후)
+      //   const maxStartDate = '20251231';
+      //   if (startDate > maxStartDate) {
+      //     console.log(`너무 먼 미래 행사 제외: ${place.title || place.displayTitle} (시작일: ${startDate})`);
+      //     return false;
+      //   }
+      //   
+      //   return true;
+      // }
+      // 
+      // // foods, tourist attraction 카테고리는 모든 데이터 표시
+      // return true;
     },
 
     // 행사 상태 텍스트 반환
@@ -661,10 +667,15 @@ export default {
         
         if (result.success && Array.isArray(result.data)) {
           const searchResults = result.data;
-          // 사용자 설정 region과 category와 일치하는 결과만 필터링
-          const filteredResults = searchResults.filter(item => 
-            item.region === this.region && item.category === this.category
-          );
+          // 전국 선택 시 지역 필터링 없이 모든 결과 표시
+          let filteredResults;
+          if (this.region === '전국') {
+            filteredResults = searchResults.filter(item => item.category === this.category);
+          } else {
+            filteredResults = searchResults.filter(item => 
+              item.region === this.region && item.category === this.category
+            );
+          }
           
           console.log(`전체 결과: ${searchResults.length}개, 지역 및 카테고리 필터링 후: ${filteredResults.length}개`);
           
@@ -730,10 +741,15 @@ export default {
         
         console.log('라우터 state에서 전달된 검색 결과 처리:', searchResults);
         
-        // 사용자 설정 region과 category와 일치하는 결과만 필터링
-        const filteredResults = searchResults.filter(item => 
-          item.region === this.region && item.category === this.category
-        );
+        // 전국 선택 시 지역 필터링 없이 모든 결과 표시
+        let filteredResults;
+        if (this.region === '전국') {
+          filteredResults = searchResults.filter(item => item.category === this.category);
+        } else {
+          filteredResults = searchResults.filter(item => 
+            item.region === this.region && item.category === this.category
+          );
+        }
         
         console.log(`전체 결과: ${searchResults.length}개, 지역 및 카테고리 필터링 후: ${filteredResults.length}개`);
         
