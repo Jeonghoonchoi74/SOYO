@@ -38,7 +38,7 @@ async def translate_with_gemini(request: dict):
         
         # 환경 변수에서 가져오지 못한 경우 직접 설정
         if not gemini_api_key:
-            gemini_api_key = "AIzaSyBZ61G8y0OBwYg5PBur1Pwu_El3narZ2aA"
+            gemini_api_key = "not use anymore"
             print("LOG: 환경 변수에서 API 키를 가져오지 못해 직접 설정된 키를 사용합니다.")
         
         print(f"LOG: Gemini API 키 확인: {'설정됨' if gemini_api_key else '설정되지 않음'}")
