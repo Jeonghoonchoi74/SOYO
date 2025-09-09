@@ -195,7 +195,7 @@ export default {
       i18nState.lang = code;
     },
     start() {
-      this.$router.push('/preference');
+      this.$router.push('/search');
     },
     goToBookmarks() {
       this.$router.push('/bookmarks');

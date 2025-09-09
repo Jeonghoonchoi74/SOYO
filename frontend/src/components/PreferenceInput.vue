@@ -1,5 +1,11 @@
 <template>
   <div class="preference-page">
+    <button class="back-btn" @click="goBack">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      뒤로가기
+    </button>
     <div class="preference-content">
       <div class="preference-header">
         <h2 class="title">{{ $t('pref_title') }}</h2>
@@ -146,6 +152,9 @@ export default {
   methods: {
     $t,
 
+    goBack() {
+      this.$router.push('/search');
+    },
 
     // 지역 선택 관련 메서드들
     openRegionModal() {
@@ -526,6 +535,31 @@ export default {
   overflow-x: hidden;
   box-sizing: border-box;
   padding: 20px;
+  position: relative;
+}
+
+.back-btn {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: white;
+  color: #4A69E2;
+  border: 1px solid #4A69E2;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  z-index: 1000;
+}
+
+.back-btn:hover {
+  background: #4A69E2;
+  color: white;
 }
 
 .preference-content {
