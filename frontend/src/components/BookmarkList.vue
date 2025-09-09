@@ -114,28 +114,6 @@
       </template>
     </div>
 
-    <!-- 관리자 버튼 (admin@gmail.com인 경우만 표시) -->
-    <div class="section">
-      <button class="delete-account-btn" @click="showDeleteAccountConfirm">
-        {{ $t('delete_account_btn') }}
-      </button>
-    </div>
-
-    <!-- 회원탈퇴 확인 모달 -->
-    <div v-if="showDeleteConfirm" class="delete-confirm-modal">
-      <div class="delete-confirm-content">
-        <h3>{{ $t('delete_account_btn') }}</h3>
-        <p>{{ $t('delete_account_confirm') }}</p>
-        <div class="delete-confirm-buttons">
-          <button class="cancel-btn" @click="cancelDeleteAccount">
-            {{ $t('delete_account_cancel') }}
-          </button>
-          <button class="confirm-delete-btn" @click="confirmDeleteAccount">
-            {{ $t('delete_account_btn') }}
-          </button>
-        </div>
-      </div>
-    </div>
 
     <div v-if="showModal" class="custom-modal">{{ modalMessage }}</div>
 
@@ -270,7 +248,6 @@ export default {
       bookmarked: [],
       showModal: false,
       modalMessage: '',
-      showDeleteConfirm: false,
       showDetailModal: false,
       selectedPlace: null,
     };
@@ -479,41 +456,6 @@ export default {
       setTimeout(() => {
         this.showModal = false;
       }, 1500);
-    },
-    showDeleteAccountConfirm() {
-      this.showDeleteConfirm = true;
-    },
-    cancelDeleteAccount() {
-      this.showDeleteConfirm = false;
-    },
-    async confirmDeleteAccount() {
-      const auth = getAuth();
-      const user = auth.currentUser;
-      if (!user) return;
-
-      try {
-        // 백엔드 API 호출하여 사용자 데이터 삭제
-        await fetch('http://localhost:5000/api/delete_user_account', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ uid: user.uid })
-        });
-
-        // Firebase Auth에서 사용자 삭제
-        await user.delete();
-
-        this.showDeleteConfirm = false;
-        this.showModalMessage(this.$t('delete_account_success'));
-
-        // 홈페이지로 리다이렉트
-        setTimeout(() => {
-          this.$router.push('/');
-        }, 2000);
-
-      } catch (error) {
-        console.error('회원탈퇴 오류:', error);
-        this.showModalMessage('회원탈퇴 중 오류가 발생했습니다.');
-      }
     },
     setTempRating(place, rating) {
       place.tempRating = rating;
@@ -751,89 +693,6 @@ export default {
   }
 }
 
-.delete-account-btn {
-  width: 100%;
-  padding: 1.2rem 0;
-  background: #dc2626;
-  color: #fff;
-  font-size: 1.2rem;
-  font-weight: 800;
-  border: none;
-  border-radius: 14px;
-  box-shadow: 0 6px 24px rgba(220, 38, 38, 0.12);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.delete-account-btn:hover {
-  background: #b91c1c;
-  transform: translateY(-2px);
-}
-
-.delete-account-btn:active {
-  background: #991b1b;
-  transform: translateY(0);
-}
-
-.delete-confirm-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 4000;
-}
-
-.delete-confirm-content {
-  background: #fff;
-  border-radius: 20px;
-  padding: 2.5rem;
-  max-width: 400px;
-  width: 90%;
-  text-align: center;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-}
-
-.delete-confirm-content h3 {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: #dc2626;
-  margin-bottom: 1rem;
-}
-
-.delete-confirm-content p {
-  font-size: 1.1rem;
-  color: #64748b;
-  margin-bottom: 2rem;
-  line-height: 1.6;
-  white-space: pre-line;
-}
-
-.delete-confirm-buttons {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-}
-
-.confirm-delete-btn {
-  padding: 1rem 2rem;
-  background: #dc2626;
-  color: #fff;
-  border: none;
-  border-radius: 12px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.confirm-delete-btn:hover {
-  background: #b91c1c;
-}
 
 /*
  통합된 리뷰 카드 스타일 */

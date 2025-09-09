@@ -10,6 +10,7 @@ import AuthPage from './components/AuthPage.vue'
 import Test from './components/test.vue'
 import SearchChooser from './components/SearchChooser.vue'
 import GuidedSearch from './components/GuidedSearch.vue'
+import Mypage from './components/Mypage.vue'
 
 const routes = [
   { path: '/auth', component: AuthPage },
@@ -18,6 +19,7 @@ const routes = [
   { path: '/search', component: SearchChooser }, // New search chooser page
   { path: '/preference', component: PreferenceInput }, // Existing free search
   { path: '/search/guided', component: GuidedSearch }, // New guided search
+  { path: '/mypage', component: Mypage }, // 마이페이지
   { path: '/recommend', component: () => import('./components/RecommendResult.vue') }, // 추후 구현
   { path: '/bookmarks', component: () => import('./components/BookmarkList.vue') }, // 북마크 페이지
   { path: '/community', component: () => import('./components/Community.vue') }, // 커뮤니티 페이지

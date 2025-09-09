@@ -14,6 +14,13 @@
       <button class="start-btn" @click="start">{{ $t('start') }}</button>
       
       <div v-if="isLoggedIn" class="nav-buttons">
+        <button class="nav-btn" @click="goToMyPage">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+          {{ $t('mypage_btn') }}
+        </button>
         <button class="nav-btn" @click="goToBookmarks">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
@@ -113,7 +120,7 @@ export default {
         console.log('사용자 로그인됨:', user.uid, user.email);
         // Backend API를 통해 사용자 언어 설정 조회
         try {
-          const response = await fetch('http://localhost:5000/api/firebase/get-user-language', {
+          const response = await fetch('/api/firebase/get-user-language', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -167,8 +174,10 @@ export default {
     },
     async updateUserLanguage(uid, langCode) {
       try {
+        console.log('Firebase 언어 업데이트 시작:', { uid, langCode });
+        
         // 백엔드 API로 언어 설정 업데이트
-        const response = await fetch('http://localhost:5000/api/update_user_language', {
+        const response = await fetch('/api/update_user_language', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -177,28 +186,48 @@ export default {
           })
         });
         
+        console.log('API 응답 상태:', response.status);
+        
         if (!response.ok) {
-          throw new Error('Failed to update user language via API');
+          const errorText = await response.text();
+          console.error('API 응답 에러:', errorText);
+          throw new Error(`Failed to update user language via API: ${response.status}`);
         }
         
-        // Backend API가 성공했으므로 추가 작업 불필요
+        const result = await response.json();
+        console.log('Firebase 언어 업데이트 성공:', result);
         
       } catch (error) {
         console.error('언어 설정 업데이트 실패:', error);
-        
-        // Backend API 실패 시 에러 처리
         console.error('언어 설정 업데이트가 실패했습니다. 잠시 후 다시 시도해주세요.');
       }
     },
     selectLang(code) {
+      console.log('언어 변경 시도:', code);
       this.selectedLang = code;
       i18nState.lang = code;
+      console.log('언어 상태 업데이트 완료:', i18nState.lang);
+      
+      // 강제로 컴포넌트 업데이트
+      this.$forceUpdate();
+      
+      // 로그인된 사용자의 경우 Firebase에 언어 설정 업데이트
+      const user = auth.currentUser;
+      if (user) {
+        console.log('로그인된 사용자, Firebase 업데이트 시작');
+        this.updateUserLanguage(user.uid, code);
+      } else {
+        console.log('로그인되지 않은 사용자, 로컬에서만 언어 변경');
+      }
     },
     start() {
       this.$router.push('/search');
     },
     goToBookmarks() {
       this.$router.push('/bookmarks');
+    },
+    goToMyPage() {
+      this.$router.push('/mypage');
     },
     goToCommunity() {
       this.$router.push('/community');

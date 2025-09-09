@@ -195,7 +195,26 @@ export const messages = {
     bookmark_btn: '좋아요/북마크',
     // 커뮤니티 버튼
     community_btn: '커뮤니티',
-  },
+    // 마이페이지 버튼
+    mypage_btn: '마이페이지',
+    // 마이페이지 관련
+    mypage_title: '마이페이지',
+    mypage_subtitle: '계정 설정을 관리하세요',
+    back: '뒤로가기',
+    user_id: 'ID',
+    settings: '설정',
+    language_setting: '언어 설정',
+    language_setting_desc: '앱에서 사용할 언어를 선택하세요',
+    delete_account: '회원탈퇴',
+    delete_account_desc: '계정을 영구적으로 삭제합니다',
+    delete_account_confirm_title: '회원탈퇴 확인',
+    delete_account_confirm_message: '정말로 회원탈퇴를 하시겠습니까?\n탈퇴 시 모든 데이터가 영구적으로 삭제되며 복구할 수 없습니다.',
+    cancel: '취소',
+    language_change_success: '언어 설정이 변경되었습니다.',
+    language_change_error: '언어 설정 변경에 실패했습니다. 잠시 후 다시 시도해주세요.',
+    login_required_alert: '로그인이 필요합니다.',
+    delete_account_error: '회원탈퇴에 실패했습니다. 잠시 후 다시 시도해주세요.',
+},
   en: {
     welcome: 'Every moment of your trip,\nwith AI Travel Assistant',
     start: 'Start',
@@ -389,6 +408,25 @@ export const messages = {
     // Bookmark button
     bookmark_btn: 'Likes/Bookmarks',
     community_btn: 'Community',
+    // MyPage button
+    mypage_btn: 'My Page',
+    // MyPage related
+    mypage_title: 'My Page',
+    mypage_subtitle: 'Manage your account settings',
+    back: 'Back',
+    user_id: 'ID',
+    settings: 'Settings',
+    language_setting: 'Language Setting',
+    language_setting_desc: 'Select the language to use in the app',
+    delete_account: 'Delete Account',
+    delete_account_desc: 'Permanently delete your account',
+    delete_account_confirm_title: 'Delete Account Confirmation',
+    delete_account_confirm_message: 'Are you sure you want to delete your account?\nAll data will be permanently deleted and cannot be recovered.',
+    cancel: 'Cancel',
+    language_change_success: 'Language setting has been changed.',
+    language_change_error: 'Failed to change language setting. Please try again later.',
+    login_required_alert: 'Login is required.',
+    delete_account_error: 'Failed to delete account. Please try again later.',
   },
   zh: {
     welcome: '旅行的每一刻，\n与AI旅行助手同行',
@@ -583,6 +621,25 @@ export const messages = {
     // 书签按钮
     bookmark_btn: '喜欢/书签',
     community_btn: '社区',
+    // 我的页面按钮
+    mypage_btn: '我的页面',
+    // 我的页面相关
+    mypage_title: '我的页面',
+    mypage_subtitle: '管理您的账户设置',
+    back: '返回',
+    user_id: 'ID',
+    settings: '设置',
+    language_setting: '语言设置',
+    language_setting_desc: '选择在应用中使用的语言',
+    delete_account: '删除账户',
+    delete_account_desc: '永久删除您的账户',
+    delete_account_confirm_title: '删除账户确认',
+    delete_account_confirm_message: '您确定要删除您的账户吗？\n所有数据将被永久删除且无法恢复。',
+    cancel: '取消',
+    language_change_success: '语言设置已更改。',
+    language_change_error: '语言设置更改失败。请稍后重试。',
+    login_required_alert: '需要登录。',
+    delete_account_error: '删除账户失败。请稍后重试。',
   },
   ja: {
     welcome: '旅のすべての瞬間を\nAI旅行アシスタントと共に',
@@ -777,6 +834,25 @@ export const messages = {
     // ブックマークボタン
     bookmark_btn: 'いいね/ブックマーク',
     community_btn: 'コミュニティ',
+    // マイページボタン
+    mypage_btn: 'マイページ',
+    // マイページ関連
+    mypage_title: 'マイページ',
+    mypage_subtitle: 'アカウント設定を管理してください',
+    back: '戻る',
+    user_id: 'ID',
+    settings: '設定',
+    language_setting: '言語設定',
+    language_setting_desc: 'アプリで使用する言語を選択してください',
+    delete_account: 'アカウント削除',
+    delete_account_desc: 'アカウントを永続的に削除します',
+    delete_account_confirm_title: 'アカウント削除確認',
+    delete_account_confirm_message: '本当にアカウントを削除しますか？\nすべてのデータが永続的に削除され、復元できません。',
+    cancel: 'キャンセル',
+    language_change_success: '言語設定が変更されました。',
+    language_change_error: '言語設定の変更に失敗しました。しばらくしてから再試行してください。',
+    login_required_alert: 'ログインが必要です。',
+    delete_account_error: 'アカウント削除に失敗しました。しばらくしてから再試行してください。',
   },
 };
 
