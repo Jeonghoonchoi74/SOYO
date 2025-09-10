@@ -157,7 +157,12 @@
     <div v-if="selectedPlace" class="modal-overlay" @click="closeModal">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
-          <h2 class="modal-title">{{ selectedPlace.displayTitle || selectedPlace.title }}</h2>
+          <h2 class="modal-title">
+            <div class="title-container">
+              <span class="translated-title">{{ getDisplayTitle().translated }}</span>
+              <span v-if="getDisplayTitle().original" class="original-title">{{ getDisplayTitle().original }}</span>
+            </div>
+          </h2>
           <div class="modal-actions">
             <button 
               class="modal-bookmark-btn" 
@@ -1134,8 +1139,21 @@ export default {
 
     // 모달 열기
     async openModal(place) {
-      this.selectedPlace = place;
       this.userLanguage = await this.getUserLanguage();
+      
+      // 최신 데이터(번역된 필드 포함)를 다시 가져오기
+      const latestData = await this.getFirebaseData(
+        place.contentid,
+        this.region,
+        this.category
+      );
+      
+      if (latestData) {
+        this.selectedPlace = latestData;
+        console.log('모달용 최신 데이터 로드:', latestData);
+      } else {
+        this.selectedPlace = place;
+      }
       
       // 번역 상태 확인
       await this.checkTranslationStatus();
@@ -1174,18 +1192,18 @@ export default {
       this.$router.push('/');
     },
 
-    // 장소 내용 번역 함수
+    // 장소 내용 번역 함수 (일괄 번역으로 최적화)
     async translatePlaceContent() {
       if (!this.selectedPlace || this.isTranslating) return;
       
       this.isTranslating = true;
       
       try {
-        // 번역할 내용들을 수집 (가게명 제외)
+        // 번역할 내용들을 수집 (가게명 포함)
         const contentToTranslate = {
-          // title: this.selectedPlace.displayTitle || this.selectedPlace.title,  // 가게명은 번역하지 않음
+          title: this.selectedPlace.displayTitle || this.selectedPlace.title,  // 가게명도 번역
           address: this.selectedPlace.displayAddress || this.selectedPlace.addr1,
-          summary: this.selectedPlace.displaySummary || this.selectedPlace.overview,
+          summary: this.selectedPlace.displaySummary || this.selectedPlace.overview || this.selectedPlace.description,
           detailInfo: this.selectedPlace.detail_intro2?.eventintro || this.selectedPlace.detail_intro2?.eventtext,
           // foods 카테고리 관련 정보
           representativeMenu: this.selectedPlace.firstmenu,
@@ -1204,24 +1222,61 @@ export default {
           detailAddress: this.selectedPlace.addr2
         };
         
-        // 각 내용을 번역
-        const translatedContent = {};
-        
+        // 유효한 텍스트만 필터링
+        const validTexts = {};
         for (const [key, text] of Object.entries(contentToTranslate)) {
           if (text && text.trim()) {
-            console.log(`번역 중: ${key} - ${text.substring(0, 50)}...`);
-            translatedContent[key] = await this.translateWithGemini(text, 'ko', this.userLanguage);
+            validTexts[key] = text.trim();
           }
         }
         
-        // 번역된 내용을 저장
-        this.translatedContent = translatedContent;
+        if (Object.keys(validTexts).length === 0) {
+          this.showModalMessage('번역할 내용이 없습니다.');
+          return;
+        }
         
-        // Firebase에 번역 결과 저장
-        await this.saveTranslationToFirebase(translatedContent);
+        console.log(`Gemini 일괄 번역 시작: ${Object.keys(validTexts).length}개 항목`);
         
-        // 모달 메시지 표시
-        this.showModalMessage('번역이 완료되었습니다.');
+        // Gemini 일괄 번역 API 호출
+        const response = await fetch('/api/gemini/translate-batch', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            texts: validTexts,
+            source_lang: 'ko',
+            target_lang: this.userLanguage
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        
+        if (result.success && result.translated_texts) {
+          console.log('Gemini 일괄 번역 완료:', result.translated_texts);
+          this.translatedContent = result.translated_texts;
+          
+          // selectedPlace의 데이터 업데이트 (가게명 번역 시)
+          if (result.translated_texts.title) {
+            // 원본 제목을 original_title에 저장
+            this.selectedPlace.original_title = this.selectedPlace.displayTitle || this.selectedPlace.title;
+            // 현재 제목을 번역된 내용으로 업데이트
+            this.selectedPlace.title = result.translated_texts.title;
+            this.selectedPlace.displayTitle = result.translated_texts.title;
+          }
+          
+          // Firebase에 번역 결과 저장
+          await this.saveTranslationToFirebase(result.translated_texts);
+          
+          // 모달 메시지 표시
+          this.showModalMessage('번역이 완료되었습니다.');
+        } else {
+          throw new Error('번역 결과를 받지 못했습니다.');
+        }
         
       } catch (error) {
         console.error('번역 중 오류:', error);
@@ -1239,10 +1294,39 @@ export default {
       return originalText;
     },
 
+    // 가게명 표시용 함수 (번역된 이름 + 원본 이름)
+    getDisplayTitle() {
+      if (!this.selectedPlace) return '';
+      
+      const currentTitle = this.selectedPlace.displayTitle || this.selectedPlace.title;
+      const originalTitle = this.selectedPlace.original_title;
+      
+      // original_title 필드가 있으면 번역된 상태
+      if (originalTitle) {
+        return {
+          translated: currentTitle,
+          original: originalTitle
+        };
+      }
+      
+      // 번역되지 않은 상태
+      return {
+        translated: currentTitle,
+        original: null
+      };
+    },
+
     // 번역 상태 확인
     async checkTranslationStatus() {
       if (!this.selectedPlace || this.userLanguage === 'ko') {
         this.isTranslated = false;
+        return;
+      }
+
+      // selectedPlace에 original_title이 있으면 이미 번역된 상태
+      if (this.selectedPlace.original_title) {
+        this.isTranslated = true;
+        console.log('이미 번역된 데이터가 로드됨:', this.selectedPlace);
         return;
       }
 
@@ -1989,6 +2073,27 @@ export default {
   padding-right: 20px;
 }
 
+.title-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.translated-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #2c3e50;
+  line-height: 1.3;
+}
+
+.original-title {
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: #6c757d;
+  line-height: 1.2;
+  opacity: 0.8;
+}
+
 .modal-close {
   background: none;
   border: none;
@@ -2181,6 +2286,14 @@ export default {
   
   .modal-title {
     font-size: 18px;
+  }
+  
+  .translated-title {
+    font-size: 18px;
+  }
+  
+  .original-title {
+    font-size: 14px;
   }
   
   .modal-body {

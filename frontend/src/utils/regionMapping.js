@@ -83,6 +83,28 @@ export const regionImages = {
   '충청북도': '/src/assets/regions/충청북도.jpg'
 };
 
+// 지역별 설명 데이터 (i18n 키)
+export const regionDescriptions = {
+  '전국': 'region_desc_nationwide',
+  '강원특별자치도': 'region_desc_gangwon',
+  '경기도': 'region_desc_gyeonggi',
+  '경상남도': 'region_desc_gyeongnam',
+  '경상북도': 'region_desc_gyeongbuk',
+  '광주': 'region_desc_gwangju',
+  '대구': 'region_desc_daegu',
+  '대전': 'region_desc_daejeon',
+  '부산': 'region_desc_busan',
+  '서울': 'region_desc_seoul',
+  '세종특별자치시': 'region_desc_sejong',
+  '울산': 'region_desc_ulsan',
+  '인천': 'region_desc_incheon',
+  '전라남도': 'region_desc_jeonnam',
+  '전북특별자치도': 'region_desc_jeonbuk',
+  '제주도': 'region_desc_jeju',
+  '충청남도': 'region_desc_chungnam',
+  '충청북도': 'region_desc_chungbuk'
+};
+
 // 지역 옵션 배열 생성 (다국어 키 사용)
 export function getRegionOptions() {
   // 전국을 제외한 지역들만 처리
@@ -113,4 +135,9 @@ export function getAvailableCategories(region) {
 // 카테고리 표시명 가져오기
 export function getCategoryLabel(category) {
   return categoryLabels[category] || category;
+}
+
+// 지역 설명 가져오기 (i18n 키 반환)
+export function getRegionDescription(region) {
+  return regionDescriptions[region] || '';
 }

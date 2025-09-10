@@ -11,7 +11,7 @@
       >
         <path d="M19 12H5M12 19l-7-7 7-7" />
       </svg>
-      뒤로가기
+      {{ $t('back') }}
     </button>
     <div class="preference-content">
       <div class="progress-bar" v-if="currentStep > 0 && !isConfirmationStep">
@@ -69,6 +69,13 @@
             </span>
             <span class="dropdown-icon">▼</span>
           </button>
+        </div>
+        
+        <!-- Region Description -->
+        <div v-if="userSelections.region" class="form-group">
+          <div class="region-description">
+            <p class="description-text">{{ $t(getRegionDescription(userSelections.region.value)) }}</p>
+          </div>
         </div>
       </div>
 
@@ -130,7 +137,7 @@
 
 <script>
 import { getAuth } from "firebase/auth";
-import { getRegionOptions } from "../utils/regionMapping";
+import { getRegionOptions, getRegionDescription } from "../utils/regionMapping";
 import questions from "../utils/guidedSearchQuestions";
 import { $t, i18nState } from "../i18n";
 
@@ -300,6 +307,9 @@ export default {
     getSelectedRegionDisplayName() {
       const region = this.userSelections.region;
       return region ? region.text : "";
+    },
+    getRegionDescription(region) {
+      return getRegionDescription(region);
     },
     startRecommendation() {
       this.recommend();
@@ -663,6 +673,22 @@ export default {
 }
 .region-selector-btn .placeholder {
   color: #adb5bd;
+}
+
+.region-description {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 8px;
+}
+
+.description-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #495057;
+  text-align: left;
 }
 .modal-overlay {
   position: fixed;

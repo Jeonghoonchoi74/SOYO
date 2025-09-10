@@ -166,12 +166,24 @@ def map_language_fields(data, lang, db_path=""):
             "dbReference": db_path
         }
     else:
-        # 다국어: 번역된 필드 사용
+        # 다국어: 번역된 필드 사용 (번역된 가게명과 원본 제목 포함)
         return {
             **data,
-            "displayTitle": data.get("translated_eventtitle") or data.get("title", ""),
+            "displayTitle": data.get("title", ""),  # 번역된 제목 (title 필드가 번역된 내용으로 대체됨)
+            "original_title": data.get("original_title", ""),  # 원본 제목
             "displayAddress": data.get("translated_addr") or data.get("addr1", ""),
-            "displaySummary": data.get("summary") or data.get("overview", ""),
+            "displaySummary": data.get("translated_summary") or data.get("overview", ""),
+            # 번역된 메뉴 정보들
+            "firstmenu": data.get("translated_firstmenu") or data.get("firstmenu", ""),
+            "treatmenu": data.get("translated_treatmenu") or data.get("treatmenu", ""),
+            "opentimefood": data.get("translated_opentimefood") or data.get("opentimefood", ""),
+            "restdatefood": data.get("translated_restdatefood") or data.get("restdatefood", ""),
+            "usetime": data.get("translated_usetime") or data.get("usetime", ""),
+            "restdate": data.get("translated_restdate") or data.get("restdate", ""),
+            "infocenter": data.get("translated_infocenter") or data.get("infocenter", ""),
+            "tel": data.get("translated_tel") or data.get("tel", ""),
+            "addr1": data.get("translated_addr") or data.get("addr1", ""),
+            "addr2": data.get("translated_addr2") or data.get("addr2", ""),
             "keywords": data.get("keywords", []),
             "dbReference": db_path
         }

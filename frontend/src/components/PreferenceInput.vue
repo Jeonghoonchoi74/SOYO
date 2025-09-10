@@ -4,7 +4,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M19 12H5M12 19l-7-7 7-7"/>
       </svg>
-      뒤로가기
+      {{ $t('back') }}
     </button>
     <div class="preference-content">
       <div class="preference-header">
@@ -31,6 +31,12 @@
           </button>
         </div>
         
+        <div v-if="selectedRegion" class="form-group">
+          <div class="region-description">
+            <p class="description-text">{{ $t(getRegionDescription(selectedRegion)) }}</p>
+          </div>
+        </div>
+
         <div v-if="selectedRegion" class="form-group">
           <label class="section-label">{{ $t('pref_section_category') }}</label>
           <div class="category-selector">
@@ -118,7 +124,7 @@
 <script>
 import { i18nState, $t } from '../i18n';
 import { getAuth } from 'firebase/auth';
-import { getRegionOptions, getAvailableCategories, getCategoryLabel } from '../utils/regionMapping';
+import { getRegionOptions, getAvailableCategories, getCategoryLabel, getRegionDescription } from '../utils/regionMapping';
 
 export default {
   name: 'PreferenceInput',
@@ -138,8 +144,8 @@ export default {
   },
   computed: {
     canProceed() {
-      // 지역 선택과 카테고리 선택이 필요함
-      return this.selectedRegion && this.selectedCategory;
+      // 지역 선택, 카테고리 선택, 자유 텍스트 입력이 필요함
+      return this.selectedRegion && this.selectedCategory && this.freeText && this.freeText.trim().length > 0;
     },
   },
 
@@ -195,6 +201,9 @@ export default {
     },
     getCategoryDisplayName(category) {
       return this.$t(getCategoryLabel(category));
+    },
+    getRegionDescription(region) {
+      return getRegionDescription(region);
     },
 
     // 위치 권한 확인
@@ -696,6 +705,22 @@ export default {
   background: #4A69E2;
   border-color: #4A69E2;
   color: white;
+}
+
+.region-description {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 8px;
+}
+
+.description-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #495057;
+  text-align: left;
 }
 
 .toggle-list {

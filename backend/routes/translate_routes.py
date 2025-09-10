@@ -51,3 +51,4 @@ async def translate_text(request: dict):
         raise HTTPException(status_code=503, detail="번역 서비스에 연결할 수 없습니다")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"번역 중 오류 발생: {str(e)}")
+
