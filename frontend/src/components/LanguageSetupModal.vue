@@ -64,7 +64,7 @@ export default {
       
       try {
         // 1. 백엔드 API로 사용자 정보 저장
-        const response = await fetch('http://localhost:5000/api/register_user', {
+        const response = await fetch('/api/register_user', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

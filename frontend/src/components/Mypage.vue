@@ -21,7 +21,30 @@
           </svg>
         </div>
         <div class="user-details">
-          <h3 class="user-email">{{ userEmail }}</h3>
+          <div class="user-name-section">
+            <h3 class="user-name" v-if="!isEditingName">{{ userName || '사용자' }}</h3>
+            <div class="name-edit-container" v-else>
+              <input 
+                v-model="editingName" 
+                class="name-input" 
+                :placeholder="$t('enter_name')"
+                @keyup.enter="saveUserName"
+                @keyup.escape="cancelEditName"
+                ref="nameInput"
+              />
+            </div>
+            <button class="edit-name-btn" @click="toggleNameEdit" v-if="!isEditingName">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </button>
+            <div class="name-edit-actions" v-if="isEditingName">
+              <button class="save-btn" @click="saveUserName">{{ $t('save') }}</button>
+              <button class="cancel-btn" @click="cancelEditName">{{ $t('cancel') }}</button>
+            </div>
+          </div>
+          <p class="user-email">{{ userEmail }}</p>
           <p class="user-uid">{{ $t('user_id') }}: {{ userUid }}</p>
         </div>
       </div>
@@ -108,9 +131,12 @@ export default {
     return {
       userEmail: '',
       userUid: '',
+      userName: '',
       selectedLang: 'ko',
       showLanguageModal: false,
       showDeleteModal: false,
+      isEditingName: false,
+      editingName: '',
       languages: [
         { code: 'ko', name: '한국어', flag: '🇰🇷' },
         { code: 'en', name: 'English', flag: '🇺🇸' },
@@ -128,6 +154,7 @@ export default {
         this.userEmail = user.email;
         this.userUid = user.uid;
         this.selectedLang = i18nState.lang || 'ko';
+        this.loadUserInfo();
       } else {
         this.$router.push('/');
       }
@@ -136,6 +163,63 @@ export default {
   methods: {
     goBack() {
       this.$router.push('/');
+    },
+    async loadUserInfo() {
+      try {
+        const response = await fetch(`/api/get_user_info/${this.userUid}`);
+        const data = await response.json();
+        if (data.success && data.user) {
+          this.userName = data.user.name || '';
+        }
+      } catch (error) {
+        console.error('사용자 정보 로드 실패:', error);
+      }
+    },
+    toggleNameEdit() {
+      this.isEditingName = true;
+      this.editingName = this.userName;
+      this.$nextTick(() => {
+        this.$refs.nameInput?.focus();
+      });
+    },
+    cancelEditName() {
+      this.isEditingName = false;
+      this.editingName = '';
+    },
+    async saveUserName() {
+      if (!this.editingName.trim()) {
+        alert('이름을 입력해주세요.');
+        return;
+      }
+      
+      if (this.editingName.trim().length < 2) {
+        alert('이름은 최소 2글자 이상이어야 합니다.');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/update_user_name', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            uid: this.userUid,
+            name: this.editingName.trim()
+          })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          this.userName = this.editingName.trim();
+          this.isEditingName = false;
+          this.editingName = '';
+          alert('이름이 성공적으로 변경되었습니다.');
+        } else {
+          alert(data.error || '이름 변경에 실패했습니다.');
+        }
+      } catch (error) {
+        console.error('이름 변경 실패:', error);
+        alert('이름 변경 중 오류가 발생했습니다.');
+      }
     },
     getCurrentLanguageName() {
       const lang = this.languages.find(l => l.code === this.selectedLang);
@@ -217,7 +301,8 @@ export default {
 <style scoped>
 .mypage-page {
   min-height: 100vh;
-  background: #F7F8FA;
+  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+  background-attachment: fixed;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   padding: 20px;
   position: relative;
@@ -250,7 +335,10 @@ export default {
 .mypage-content {
   width: 100%;
   max-width: 480px;
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 16px;
   padding: 40px 24px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -300,10 +388,100 @@ export default {
   flex: 1;
 }
 
-.user-email {
-  font-size: 18px;
-  font-weight: 600;
+.user-name-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.user-name {
+  font-size: 20px;
+  font-weight: 700;
   color: #212529;
+  margin: 0;
+}
+
+.edit-name-btn {
+  background: none;
+  border: none;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-name-btn:hover {
+  background: #f8f9fa;
+  color: #4A69E2;
+}
+
+.name-edit-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.name-input {
+  font-size: 20px;
+  font-weight: 700;
+  color: #212529;
+  border: 2px solid #4A69E2;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: white;
+  outline: none;
+  min-width: 120px;
+}
+
+.name-input:focus {
+  border-color: #0984e3;
+  box-shadow: 0 0 0 3px rgba(74, 105, 226, 0.1);
+}
+
+.name-edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.save-btn, .cancel-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.save-btn {
+  background: #4A69E2;
+  color: white;
+}
+
+.save-btn:hover {
+  background: #0984e3;
+}
+
+.cancel-btn {
+  background: #f8f9fa;
+  color: #6c757d;
+  border: 1px solid #e9ecef;
+}
+
+.cancel-btn:hover {
+  background: #e9ecef;
+  color: #212529;
+}
+
+.user-email {
+  font-size: 16px;
+  font-weight: 500;
+  color: #6c757d;
   margin-bottom: 4px;
 }
 
@@ -412,7 +590,10 @@ export default {
 }
 
 .modal-box {
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 16px;
   width: 100%;
   max-width: 480px;

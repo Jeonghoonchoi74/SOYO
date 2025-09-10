@@ -27,8 +27,9 @@
         @click="openModal(place)"
       >
         <div class="card-actions">
-          <button class="action-btn" @click.stop="toggleBookmark(idx)">
-            <span :class="{ active: place.bookmarked }">❤️</span>
+          <button class="action-btn bookmark-btn" @click.stop="toggleBookmark(idx)" :class="{ bookmarked: place.bookmarked }">
+            <span v-if="place.bookmarked" class="bookmark-icon bookmarked">🔖</span>
+            <span v-else class="bookmark-icon">📖</span>
           </button>
         </div>
         
@@ -100,6 +101,32 @@
             </div>
           </div>
           
+          <!-- 리뷰 섹션 -->
+          <div v-if="place.reviews && place.reviews.length > 0" class="place-reviews">
+            <div class="reviews-header">
+              <span class="reviews-title">💬 리뷰 ({{ place.reviews.length }})</span>
+            </div>
+            <div class="reviews-list">
+              <div 
+                v-for="(review, reviewIdx) in place.reviews.slice(0, 2)" 
+                :key="reviewIdx" 
+                class="review-item"
+              >
+                <div class="review-header">
+                  <span class="reviewer-name">{{ review.userName || '익명' }}</span>
+                  <div class="review-rating">
+                    <span v-for="star in 5" :key="star" class="star" :class="{ filled: star <= review.rating }">⭐</span>
+                  </div>
+                </div>
+                <p class="review-content">{{ review.review }}</p>
+                <span class="review-date">{{ formatReviewDate(review.createdAt) }}</span>
+              </div>
+              <div v-if="place.reviews.length > 2" class="more-reviews">
+                +{{ place.reviews.length - 2 }}개 더 보기
+              </div>
+            </div>
+          </div>
+
           <!-- DB 참조 정보 섹션 -->
           <div v-if="place.dbReference" class="db-reference">
             <div class="db-reference-container">
@@ -112,7 +139,7 @@
     </div>
     
     <div class="summary">
-      <p>{{ $t('recommend_summary').replace('{count}', places.length) }}</p>
+      <p>{{ $t('recommend_summary').replace('{count}', places.length).replace('{displayed}', places.length) }}</p>
     </div>
     
     
@@ -132,6 +159,14 @@
         <div class="modal-header">
           <h2 class="modal-title">{{ selectedPlace.displayTitle || selectedPlace.title }}</h2>
           <div class="modal-actions">
+            <button 
+              class="modal-bookmark-btn" 
+              @click="toggleModalBookmark"
+              :class="{ bookmarked: selectedPlace.bookmarked }"
+            >
+              <span v-if="selectedPlace.bookmarked" class="bookmark-icon bookmarked">🔖</span>
+              <span v-else class="bookmark-icon">📖</span>
+            </button>
             <button 
               v-if="userLanguage !== 'ko' && !isTranslated" 
               class="translate-btn" 
@@ -264,8 +299,8 @@
             </div>
             
             <!-- overview(개요) 섹션: 제목 없이 overview만 -->
-            <div v-if="selectedPlace.displaySummary || selectedPlace.overview" class="info-section">
-              <p v-html="getTranslatedContent('summary', selectedPlace.displaySummary || selectedPlace.overview)" style="margin-top: 12px; color: #222; font-size: 1.13rem; line-height: 1.7; text-align: left;"></p>
+            <div v-if="selectedPlace.displaySummary || selectedPlace.overview || selectedPlace.description" class="info-section">
+              <p v-html="getTranslatedContent('summary', selectedPlace.displaySummary || selectedPlace.overview || selectedPlace.description)" style="margin-top: 12px; color: #222; font-size: 1.13rem; line-height: 1.7; text-align: left;"></p>
             </div>
             
             <!-- 지도 섹션 -->
@@ -538,7 +573,7 @@ export default {
         const user = auth.currentUser;
         if (!user) return 'ko';
         
-        const response = await fetch('http://localhost:5000/api/firebase/get-user-language', {
+        const response = await fetch('/api/firebase/get-user-language', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -565,7 +600,7 @@ export default {
     // 번역 API 호출 함수
     async translateText(text, targetLang = 'ko') {
       try {
-        const response = await fetch('http://localhost:5000/api/translate/', {
+        const response = await fetch('/api/translate/', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -593,7 +628,7 @@ export default {
     // Gemini 번역 API 호출 함수
     async translateWithGemini(text, sourceLang = 'ko', targetLang = 'en') {
       try {
-        const response = await fetch('http://localhost:5000/api/gemini/translate', {
+        const response = await fetch('/api/gemini/translate', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -647,7 +682,7 @@ export default {
         console.log('추천 API 검색 시작:', finalQuery);
         
         // 추천 API 호출
-        const response = await fetch('http://localhost:5000/api/recommend/search', {
+        const response = await fetch('/api/recommend/search', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -701,14 +736,18 @@ export default {
                 return;
               }
               
-              // 즉시 추가하여 바로 표시
-              this.places.push({
-                ...firebaseData,
-                bookmarked: false
-              });
-              this.bookmarkDisabled.push(false);
-              
-              console.log(`장소 추가됨: ${item.id}, 총 ${this.places.length}개`);
+            // 리뷰 데이터 로드
+            const reviews = await this.loadPlaceReviews(firebaseData.contentid);
+            
+            // 즉시 추가하여 바로 표시
+            this.places.push({
+              ...firebaseData,
+              bookmarked: false,
+              reviews: reviews
+            });
+            this.bookmarkDisabled.push(false);
+            
+            console.log(`장소 추가됨: ${item.id}, 리뷰 ${reviews.length}개, 총 ${this.places.length}개`);
             } else {
               console.log(`Firebase 데이터 없음: ${item.id}`);
             }
@@ -775,10 +814,14 @@ export default {
               return;
             }
             
+            // 리뷰 데이터 로드
+            const reviews = await this.loadPlaceReviews(firebaseData.contentid);
+            
             // 즉시 추가하여 바로 표시
             this.places.push({
               ...firebaseData,
-              bookmarked: false
+              bookmarked: false,
+              reviews: reviews
             });
             this.bookmarkDisabled.push(false);
             
@@ -811,7 +854,7 @@ export default {
         
         console.log(`Firebase 데이터 조회 - 언어: ${lang}, 지역: ${region}, 카테고리: ${category}, ID: ${contentId}`);
         
-        const response = await fetch('http://localhost:5000/api/firebase/get-firebase-data', {
+        const response = await fetch('/api/firebase/get-firebase-data', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -845,23 +888,28 @@ export default {
 
     // 언어별 필드 매핑 함수
     mapLanguageFields(data, lang, dbPath = '') {
+      // description 필드들을 우선순위에 따라 확인
+      const getDescription = () => {
+        return data.overview || data.description || data.intro || data.summary || '';
+      };
+
       if (lang === 'ko') {
-        // 한국어: 기본 필드 사용 (overview 우선, 없으면 빈 문자열)
+        // 한국어: 기본 필드 사용
         return {
           ...data,
           displayTitle: data.title || '',
           displayAddress: data.addr1 || '',
-          displaySummary: data.overview || '',
+          displaySummary: getDescription(),
           keywords: data.keywords || [],
           dbReference: dbPath
         };
       } else {
-        // 다국어: 번역된 필드 사용 (summary 우선, overview 대체)
+        // 다국어: 번역된 필드 사용 (summary 우선, 기본 description 대체)
         return {
           ...data,
           displayTitle: data.translated_eventtitle || data.title || '',
           displayAddress: data.translated_addr || data.addr1 || '',
-          displaySummary: data.summary || data.overview || '',
+          displaySummary: data.summary || getDescription(),
           keywords: data.keywords || [],
           dbReference: dbPath
         };
@@ -890,7 +938,7 @@ export default {
         
         console.log(`기존 방식 데이터 조회 - 언어: ${lang}, 지역: ${this.region}, 카테고리: ${this.category}`);
         
-        const response = await fetch('http://localhost:5000/api/firebase/get-recommend-places', {
+        const response = await fetch('/api/firebase/get-recommend-places', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -943,13 +991,17 @@ export default {
           
           // 하나씩 추가하여 바로 표시 (실시간 로딩)
           const addPlace = async (place) => {
+            // 리뷰 데이터 로드
+            const reviews = await this.loadPlaceReviews(place.contentid);
+            
             this.places.push({
               ...place,
-              bookmarked: false
+              bookmarked: false,
+              reviews: reviews
             });
             this.bookmarkDisabled.push(false);
             
-            console.log(`장소 추가됨: ${place.title || place.displayTitle}, 총 ${this.places.length}개`);
+            console.log(`장소 추가됨: ${place.title || place.displayTitle}, 리뷰 ${reviews.length}개, 총 ${this.places.length}개`);
             
             // 부드러운 로딩을 위한 약간의 지연
             await new Promise(resolve => setTimeout(resolve, 150));
@@ -978,7 +1030,7 @@ export default {
       if (!user) return;
       
       try {
-        const res = await fetch('http://localhost:5000/api/get_user_bookmarks', {
+        const res = await fetch('/api/get_user_bookmarks', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ uid: user.uid })
@@ -1043,7 +1095,7 @@ export default {
           console.log('북마크 저장 파라미터:', params);
           console.log('장소 정보:', this.places[idx]);
           console.log('contentId 타입:', typeof this.places[idx].contentid);
-          const res = await fetch('http://localhost:5000/api/save_bookmark', {
+          const res = await fetch('/api/save_bookmark', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(params),
@@ -1058,7 +1110,7 @@ export default {
           };
           
           console.log('북마크 삭제 파라미터:', params);
-          const res = await fetch('http://localhost:5000/api/delete_user_bookmark', {
+          const res = await fetch('/api/delete_user_bookmark', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(params),
@@ -1087,6 +1139,24 @@ export default {
       
       // 번역 상태 확인
       await this.checkTranslationStatus();
+    },
+
+    // 모달에서 북마크 토글
+    async toggleModalBookmark() {
+      if (!this.selectedPlace) return;
+      
+      // 현재 장소의 인덱스 찾기
+      const placeIndex = this.places.findIndex(place => 
+        place.contentid === this.selectedPlace.contentid
+      );
+      
+      if (placeIndex === -1) return;
+      
+      // 기존 토글 로직 사용
+      await this.toggleBookmark(placeIndex);
+      
+      // 모달의 북마크 상태도 업데이트
+      this.selectedPlace.bookmarked = this.places[placeIndex].bookmarked;
     },
 
     // 모달 닫기
@@ -1182,7 +1252,7 @@ export default {
         
         if (!user) return;
 
-        const response = await fetch('http://localhost:5000/api/gemini/get-translation-status', {
+        const response = await fetch('/api/gemini/get-translation-status', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1218,7 +1288,7 @@ export default {
         
         if (!user || !this.selectedPlace) return;
 
-        const response = await fetch('http://localhost:5000/api/gemini/save-translation', {
+        const response = await fetch('/api/gemini/save-translation', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1243,6 +1313,52 @@ export default {
         console.error('Firebase 저장 중 오류:', error);
       }
     },
+
+    // 장소별 리뷰 데이터 가져오기
+    async loadPlaceReviews(contentId) {
+      try {
+        const response = await fetch('/api/get_place_reviews', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contentId: contentId
+          }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.reviews) {
+            return result.reviews;
+          }
+        }
+        return [];
+      } catch (error) {
+        console.error('리뷰 로드 오류:', error);
+        return [];
+      }
+    },
+
+    // 리뷰 날짜 포맷팅
+    formatReviewDate(dateString) {
+      if (!dateString) return '';
+      
+      try {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffTime = Math.abs(now - date);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 1) return '1일 전';
+        if (diffDays < 7) return `${diffDays}일 전`;
+        if (diffDays < 30) return `${Math.ceil(diffDays / 7)}주 전`;
+        if (diffDays < 365) return `${Math.ceil(diffDays / 30)}개월 전`;
+        return `${Math.ceil(diffDays / 365)}년 전`;
+      } catch (error) {
+        return dateString;
+      }
+    },
   },
 };
 </script>
@@ -1251,7 +1367,8 @@ export default {
 /* 네이버 지식iN 스타일 - Community.vue 베이스 */
 .recommend-page {
   min-height: 100vh;
-  background: #F7F8FA;
+  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+  background-attachment: fixed;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   width: 100vw;
   max-width: 100vw;
@@ -1399,16 +1516,54 @@ export default {
   padding: 0.7rem 1.2rem;
   font-size: 1.3rem;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
 }
 
 .action-btn:hover {
   background: #cbd5e1;
+  transform: scale(1.05);
 }
 
-.action-btn .active {
-  background: #2563eb;
-  color: #fff;
+.bookmark-btn {
+  position: relative;
+  min-width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.bookmark-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.bookmark-btn.bookmarked {
+  background: rgba(34, 197, 94, 0.9);
+  color: white;
+}
+
+.bookmark-btn.bookmarked:hover {
+  background: rgba(34, 197, 94, 1);
+}
+
+.bookmark-icon {
+  font-size: 1.5rem;
+  transition: all 0.2s ease;
+}
+
+.bookmark-btn.bookmarked .bookmark-icon {
+  animation: bookmarkPulse 0.3s ease;
+}
+
+@keyframes bookmarkPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
 }
 
 .place-image {
@@ -1507,7 +1662,7 @@ export default {
 }
 
 .keyword-tag {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
   color: white;
   padding: 0.3rem 0.6rem;
   border-radius: 12px;
@@ -1562,6 +1717,96 @@ export default {
   font-size: 0.65rem;
   word-break: break-all;
   flex: 1;
+}
+
+.place-reviews {
+  margin-top: 0.8rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.reviews-header {
+  margin-bottom: 0.6rem;
+}
+
+.reviews-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.review-item {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 0.8rem;
+  border: 1px solid #e2e8f0;
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+
+.reviewer-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.review-rating {
+  display: flex;
+  gap: 1px;
+}
+
+.star {
+  font-size: 0.7rem;
+  opacity: 0.3;
+  transition: opacity 0.2s ease;
+}
+
+.star.filled {
+  opacity: 1;
+}
+
+.review-content {
+  font-size: 0.8rem;
+  color: #4a5568;
+  line-height: 1.4;
+  margin: 0.4rem 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.review-date {
+  font-size: 0.65rem;
+  color: #718096;
+}
+
+.more-reviews {
+  text-align: center;
+  font-size: 0.7rem;
+  color: #4a5568;
+  padding: 0.4rem;
+  background: #f1f5f9;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.more-reviews:hover {
+  background: #e2e8f0;
 }
 
 .status-badge {
@@ -1693,6 +1938,46 @@ export default {
   background: #adb5bd;
   cursor: not-allowed;
   transform: none;
+}
+
+.modal-bookmark-btn {
+  position: relative;
+  min-width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-bookmark-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: scale(1.05);
+}
+
+.modal-bookmark-btn.bookmarked {
+  background: rgba(34, 197, 94, 0.9);
+  color: white;
+}
+
+.modal-bookmark-btn.bookmarked:hover {
+  background: rgba(34, 197, 94, 1);
+}
+
+.modal-bookmark-btn .bookmark-icon {
+  font-size: 1.2rem;
+  transition: all 0.2s ease;
+}
+
+.modal-bookmark-btn.bookmarked .bookmark-icon {
+  animation: bookmarkPulse 0.3s ease;
 }
 
 .modal-title {

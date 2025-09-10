@@ -124,7 +124,7 @@ export default {
           await updateProfile(userCredential.user, { displayName: this.name });
           // Flask API로 uid, name, lang 전송
           try {
-            await fetch('http://localhost:5000/api/register_user', {
+            await fetch('/api/register_user', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -210,7 +210,8 @@ export default {
 /* 네이버 지식iN 스타일 - Community.vue 베이스 */
 .auth-page {
   min-height: 100vh;
-  background: #F7F8FA;
+  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+  background-attachment: fixed;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   width: 100vw;
   max-width: 100vw;
@@ -225,10 +226,13 @@ export default {
 .auth-content {
   width: 100%;
   max-width: 480px;
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 16px;
   padding: 40px 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   box-sizing: border-box;
 }
 .auth-tabs {

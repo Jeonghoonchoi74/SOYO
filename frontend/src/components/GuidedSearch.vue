@@ -80,8 +80,12 @@
               :key="region.value" 
               :class="['region-option', { active: tempSelectedRegion === region.value }]"
               @click="selectRegion(region.value)"
+              :title="$t(region.label)"
             >
-              {{ $t(region.label) }}
+              <div class="region-image">
+                <img :src="region.image" :alt="$t(region.label)" />
+              </div>
+              <span class="region-name">{{ $t(region.label) }}</span>
             </button>
           </div>
         </div>
@@ -325,17 +329,17 @@ export default {
 
 <style scoped>
 /* Using styles from PreferenceInput.vue and SearchChooser.vue for consistency */
-.preference-page { min-height: 100vh; background: #F7F8FA; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; display: flex; align-items: flex-start; justify-content: center; position: relative; }
+.preference-page { min-height: 100vh; background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%); background-attachment: fixed; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; display: flex; align-items: flex-start; justify-content: center; position: relative; }
 .page-back-btn { position: absolute; top: 20px; left: 20px; background: white; color: #4A69E2; border: 1px solid #4A69E2; border-radius: 8px; padding: 10px 16px; font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s ease; z-index: 1000; }
 .page-back-btn:hover { background: #4A69E2; color: white; }
-.preference-content { width: 100%; max-width: 720px; background: white; border-radius: 16px; padding: 40px 24px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); margin-top: 20px; }
+.preference-content { width: 100%; max-width: 720px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 16px; padding: 40px 24px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1); margin-top: 20px; }
 .progress-bar { height: 8px; background-color: #e9ecef; border-radius: 4px; margin-bottom: 24px; overflow: hidden; }
 .progress { height: 100%; background-color: #4A69E2; transition: width 0.3s ease; }
 .step-header { display: flex; align-items: center; justify-content: center; position: relative; margin-bottom: 32px; }
 .back-btn { position: absolute; left: 0; background: none; border: none; font-size: 24px; cursor: pointer; color: #495057; padding: 0 10px; }
 .title { font-size: 24px; font-weight: 700; color: #212529; text-align: center; margin: 0; }
 .options-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
-.option-card-guided { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); cursor: pointer; transition: all 0.2s ease; border: 2px solid #e9ecef; text-align: center; }
+.option-card-guided { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); cursor: pointer; transition: all 0.2s ease; border: 2px solid rgba(255, 255, 255, 0.3); text-align: center; }
 .option-card-guided:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0,0,0,0.1); }
 .option-card-guided.active { border-color: #4A69E2; background-color: #F1F4FE; box-shadow: 0 6px 16px rgba(74, 105, 226, 0.2); }
 .option-icon-guided { font-size: 36px; margin-bottom: 12px; }
@@ -352,20 +356,32 @@ export default {
 /* Region Modal Styles */
 .form-group { display: flex; flex-direction: column; gap: 12px; }
 .section-label { font-size: 16px; font-weight: 600; color: #212529; text-align: left; }
-.region-selector-btn { width: 100%; padding: 14px 16px; font-size: 14px; border: 1px solid #e9ecef; border-radius: 8px; background: #F7F8FA; color: #212529; outline: none; transition: all 0.2s ease; font-family: inherit; cursor: pointer; display: flex; justify-content: space-between; align-items: center; text-align: left; }
-.region-selector-btn:hover { border-color: #4A69E2; background: white; box-shadow: 0 0 0 3px rgba(74, 105, 226, 0.1); }
-.region-selector-btn.has-selection { background: white; border-color: #4A69E2; color: #4A69E2; }
+.region-selector-btn { width: 100%; padding: 14px 16px; font-size: 14px; border: 1px solid #e9ecef; border-radius: 8px; background: #ffffff; color: #212529; outline: none; transition: all 0.2s ease; font-family: inherit; cursor: pointer; display: flex; justify-content: space-between; align-items: center; text-align: left; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06); }
+.region-selector-btn:hover { border-color: #4A69E2; background: #ffffff; box-shadow: 0 0 0 3px rgba(74, 105, 226, 0.12); }
+.region-selector-btn.has-selection { background: #ffffff; border-color: #4A69E2; color: #4A69E2; }
 .region-selector-btn .placeholder { color: #adb5bd; }
 .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 3000; padding: 20px; color: #212529; }
-.modal-content { background: white; border-radius: 16px; width: 100%; max-width: 600px; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15); position: relative; z-index: 3001; }
+.modal-content { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 16px; width: 100%; max-width: 900px; max-height: 95vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15); position: relative; z-index: 3001; }
 .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 24px 24px 20px 24px; border-bottom: 1px solid #f1f3f4; }
 .modal-header h3 { margin: 0; font-size: 18px; font-weight: 600; }
 .close-btn { background: none; border: none; font-size: 24px; color: #adb5bd; cursor: pointer; }
 .modal-body { padding: 20px 24px; }
-.region-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
-.region-option { padding: 16px 20px; border: 1px solid #e9ecef; border-radius: 8px; background: #f8f9fa; color: #495057; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; text-align: center; }
-.region-option:hover { background: #e9ecef; }
-.region-option.active { background: #4A69E2; border-color: #4A69E2; color: white; }
+.region-grid { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(6, 1fr); gap: 4px; max-height: 900px; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
+.region-grid::-webkit-scrollbar { display: none; }
+.region-option { padding: 0; border: none; border-radius: 6px; background: transparent; color: #495057; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 0; min-height: 100px; position: relative; overflow: hidden; }
+.region-option:hover { transform: scale(1.02); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); z-index: 10; }
+.region-option.active { box-shadow: 0 4px 12px rgba(74, 105, 226, 0.5); transform: scale(1.02); z-index: 10; }
+.region-image { width: 100%; height: 100%; border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: transparent; position: absolute; top: 0; left: 0; }
+.region-image img { width: 100%; height: 100%; object-fit: cover; }
+.region-name { font-size: 11px; font-weight: 600; line-height: 1.2; text-align: center; word-break: keep-all; opacity: 1; transform: translateX(-50%) translateY(0); transition: all 0.2s ease; position: absolute; bottom: 6px; left: 50%; background: rgba(0, 0, 0, 0.8); color: white; padding: 3px 8px; border-radius: 4px; white-space: nowrap; z-index: 10; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
 .modal-footer { padding: 20px 24px; display: flex; justify-content: flex-end; background: #f8fafc; border-top: 1px solid #e2e8f0; }
 .btn-primary { background: #4A69E2; color: white; border: none; border-radius: 6px; padding: 10px 20px; font-size: 14px; font-weight: 500; cursor: pointer; }
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .region-grid { grid-template-columns: repeat(2, 1fr); grid-template-rows: auto; gap: 4px; }
+  .region-option { padding: 0; min-height: 70px; }
+  .region-image { width: 100%; height: 100%; }
+  .region-name { font-size: 10px; bottom: 2px; }
+}
 </style>

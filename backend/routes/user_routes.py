@@ -57,6 +57,30 @@ async def update_user_language(request: Request):
     except Exception as e:
         return JSONResponse(content={'success': False, 'error': str(e)}, status_code=500)
 
+@router.post("/update_user_name")
+async def update_user_name(request: Request):
+    data = await request.json()
+    uid = data.get('uid')
+    name = data.get('name')
+    
+    if not uid or not name:
+        return JSONResponse(content={'success': False, 'error': 'Missing required fields'}, status_code=400)
+    
+    if len(name.strip()) < 2:
+        return JSONResponse(content={'success': False, 'error': 'Name must be at least 2 characters long'}, status_code=400)
+    
+    try:
+        await asyncio.to_thread(
+            db.collection('users').document(uid).update,
+            {
+                'name': name.strip(),
+                'updatedAt': firestore.SERVER_TIMESTAMP
+            }
+        )
+        return {'success': True}
+    except Exception as e:
+        return JSONResponse(content={'success': False, 'error': str(e)}, status_code=500)
+
 @router.get("/get_user_info/{uid}")
 async def get_user_info(uid: str):
     try:

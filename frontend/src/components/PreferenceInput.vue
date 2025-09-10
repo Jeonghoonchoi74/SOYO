@@ -77,8 +77,12 @@
               :key="region.value" 
               :class="['region-option', { active: selectedRegion === region.value }]"
               @click="selectRegion(region.value)"
+              :title="$t(region.label)"
             >
-              {{ $t(region.label) }}
+              <div class="region-image">
+                <img :src="region.image" :alt="$t(region.label)" />
+              </div>
+              <span class="region-name">{{ $t(region.label) }}</span>
             </button>
           </div>
         </div>
@@ -301,7 +305,7 @@ export default {
       try {
         this.isSaving = true;
         
-        const response = await fetch('http://localhost:5000/api/save_user_preferences', {
+        const response = await fetch('/api/save_user_preferences', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -376,7 +380,7 @@ export default {
           requestBody.region = this.selectedRegion;
         }
         
-        const response = await fetch('http://localhost:5000/api/recommend/search', {
+        const response = await fetch('/api/recommend/search', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -450,7 +454,7 @@ export default {
       }
 
       try {
-        const response = await fetch('http://localhost:5000/api/firebase/get-user-language', {
+        const response = await fetch('/api/firebase/get-user-language', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -487,7 +491,7 @@ export default {
       try {
         console.log('번역 요청 시작:', this.freeText);
         
-        const response = await fetch('http://localhost:5000/api/translate/', {
+        const response = await fetch('/api/translate/', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -528,7 +532,8 @@ export default {
 /* 네이버 지식iN 스타일 - Community.vue 베이스 */
 .preference-page {
   min-height: 100vh;
-  background: #F7F8FA;
+  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+  background-attachment: fixed;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   width: 100vw;
   max-width: 100vw;
@@ -565,7 +570,10 @@ export default {
 .preference-content {
   width: 100%;
   max-width: 480px;
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 16px;
   padding: 40px 24px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -618,7 +626,7 @@ export default {
   font-size: 14px;
   border: 1px solid #e9ecef;
   border-radius: 8px;
-  background: #F7F8FA;
+  background: #ffffff;
   color: #212529;
   outline: none;
   transition: all 0.2s ease;
@@ -628,16 +636,17 @@ export default {
   justify-content: space-between;
   align-items: center;
   text-align: left;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
 .region-selector-btn:hover {
   border-color: #4A69E2;
-  background: white;
-  box-shadow: 0 0 0 3px rgba(74, 105, 226, 0.1);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(74, 105, 226, 0.12);
 }
 
 .region-selector-btn.has-selection {
-  background: white;
+  background: #ffffff;
   border-color: #4A69E2;
   color: #4A69E2;
 }
@@ -699,7 +708,8 @@ export default {
   padding: 12px 16px;
   border: 1px solid #e9ecef;
   border-radius: 8px;
-  background: #F7F8FA;
+  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+  background-attachment: fixed;
   color: #495057;
   font-size: 14px;
   font-weight: 500;
@@ -724,7 +734,7 @@ export default {
   font-size: 14px;
   border: 1px solid #e9ecef;
   border-radius: 8px;
-  background: #F7F8FA;
+  background: #ffffff;
   color: #212529;
   outline: none;
   transition: all 0.2s ease;
@@ -732,6 +742,7 @@ export default {
   resize: vertical;
   min-height: 80px;
   box-sizing: border-box;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
 .free-input:focus {
@@ -790,11 +801,14 @@ export default {
 }
 
 .modal-content {
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 16px;
   width: 100%;
-  max-width: 480px;
-  max-height: 85vh;
+  max-width: 900px;
+  max-height: 95vh;
   overflow-y: auto;
   color: #212529;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
@@ -888,7 +902,8 @@ export default {
 }
 
 .btn-secondary {
-  background: #F7F8FA;
+  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+  background-attachment: fixed;
   color: #495057;
   border: 1px solid #e9ecef;
   border-radius: 6px;
@@ -906,14 +921,15 @@ export default {
 
 /* 지역 선택 모달 스타일 */
 .region-modal {
-  max-width: 600px;
+  max-width: 900px;
 }
 
 .region-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
-  max-height: 400px;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(6, 1fr);
+  gap: 4px;
+  max-height: 900px;
   overflow-y: auto;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE and Edge */
@@ -924,29 +940,77 @@ export default {
 }
 
 .region-option {
-  padding: 16px 20px;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  background: #f8f9fa;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
   color: #495057;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  min-height: 100px;
+  position: relative;
+  overflow: hidden;
 }
 
 .region-option:hover {
-  background: #e9ecef;
-  border-color: #adb5bd;
-  color: #212529;
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 10;
 }
 
 .region-option.active {
-  background: #4A69E2;
-  border-color: #4A69E2;
+  box-shadow: 0 4px 12px rgba(74, 105, 226, 0.5);
+  transform: scale(1.02);
+  z-index: 10;
+}
+
+.region-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.region-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.region-name {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  word-break: keep-all;
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  transition: all 0.2s ease;
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  background: rgba(0, 0, 0, 0.8);
   color: white;
-  box-shadow: 0 2px 8px rgba(74, 105, 226, 0.3);
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  z-index: 10;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 /* 반응형 */
@@ -1042,13 +1106,24 @@ export default {
   }
   
   .region-grid {
-    grid-template-columns: 1fr;
-    gap: 8px;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: auto;
+    gap: 4px;
   }
   
   .region-option {
-    padding: 12px 16px;
-    font-size: 14px;
+    padding: 0;
+    min-height: 70px;
+  }
+  
+  .region-image {
+    width: 100%;
+    height: 100%;
+  }
+  
+  .region-name {
+    font-size: 10px;
+    bottom: 2px;
   }
 }
 </style>

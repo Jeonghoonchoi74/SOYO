@@ -131,7 +131,7 @@ async def save_translation(request: dict):
             
             # 번역된 내용을 기존 필드명에 매핑 (가게명 제외)
             field_mapping = {
-                # 'title': 'title',  # 가게명은 번역하지 않음
+                'title': 'title',  # 가게명은 번역하지 않음
                 'address': 'addr1', 
                 'summary': 'description',
                 'detailInfo': 'description',  # 상세정보는 description 필드에
@@ -174,7 +174,7 @@ async def save_translation(request: dict):
                 
                 # 번역된 내용을 기존 필드명에 매핑 (가게명 제외)
                 field_mapping = {
-                    # 'title': 'title',  # 가게명은 번역하지 않음
+                    'title': 'title',  # 가게명은 번역하지 않음
                     'address': 'addr1', 
                     'summary': 'description',
                     'detailInfo': 'description',
@@ -233,7 +233,7 @@ async def get_translation_status(request: dict):
             if is_translated:
                 # 기존 필드에서 번역된 내용 추출 (가게명 제외)
                 field_mapping = {
-                    # 'title': 'title',  # 가게명은 번역하지 않음
+                    'title': 'title',  # 가게명은 번역하지 않음
                     'address': 'addr1', 
                     'summary': 'description',
                     'detailInfo': 'description',

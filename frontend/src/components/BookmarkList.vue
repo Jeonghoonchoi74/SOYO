@@ -257,7 +257,7 @@ export default {
     const user = auth.currentUser;
     if (!user) return;
 
-    const res = await fetch('http://localhost:5000/api/get_user_bookmarks', {
+    const res = await fetch('/api/get_user_bookmarks', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ uid: user.uid })
@@ -285,7 +285,7 @@ export default {
     }
 
     // 사용자 리뷰 로드
-    const reviewsRes = await fetch('http://localhost:5000/api/get_user_reviews', {
+    const reviewsRes = await fetch('/api/get_user_reviews', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ uid: user.uid })
@@ -330,7 +330,7 @@ export default {
         if (place.isEditing && (place.tempRating !== place.rating || place.tempIsPublic !== place.isPublic)) {
           // 평점 업데이트
           if (place.tempRating !== place.rating) {
-            const ratingResponse = await fetch('http://localhost:5000/api/update_bookmark_rating', {
+            const ratingResponse = await fetch('/api/update_bookmark_rating', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -349,7 +349,7 @@ export default {
 
           // 공개여부 업데이트
           if (place.tempIsPublic !== place.isPublic) {
-            const visibilityResponse = await fetch('http://localhost:5000/api/update_bookmark_visibility', {
+            const visibilityResponse = await fetch('/api/update_bookmark_visibility', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -372,7 +372,7 @@ export default {
           // 사용자 선호도에서 region 가져오기
           let userRegion = '전국'; // 기본값
           try {
-            const preferencesResponse = await fetch('http://localhost:5000/api/get_user_preferences', {
+            const preferencesResponse = await fetch('/api/get_user_preferences', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ uid: user.uid })
@@ -386,7 +386,7 @@ export default {
             console.warn('사용자 선호도 조회 실패, 기본값 사용:', error);
           }
 
-          const response = await fetch('http://localhost:5000/api/save_review', {
+          const response = await fetch('/api/save_review', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -435,7 +435,7 @@ export default {
       console.log('삭제할 북마크 정보:', place);
       console.log('전송할 placeId:', place.name);
 
-      const response = await fetch('http://localhost:5000/api/delete_user_bookmark', {
+      const response = await fetch('/api/delete_user_bookmark', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uid: user.uid, contentId: place.contentId }) // contentId 사용
@@ -476,7 +476,8 @@ export default {
 /* 네이버 지식iN 스타일 - Community.vue 베이스 */
 .bookmark-page {
   min-height: 100vh;
-  background: #F7F8FA;
+  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+  background-attachment: fixed;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   width: 100vw;
   max-width: 100vw;
@@ -534,7 +535,7 @@ export default {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .bookmark-card {
@@ -1050,7 +1051,7 @@ export default {
   }
   
   .bookmark-list {
-    gap: 8px;
+    gap: 6px;
   }
   
   .bookmark-card {

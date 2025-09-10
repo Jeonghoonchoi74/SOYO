@@ -40,8 +40,14 @@
     <div class="main-content">
       <!-- 리뷰 목록 -->
       <div class="review-list">
-        <div v-if="filteredReviews.length > 0">
-          <div v-for="review in filteredReviews" :key="review.id" class="review-item">
+        <!-- 로딩 상태 -->
+        <div v-if="isLoading" class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>리뷰를 불러오는 중...</p>
+        </div>
+        
+        <div v-else-if="filteredReviews.length > 0">
+          <div v-for="review in filteredReviews" :key="review.id" class="review-item fade-in">
             <div class="review-content">
               <div class="review-image" v-if="review.placeImage">
                 <img :src="review.placeImage" :alt="review.placeName" />
@@ -216,6 +222,8 @@ export default {
       showPlaceDropdown: false,
       regions: [],
       selectedRegion: '',
+      isLoading: false,
+      streamingDelay: 300, // 스트리밍 지연 시간 (ms)
 
       sortBy: 'recent'
     };
@@ -314,24 +322,60 @@ export default {
 
     async loadPublicReviews() {
       try {
-        const response = await fetch('http://localhost:5000/api/get_public_reviews');
+        this.isLoading = true;
+        this.publicReviews = []; // 기존 리뷰 초기화
+        
+        const response = await fetch('/api/get_public_reviews');
         const result = await response.json();
 
-        if (result.success) {
-          this.publicReviews = result.reviews.map(review => ({
-            ...review,
-            showComments: false,
-            newComment: '',
-            isLiked: false
-          }));
-
-          for (let review of this.publicReviews) {
-            await this.loadReviewInteractions(review);
-          }
+        if (result.success && result.reviews.length > 0) {
+          // 리뷰를 하나씩 스트리밍으로 표시 (비동기로 실행)
+          this.streamReviews(result.reviews);
         }
       } catch (error) {
         console.error('공개 리뷰 로드 오류:', error);
         this.showModalMessage('리뷰를 불러오는 중 오류가 발생했습니다.');
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    streamReviews(reviews) {
+      reviews.forEach((review, index) => {
+        // 각 리뷰를 지연 시간 후에 표시
+        setTimeout(() => {
+          const reviewItem = {
+            ...review,
+            showComments: false,
+            newComment: '',
+            isLiked: false,
+            likes: 0,
+            comments: []
+          };
+          
+          this.publicReviews.push(reviewItem);
+          
+          // 백그라운드에서 좋아요 정보 로드
+          this.loadReviewLikes(reviewItem);
+        }, index * this.streamingDelay);
+      });
+    },
+
+    async loadReviewLikes(review) {
+      try {
+        const likesResponse = await fetch(`/api/get_review_likes/${review.contentId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uid: this.currentUser.uid })
+        });
+
+        const likesResult = await likesResponse.json();
+        if (likesResult.success) {
+          review.likes = likesResult.likes;
+          review.isLiked = likesResult.userLiked;
+        }
+      } catch (error) {
+        console.error(`리뷰 ${review.contentId} 좋아요 로드 오류:`, error);
       }
     },
 
@@ -339,12 +383,12 @@ export default {
       try {
         // Backend API를 통해 북마크와 리뷰 정보 가져오기
         const [bookmarksRes, reviewsRes] = await Promise.all([
-          fetch('http://localhost:5000/api/get_user_bookmarks', {
+          fetch('/api/get_user_bookmarks', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ uid: this.currentUser.uid })
           }),
-          fetch('http://localhost:5000/api/get_user_reviews', {
+          fetch('/api/get_user_reviews', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ uid: this.currentUser.uid })
@@ -359,24 +403,27 @@ export default {
           const reviews = reviewsResult.reviews || [];
 
           // 리뷰된 장소 이름들 Set으로 변환
-          const reviewedPlaces = new Set(reviews.map(review => review.placeId || review.name));
+          const reviewedPlaces = new Set(reviews.map(review => review.placeName));
 
           // 리뷰가 없는 북마크만 필터링
           this.availablePlaces = bookmarks.filter(bookmark =>
             !reviewedPlaces.has(bookmark.name)
           );
-        }
 
-        // console.log('Firebase에서 직접 가져온 북마크:', bookmarks);
-        // console.log('리뷰 작성 가능한 장소:', this.availablePlaces);
+          console.log('Firebase에서 직접 가져온 북마크:', bookmarks);
+          console.log('사용자가 작성한 리뷰들:', reviews);
+          console.log('리뷰된 장소 이름들:', Array.from(reviewedPlaces));
+          console.log('리뷰 작성 가능한 장소:', this.availablePlaces);
+        }
       } catch (error) {
         console.error('사용 가능한 장소 로드 오류:', error);
       }
     },
 
+
     async loadReviewInteractions(review) {
       try {
-        const likesResponse = await fetch(`http://localhost:5000/api/get_review_likes/${review.contentId}`, {
+        const likesResponse = await fetch(`/api/get_review_likes/${review.contentId}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ uid: this.currentUser.uid })
@@ -387,7 +434,7 @@ export default {
           review.isLiked = likesResult.userLiked;
         }
 
-        const commentsResponse = await fetch(`http://localhost:5000/api/get_review_comments/${review.contentId}`);
+        const commentsResponse = await fetch(`/api/get_review_comments/${review.contentId}`);
         const commentsResult = await commentsResponse.json();
         if (commentsResult.success) {
           review.comments = commentsResult.comments;
@@ -410,7 +457,7 @@ export default {
       // 사용자 선호도에서 region 우선 가져오기
       let region = '전국'; // 기본값
       try {
-        const preferencesResponse = await fetch('http://localhost:5000/api/get_user_preferences', {
+        const preferencesResponse = await fetch('/api/get_user_preferences', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ uid: this.currentUser.uid })
@@ -454,7 +501,7 @@ export default {
       console.log('사용할 지역:', region);
 
       try {
-        const response = await fetch('http://localhost:5000/api/save_review', {
+        const response = await fetch('/api/save_review', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -505,7 +552,7 @@ export default {
         };
         // console.log('좋아요 토글 - 전송 데이터:', requestData);
 
-        const response = await fetch('http://localhost:5000/api/toggle_review_like', {
+        const response = await fetch('/api/toggle_review_like', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestData)
@@ -522,8 +569,21 @@ export default {
       }
     },
 
-    toggleComments(review) {
+    async toggleComments(review) {
       review.showComments = !review.showComments;
+      
+      // 댓글 섹션이 열릴 때만 댓글 로드 (지연 로딩)
+      if (review.showComments && (!review.comments || review.comments.length === 0)) {
+        try {
+          const commentsResponse = await fetch(`/api/get_review_comments/${review.contentId}`);
+          const commentsResult = await commentsResponse.json();
+          if (commentsResult.success) {
+            review.comments = commentsResult.comments;
+          }
+        } catch (error) {
+          console.error('댓글 로드 오류:', error);
+        }
+      }
     },
 
     async submitComment(review) {
@@ -541,7 +601,7 @@ export default {
         };
         // console.log('댓글 추가 - 전송 데이터:', requestData);
 
-        const response = await fetch('http://localhost:5000/api/add_review_comment', {
+        const response = await fetch('/api/add_review_comment', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestData)
@@ -637,7 +697,7 @@ export default {
         // console.log('댓글 삭제 - 댓글 데이터:', comment);
         // console.log('댓글 삭제 - 전송 데이터:', requestData);
 
-        const response = await fetch('http://localhost:5000/api/delete_review_comment', {
+        const response = await fetch('/api/delete_review_comment', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestData)
@@ -688,7 +748,7 @@ export default {
       }
 
       try {
-        const response = await fetch('http://localhost:5000/api/delete_review', {
+        const response = await fetch('/api/delete_review', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -719,7 +779,7 @@ export default {
 /* 네이버 지식iN 스타일 */
 .community-page {
   min-height: 100vh;
-  background: #F7F8FA;
+  background: #f8f9fa;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   width: 100vw;
   max-width: 100vw;
@@ -877,13 +937,31 @@ export default {
 }
 
 .review-item {
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   margin-bottom: 8px;
   padding: 16px;
   border-radius: 8px;
   border: 1px solid #e9ecef;
   width: 100%;
   box-sizing: border-box;
+}
+
+.fade-in {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 
@@ -1133,7 +1211,10 @@ export default {
 }
 
 .write-modal {
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 16px;
   width: 100%;
   max-width: 480px;
@@ -1303,6 +1384,28 @@ export default {
 .submit-btn:disabled {
   background: #adb5bd;
   cursor: not-allowed;
+}
+
+/* 로딩 상태 */
+.loading-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6c757d;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #4A69E2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* 빈 상태 */

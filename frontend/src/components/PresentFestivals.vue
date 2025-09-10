@@ -302,7 +302,7 @@ const fetchPresentFestivals = async () => {
     error.value = null;
     
     // Backend API를 통해 행사 데이터 가져오기
-    const response = await fetch('http://localhost:5000/api/firebase/get-recommend-places', {
+    const response = await fetch('/api/firebase/get-recommend-places', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -368,7 +368,7 @@ onMounted(() => {
 <style scoped>
 .present-festivals {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
   padding: 20px 0;
 }
 

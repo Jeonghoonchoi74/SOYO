@@ -1,5 +1,6 @@
 // DB에 저장되는 지역명과 다국어 키 매핑
 export const regionMapping = {
+  '전국': 'region_nationwide',
   '강원특별자치도': 'region_gangwon',
   '경기도': 'region_gyeonggi',
   '경상남도': 'region_gyeongnam',
@@ -60,16 +61,46 @@ export function getDbRegionName(displayName) {
   return entry ? entry[0] : displayName;
 }
 
+// 지역별 이미지 경로 매핑
+export const regionImages = {
+  '전국': '/src/assets/regions/서울.jpg', // 전국 이미지가 없으므로 서울 이미지 사용
+  '강원특별자치도': '/src/assets/regions/강원도.jpg',
+  '경기도': '/src/assets/regions/경기도.jpg',
+  '경상남도': '/src/assets/regions/경상남도.jpg',
+  '경상북도': '/src/assets/regions/경상북도.jpg',
+  '광주': '/src/assets/regions/광주.jpg',
+  '대구': '/src/assets/regions/대구.jpg',
+  '대전': '/src/assets/regions/대전.jpg',
+  '부산': '/src/assets/regions/부산.jpg',
+  '서울': '/src/assets/regions/서울.jpg',
+  '세종특별자치시': '/src/assets/regions/세종특별자치시.jpg',
+  '울산': '/src/assets/regions/울산.jpg',
+  '인천': '/src/assets/regions/인천.jpg',
+  '전라남도': '/src/assets/regions/전라남도.jpg',
+  '전북특별자치도': '/src/assets/regions/전라북도.jpg',
+  '제주도': '/src/assets/regions/제주도.jpg',
+  '충청남도': '/src/assets/regions/충청남도.jpg',
+  '충청북도': '/src/assets/regions/충청북도.jpg'
+};
+
 // 지역 옵션 배열 생성 (다국어 키 사용)
 export function getRegionOptions() {
-  const regions = Object.entries(regionMapping).map(([value, label]) => ({
-    value,
-    label
-  })).sort((a, b) => a.label.localeCompare(b.label, 'ko'));
+  // 전국을 제외한 지역들만 처리
+  const regions = Object.entries(regionMapping)
+    .filter(([value]) => value !== '전국')
+    .map(([value, label]) => ({
+      value,
+      label,
+      image: regionImages[value] || '/src/assets/regions/default.jpg'
+    })).sort((a, b) => a.label.localeCompare(b.label, 'ko'));
   
   // 전국 옵션을 맨 앞에 추가
   return [
-    { value: '전국', label: 'region_nationwide' },
+    { 
+      value: '전국', 
+      label: 'region_nationwide',
+      image: regionImages['전국'] || '/src/assets/regions/nationwide.jpg'
+    },
     ...regions
   ];
 }

@@ -7,6 +7,7 @@
         뒤로가기
       </button>
       <div class="chooser-content">
+        <div class="chooser-box">
         <div class="chooser-header">
           <h2 class="title">어떤 방식으로 추천을 받을까요?</h2>
           <p class="subtitle">원하는 방식에 따라 맞춤 장소를 추천해 드립니다.</p>
@@ -22,6 +23,7 @@
             <h3 class="option-title">가이드 따라 검색하기</h3>
             <p class="option-description">단계별 질문에 답변하며 나에게 꼭 맞는 장소를 찾아갑니다.</p>
           </div>
+        </div>
         </div>
       </div>
     </div>
@@ -50,7 +52,8 @@
     align-items: center;
     justify-content: center;
     min-height: 100vh;
-    background: #F7F8FA;
+    background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+    background-attachment: fixed;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     padding: 20px;
     position: relative;
@@ -84,6 +87,18 @@
     width: 100%;
     max-width: 640px;
     text-align: center;
+    position: relative;
+    z-index: 5;
+  }
+
+  .chooser-box {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    padding: 40px 32px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   }
   
   .chooser-header {
@@ -95,11 +110,13 @@
     font-weight: 700;
     color: #212529;
     margin-bottom: 12px;
+    text-shadow: none;
   }
   
   .subtitle {
     font-size: 18px;
-    color: #6c757d;
+    color: #495057;
+    text-shadow: none;
   }
   
   .chooser-options {
@@ -109,14 +126,18 @@
   }
   
   .option-card {
-    background: white;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 16px;
     padding: 32px;
     width: 280px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
     cursor: pointer;
     transition: all 0.2s ease;
-    border: 1px solid #e9ecef;
+    position: relative;
+    z-index: 10;
   }
   
   .option-card:hover {
