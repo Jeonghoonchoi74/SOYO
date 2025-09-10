@@ -489,7 +489,9 @@ export default {
       }
 
       try {
+        const userLanguage = await this.getUserLanguage() || 'auto';
         console.log('번역 요청 시작:', this.freeText);
+        console.log('소스 언어:', userLanguage, '→ 타겟 언어: ko');
         
         const response = await fetch('/api/translate/', {
           method: 'POST',
@@ -498,7 +500,7 @@ export default {
           },
           body: JSON.stringify({
             text: this.freeText,
-            source_lang: await this.getUserLanguage() || 'auto',
+            source_lang: userLanguage,
             target_language: 'ko',
             uid: user.uid
           }),

@@ -33,9 +33,11 @@ async def translate_text(request: dict):
             
             if response.status_code == 200:
                 result = response.json()
+                # 번역 서버 응답에서 translate 필드 또는 translated_text 필드 확인
+                translated_text = result.get("translated_text") or result.get("translate", text)
                 return {
                     "success": True,
-                    "translated_text": result.get("translated_text", text)
+                    "translated_text": translated_text
                 }
             else:
                 raise HTTPException(

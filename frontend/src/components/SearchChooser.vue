@@ -9,19 +9,19 @@
       <div class="chooser-content">
         <div class="chooser-box">
         <div class="chooser-header">
-          <h2 class="title">어떤 방식으로 추천을 받을까요?</h2>
-          <p class="subtitle">원하는 방식에 따라 맞춤 장소를 추천해 드립니다.</p>
+          <h2 class="title">{{ $t('search_chooser_title') }}</h2>
+          <p class="subtitle">{{ $t('search_chooser_subtitle') }}</p>
         </div>
         <div class="chooser-options">
           <div class="option-card" @click="goToFreeSearch">
             <div class="option-icon">⌨️</div>
-            <h3 class="option-title">자유롭게 검색하기</h3>
-            <p class="option-description">가고 싶은 곳, 하고 싶은 것을 자유롭게 입력하여 추천 받습니다.</p>
+            <h3 class="option-title">{{ $t('search_chooser_free_title') }}</h3>
+            <p class="option-description">{{ $t('search_chooser_free_desc') }}</p>
           </div>
           <div class="option-card" @click="goToGuidedSearch">
             <div class="option-icon">🗺️</div>
-            <h3 class="option-title">가이드 따라 검색하기</h3>
-            <p class="option-description">단계별 질문에 답변하며 나에게 꼭 맞는 장소를 찾아갑니다.</p>
+            <h3 class="option-title">{{ $t('search_chooser_guided_title') }}</h3>
+            <p class="option-description">{{ $t('search_chooser_guided_desc') }}</p>
           </div>
         </div>
         </div>
@@ -30,9 +30,14 @@
   </template>
   
   <script>
+  import { $t } from '../i18n';
+  
   export default {
     name: 'SearchChooser',
     methods: {
+      $t(key) {
+        return $t(key);
+      },
       goBack() {
         this.$router.push('/');
       },

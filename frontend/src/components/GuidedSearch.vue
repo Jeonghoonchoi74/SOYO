@@ -26,7 +26,7 @@
         <button v-if="history.length > 0" @click="goBack" class="back-btn">
           ←
         </button>
-        <h2 class="title">{{ currentQuestion.text }}</h2>
+        <h2 class="title">{{ $t(currentQuestion.text) }}</h2>
       </div>
 
       <!-- Options -->
@@ -44,7 +44,7 @@
           <div class="option-icon-guided" v-if="option.icon">
             {{ option.icon }}
           </div>
-          <div class="option-text-guided">{{ option.text }}</div>
+          <div class="option-text-guided">{{ $t(option.text) }}</div>
           <div v-if="option.description" class="option-description-guided">
             {{ option.description }}
           </div>
@@ -54,7 +54,7 @@
       <!-- Region Modal Trigger -->
       <div v-if="currentQuestion.isRegion && !isConfirmationStep">
         <div class="form-group">
-          <label class="section-label">{{ currentQuestion.text }}</label>
+          <label class="section-label">{{ $t(currentQuestion.text) }}</label>
           <button
             type="button"
             class="region-selector-btn"
@@ -65,7 +65,7 @@
               {{ getSelectedRegionDisplayName() }}
             </span>
             <span v-else class="placeholder">
-              전국 또는 특정 지역을 선택하세요
+              {{ $t('guided_search_region_placeholder') }}
             </span>
             <span class="dropdown-icon">▼</span>
           </button>
@@ -75,18 +75,18 @@
       <!-- Confirmation Step -->
       <div v-if="isConfirmationStep" class="confirmation-container">
         <div class="step-header">
-          <h2 class="title">이대로 추천을 받을까요?</h2>
+          <h2 class="title">{{ $t('guided_search_confirm_title') }}</h2>
         </div>
         <div class="final-query">
-          <p><strong>완성된 검색어:</strong></p>
+          <p><strong>{{ $t('guided_search_final_query') }}</strong></p>
           <p>{{ finalQuery }}</p>
         </div>
         <div class="confirmation-buttons">
           <button @click="goBack" class="recommend-btn secondary">
-            다시 선택
+            {{ $t('guided_search_retry') }}
           </button>
           <button @click="startRecommendation" class="recommend-btn">
-            추천 받기
+            {{ $t('guided_search_recommend') }}
           </button>
         </div>
       </div>
@@ -96,7 +96,7 @@
     <div v-if="showRegionModal" class="modal-overlay" @click="closeRegionModal">
       <div class="modal-content region-modal" @click.stop>
         <div class="modal-header">
-          <h3>지역 선택</h3>
+          <h3>{{ $t('guided_search_region_select') }}</h3>
           <button class="close-btn" @click="closeRegionModal">×</button>
         </div>
         <div class="modal-body">
@@ -120,7 +120,7 @@
         </div>
         <div class="modal-footer">
           <button class="btn-primary" @click="confirmRegionSelection">
-            확인
+            {{ $t('guided_search_confirm') }}
           </button>
         </div>
       </div>
@@ -132,7 +132,7 @@
 import { getAuth } from "firebase/auth";
 import { getRegionOptions } from "../utils/regionMapping";
 import questions from "../utils/guidedSearchQuestions";
-import { $t } from "../i18n";
+import { $t, i18nState } from "../i18n";
 
 export default {
   name: "GuidedSearch",
@@ -177,15 +177,16 @@ export default {
         }
       }
 
-      // Build query with suffixes
+      // Build query with suffixes (exclude region selection)
       for (const id in selections) {
         if (
           selections[id] &&
           selections[id].text &&
-          selections[id].value !== "any"
+          selections[id].value !== "any" &&
+          id !== "region" // 지역 선택은 쿼리에서 제외
         ) {
           const suffixRule = queryConfig.suffixes?.[id];
-          let text = selections[id].text; // 기본 텍스트를 먼저 할당
+          let text = this.$t(selections[id].text); // 기본 텍스트를 먼저 할당
 
           if (suffixRule && selections[id].value !== "alone") {
             let specificSuffix = "";
@@ -200,10 +201,10 @@ export default {
               // suffix가 '*'로 시작하는지 확인
               if (specificSuffix.startsWith("*")) {
                 // '*'를 제외한 나머지 문자열로 text 전체를 교체
-                text = specificSuffix.substring(1);
+                text = this.$t(specificSuffix.substring(1));
               } else {
                 // 기존 방식대로 뒤에 덧붙임
-                text += specificSuffix;
+                text += this.$t(specificSuffix);
               }
             }
           }
@@ -304,6 +305,54 @@ export default {
       this.recommend();
     },
 
+    // 번역 API 호출 함수
+    async translateQuery(query, targetLang = 'ko', sourceLang = 'auto') {
+      const auth = getAuth();
+      const user = auth.currentUser;
+      
+      if (!user) {
+        console.error('사용자가 로그인되지 않았습니다.');
+        return query;
+      }
+
+      try {
+        console.log('번역 요청 시작:', query);
+        console.log('소스 언어:', sourceLang, '→ 타겟 언어:', targetLang);
+        
+        const response = await fetch('/api/translate/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text: query,
+            source_lang: sourceLang,
+            target_language: targetLang,
+            uid: user.uid
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        
+        if (result.translated_text) {
+          console.log('원본 텍스트:', query);
+          console.log('번역된 텍스트 (한국어):', result.translated_text);
+          return result.translated_text;
+        } else {
+          console.error('번역 결과가 없습니다:', result);
+          return query;
+        }
+        
+      } catch (error) {
+        console.error('번역 API 호출 중 오류 발생:', error);
+        return query; // 오류 시 원본 쿼리 반환
+      }
+    },
+
     async recommend() {
       if (this.isSaving) return;
 
@@ -317,13 +366,21 @@ export default {
 
       try {
         this.isSaving = true;
-        const finalQuery = this.finalQuery;
+        let finalQuery = this.finalQuery;
         const region = this.userSelections.region
           ? this.userSelections.region.value
           : "";
         const category = this.userSelections.category
           ? this.userSelections.category.value
           : "";
+
+        // 현재 언어가 한국어가 아닌 경우 번역 수행
+        if (i18nState.lang !== 'ko') {
+          console.log("현재 언어가 한국어가 아님, 번역 API 호출 중...");
+          console.log("원본 쿼리:", finalQuery);
+          finalQuery = await this.translateQuery(finalQuery, 'ko', i18nState.lang);
+          console.log("번역된 쿼리:", finalQuery);
+        }
 
         // 상세한 파라미터 로그
         console.log("=== 추천 API 요청 파라미터 ===");

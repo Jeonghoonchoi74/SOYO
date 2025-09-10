@@ -63,7 +63,7 @@ export function getDbRegionName(displayName) {
 
 // 지역별 이미지 경로 매핑
 export const regionImages = {
-  '전국': '/src/assets/regions/서울.jpg', // 전국 이미지가 없으므로 서울 이미지 사용
+  '전국': '/src/assets/regions/전국.png', // 전국 이미지가 없으므로 서울 이미지 사용
   '강원특별자치도': '/src/assets/regions/강원도.jpg',
   '경기도': '/src/assets/regions/경기도.jpg',
   '경상남도': '/src/assets/regions/경상남도.jpg',
