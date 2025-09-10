@@ -611,6 +611,14 @@ export default {
     // 번역 API 호출 함수
     async translateText(text, targetLang = 'ko') {
       try {
+        const auth = getAuth();
+        const user = auth.currentUser;
+        
+        if (!user) {
+          console.error('사용자가 로그인되지 않았습니다.');
+          return text;
+        }
+
         const response = await fetch('/api/translate/', {
           method: 'POST',
           headers: {
@@ -619,7 +627,7 @@ export default {
           body: JSON.stringify({
             text: text,
             target_language: targetLang,
-            uid: 'system'  // RecommendResult에서는 시스템 번역
+            uid: user.uid
           }),
         });
 
@@ -636,10 +644,18 @@ export default {
       }
     },
 
-    // Gemini 번역 API 호출 함수
-    async translateWithGemini(text, sourceLang = 'ko', targetLang = 'en') {
+    // 내부 번역 API 호출 함수
+    async translateWithInternalAPI(text, sourceLang = 'ko', targetLang = 'en') {
       try {
-        const response = await fetch('/api/gemini/translate', {
+        const auth = getAuth();
+        const user = auth.currentUser;
+        
+        if (!user) {
+          console.error('사용자가 로그인되지 않았습니다.');
+          return text;
+        }
+
+        const response = await fetch('/api/translate/', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -647,7 +663,8 @@ export default {
           body: JSON.stringify({
             text: text,
             source_lang: sourceLang,
-            target_lang: targetLang
+            target_language: targetLang,
+            uid: user.uid
           }),
         });
 
@@ -655,14 +672,15 @@ export default {
           const result = await response.json();
           return result.translated_text;
         } else {
-          console.error('Gemini 번역 API 오류:', response.status);
+          console.error('내부 번역 API 오류:', response.status);
           return text; // 번역 실패시 원본 반환
         }
       } catch (error) {
-        console.error('Gemini 번역 중 오류:', error);
+        console.error('내부 번역 중 오류:', error);
         return text; // 오류시 원본 반환
       }
     },
+
 
     // 추천 API를 통한 검색
     async searchWithRecommendAPI(searchQuery) {
@@ -1211,12 +1229,10 @@ export default {
       this.isTranslating = true;
       
       try {
-        // 번역할 내용들을 수집 (가게명 포함)
-        const contentToTranslate = {
-          title: this.selectedPlace.displayTitle || this.selectedPlace.title,  // 가게명도 번역
+        // 번역할 내용들을 2개 그룹으로 나누기
+        const detailInfo = {
+          title: this.selectedPlace.displayTitle || this.selectedPlace.title,
           address: this.selectedPlace.displayAddress || this.selectedPlace.addr1,
-          summary: this.selectedPlace.displaySummary || this.selectedPlace.overview || this.selectedPlace.description,
-          detailInfo: this.selectedPlace.detail_intro2?.eventintro || this.selectedPlace.detail_intro2?.eventtext,
           // foods 카테고리 관련 정보
           representativeMenu: this.selectedPlace.firstmenu,
           menu: this.selectedPlace.treatmenu,
@@ -1233,61 +1249,96 @@ export default {
           contact: this.selectedPlace.tel,
           detailAddress: this.selectedPlace.addr2
         };
+
+        const descriptionInfo = {
+          summary: this.selectedPlace.displaySummary || this.selectedPlace.overview || this.selectedPlace.description,
+          detailInfo: this.selectedPlace.detail_intro2?.eventintro || this.selectedPlace.detail_intro2?.eventtext
+        };
         
         // 유효한 텍스트만 필터링
-        const validTexts = {};
-        for (const [key, text] of Object.entries(contentToTranslate)) {
+        const validDetailInfo = {};
+        const validDescriptionInfo = {};
+        
+        for (const [key, text] of Object.entries(detailInfo)) {
           if (text && text.trim()) {
-            validTexts[key] = text.trim();
+            validDetailInfo[key] = text.trim();
           }
         }
         
-        if (Object.keys(validTexts).length === 0) {
+        for (const [key, text] of Object.entries(descriptionInfo)) {
+          if (text && text.trim()) {
+            validDescriptionInfo[key] = text.trim();
+          }
+        }
+        
+        if (Object.keys(validDetailInfo).length === 0 && Object.keys(validDescriptionInfo).length === 0) {
           this.showModalMessage(this.$t('recommend_no_content_to_translate'));
           return;
         }
         
-        console.log(`Gemini 일괄 번역 시작: ${Object.keys(validTexts).length}개 항목`);
+        console.log(`내부 번역 API 2단계 번역 시작: 상세정보 ${Object.keys(validDetailInfo).length}개, 설명 ${Object.keys(validDescriptionInfo).length}개`);
         
-        // Gemini 일괄 번역 API 호출
-        const response = await fetch('/api/gemini/translate-batch', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            texts: validTexts,
-            source_lang: 'ko',
-            target_lang: this.userLanguage
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        // 1단계: 상세 정보 번역
+        const translatedDetailInfo = {};
+        if (Object.keys(validDetailInfo).length > 0) {
+          const detailPromises = Object.entries(validDetailInfo).map(async ([key, text]) => {
+            try {
+              const translatedText = await this.translateWithInternalAPI(text, 'ko', this.userLanguage);
+              return { key, translatedText };
+            } catch (error) {
+              console.error(`상세정보 번역 실패: ${key}`, error);
+              return { key, translatedText: text };
+            }
+          });
+          
+          const detailResults = await Promise.all(detailPromises);
+          detailResults.forEach(({ key, translatedText }) => {
+            translatedDetailInfo[key] = translatedText;
+          });
         }
-
-        const result = await response.json();
         
-        if (result.success && result.translated_texts) {
-          console.log('Gemini 일괄 번역 완료:', result.translated_texts);
-          this.translatedContent = result.translated_texts;
+        // 2단계: 설명/개요 번역
+        const translatedDescriptionInfo = {};
+        if (Object.keys(validDescriptionInfo).length > 0) {
+          const descriptionPromises = Object.entries(validDescriptionInfo).map(async ([key, text]) => {
+            try {
+              const translatedText = await this.translateWithInternalAPI(text, 'ko', this.userLanguage);
+              return { key, translatedText };
+            } catch (error) {
+              console.error(`설명 번역 실패: ${key}`, error);
+              return { key, translatedText: text };
+            }
+          });
+          
+          const descriptionResults = await Promise.all(descriptionPromises);
+          descriptionResults.forEach(({ key, translatedText }) => {
+            translatedDescriptionInfo[key] = translatedText;
+          });
+        }
+        
+        // 결과 합치기
+        const translatedTexts = { ...translatedDetailInfo, ...translatedDescriptionInfo };
+        
+        if (Object.keys(translatedTexts).length > 0) {
+          console.log('내부 번역 API 일괄 번역 완료:', translatedTexts);
+          this.translatedContent = translatedTexts;
           
           // selectedPlace의 데이터 업데이트 (가게명 번역 시)
-          if (result.translated_texts.title) {
+          if (translatedTexts.title) {
             // 원본 제목을 original_title에 저장
             this.selectedPlace.original_title = this.selectedPlace.displayTitle || this.selectedPlace.title;
             // 현재 제목을 번역된 내용으로 업데이트
-            this.selectedPlace.title = result.translated_texts.title;
-            this.selectedPlace.displayTitle = result.translated_texts.title;
+            this.selectedPlace.title = translatedTexts.title;
+            this.selectedPlace.displayTitle = translatedTexts.title;
           }
           
           // Firebase에 번역 결과 저장
-          await this.saveTranslationToFirebase(result.translated_texts);
+          await this.saveTranslationToFirebase(translatedTexts);
           
           // 모달 메시지 표시
           this.showModalMessage(this.$t('recommend_translation_complete'));
         } else {
-          throw new Error('번역 결과를 받지 못했습니다.');
+          throw new Error('번역할 내용이 없습니다.');
         }
         
       } catch (error) {
