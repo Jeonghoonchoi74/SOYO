@@ -180,6 +180,12 @@
             >
               {{ isTranslating ? $t('recommend_translating') : $t('recommend_translate') }}
             </button>
+            <div 
+              v-if="userLanguage !== 'ko' && isTranslated" 
+              class="translate-status"
+            >
+              ✅ {{ $t('recommend_translated') }}
+            </div>
             <button class="modal-close" @click="closeModal">&times;</button>
           </div>
         </div>
@@ -1157,6 +1163,12 @@ export default {
       
       // 번역 상태 확인
       await this.checkTranslationStatus();
+      
+      // 한국어가 아니고 아직 번역되지 않은 경우 자동 번역 실행
+      if (this.userLanguage !== 'ko' && !this.isTranslated) {
+        console.log('자동 번역 시작');
+        await this.translatePlaceContent();
+      }
     },
 
     // 모달에서 북마크 토글
@@ -1231,7 +1243,7 @@ export default {
         }
         
         if (Object.keys(validTexts).length === 0) {
-          this.showModalMessage('번역할 내용이 없습니다.');
+          this.showModalMessage(this.$t('recommend_no_content_to_translate'));
           return;
         }
         
@@ -1273,14 +1285,14 @@ export default {
           await this.saveTranslationToFirebase(result.translated_texts);
           
           // 모달 메시지 표시
-          this.showModalMessage('번역이 완료되었습니다.');
+          this.showModalMessage(this.$t('recommend_translation_complete'));
         } else {
           throw new Error('번역 결과를 받지 못했습니다.');
         }
         
       } catch (error) {
         console.error('번역 중 오류:', error);
-        this.showModalMessage('번역 중 오류가 발생했습니다.');
+        this.showModalMessage(this.$t('recommend_translation_error'));
       } finally {
         this.isTranslating = false;
       }
@@ -2022,6 +2034,20 @@ export default {
   background: #adb5bd;
   cursor: not-allowed;
   transform: none;
+}
+
+.translate-status {
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: default;
 }
 
 .modal-bookmark-btn {
