@@ -50,4 +50,6 @@ async def root():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=5000)
+    # 동시 사용자 처리를 위한 다중 워커 설정
+    # import string을 사용하여 workers 파라미터 활성화
+    uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=False)

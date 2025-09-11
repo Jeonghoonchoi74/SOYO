@@ -30,10 +30,10 @@
         <div v-if="mode==='signup'" class="form-group">
           <label for="lang">{{ $t('select_language') }}</label>
           <select id="lang" v-model="signupLang" required>
-            <option value="ko">{{ $t('lang_ko') }}</option>
-            <option value="en">{{ $t('lang_en') }}</option>
-            <option value="zh">{{ $t('lang_zh') }}</option>
-            <option value="ja">{{ $t('lang_ja') }}</option>
+            <option value="ko">🇰🇷 {{ $t('lang_ko') }}</option>
+            <option value="en">🇺🇸 {{ $t('lang_en') }}</option>
+            <option value="ja">🇯🇵 {{ $t('lang_ja') }}</option>
+            <option value="zh">🇨🇳 {{ $t('lang_zh') }}</option>
           </select>
         </div>
         

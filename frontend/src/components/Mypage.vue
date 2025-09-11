@@ -1,11 +1,5 @@
 <template>
   <div class="mypage-page">
-    <button class="back-btn" @click="goBack">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M19 12H5M12 19l-7-7 7-7"/>
-      </svg>
-      {{ $t('back') }}
-    </button>
     
     <div class="mypage-content">
       <div class="mypage-header">
@@ -117,6 +111,13 @@
         </div>
       </div>
     </div>
+    
+    <!-- 뒤로가기 버튼 (왼쪽 하단) -->
+    <button class="back-btn" @click="goBack">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+    </button>
   </div>
 </template>
 
@@ -140,8 +141,8 @@ export default {
       languages: [
         { code: 'ko', name: '한국어', flag: '🇰🇷' },
         { code: 'en', name: 'English', flag: '🇺🇸' },
-        { code: 'zh', name: '中文', flag: '🇨🇳' },
         { code: 'ja', name: '日本語', flag: '🇯🇵' },
+        { code: 'zh', name: '中文', flag: '🇨🇳' },
       ],
     };
   },
@@ -309,27 +310,30 @@ export default {
 }
 
 .back-btn {
-  position: absolute;
-  top: 20px;
+  position: fixed;
+  bottom: 20px;
   left: 20px;
-  background: white;
-  color: #4A69E2;
-  border: 1px solid #4A69E2;
-  border-radius: 8px;
-  padding: 10px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  padding: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: none;
+  background: #4A69E2;
+  color: white;
+  cursor: pointer;
   transition: all 0.2s ease;
   z-index: 1000;
 }
 
 .back-btn:hover {
-  background: #4A69E2;
-  color: white;
+  background: #3B5BC7;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
 .mypage-content {
@@ -726,9 +730,14 @@ export default {
 
 /* 반응형 */
 @media (max-width: 768px) {
+  .mypage-page {
+    padding: 12px;
+  }
+  
   .mypage-content {
     padding: 32px 20px;
-    margin: 0 12px;
+    margin: 0 auto;
+    max-width: calc(100% - 24px);
   }
   
   .user-info {
@@ -746,6 +755,11 @@ export default {
   .delete-btn {
     width: 100%;
     justify-content: center;
+  }
+  
+  .back-btn {
+    width: 50px;
+    height: 50px;
   }
 }
 </style>

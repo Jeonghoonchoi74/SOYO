@@ -52,13 +52,13 @@
             <span class="flag">🇺🇸</span>
             <span class="lang-name">English</span>
           </button>
-          <button class="language-option" @click="selectLanguage('zh')">
-            <span class="flag">🇨🇳</span>
-            <span class="lang-name">中文</span>
-          </button>
           <button class="language-option" @click="selectLanguage('ja')">
             <span class="flag">🇯🇵</span>
             <span class="lang-name">日本語</span>
+          </button>
+          <button class="language-option" @click="selectLanguage('zh')">
+            <span class="flag">🇨🇳</span>
+            <span class="lang-name">中文</span>
           </button>
         </div>
       </div>
@@ -100,9 +100,9 @@ export default {
     return {
       languages: [
         { code: 'ko', label: '🇰🇷 한국어' },
-        { code: 'zh', label: '🇨🇳 中文' },
-        { code: 'ja', label: '🇯🇵 日本語' },
         { code: 'en', label: '🇺🇸 English' },
+        { code: 'ja', label: '🇯🇵 日本語' },
+        { code: 'zh', label: '🇨🇳 中文' },
       ],
       selectedLang: 'ko',
       showLoginModal: false,
@@ -319,16 +319,15 @@ export default {
 
 /* 언어 선택 버튼 그룹 */
 .lang-select {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin-bottom: 32px;
-  flex-wrap: wrap;
 }
 
 /* 언어 선택 버튼 */
 .lang-btn {
-  flex: 1;
-  min-width: 80px;
+  width: 100%;
   padding: 12px 16px;
   border: 1px solid #e9ecef;
   border-radius: 8px;
@@ -379,9 +378,9 @@ export default {
 /* 네비게이션 버튼들 */
 .nav-buttons {
   display: flex;
-  gap: 12px;
+  gap: 8px;
   justify-content: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .nav-btn {
@@ -389,14 +388,20 @@ export default {
   color: #495057;
   border: 1px solid #e9ecef;
   border-radius: 8px;
-  padding: 12px 16px;
-  font-size: 14px;
+  padding: 10px 8px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .nav-btn:hover {
@@ -440,6 +445,7 @@ export default {
   align-items: center;
   padding: 24px 24px 20px 24px;
   border-bottom: 1px solid #f1f3f4;
+  text-align: center;
 }
 
 .modal-header h3 {
@@ -447,6 +453,8 @@ export default {
   font-size: 18px;
   font-weight: 600;
   color: #212529;
+  text-align: center;
+  flex: 1;
 }
 
 .close-btn {
@@ -529,24 +537,27 @@ export default {
 
 .language-options {
   padding: 20px 24px 24px 24px;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
 
 .language-option {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 12px;
   background: #f8f9fa;
   border: 1px solid #e9ecef;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   color: #212529;
+  width: 100%;
+  text-align: center;
 }
 
 .language-option:hover {
@@ -562,7 +573,7 @@ export default {
 
 .lang-name {
   flex: 1;
-  text-align: left;
+  text-align: center;
   color: inherit;
 }
 
@@ -581,11 +592,13 @@ export default {
   .lang-select {
     gap: 6px;
     margin-bottom: 24px;
+    grid-template-columns: 1fr 1fr;
   }
   
   .lang-btn {
     padding: 10px 12px;
     font-size: 13px;
+    width: 100%;
   }
   
   .start-btn {
@@ -594,17 +607,42 @@ export default {
   }
   
   .nav-buttons {
-    gap: 8px;
+    gap: 6px;
+    flex-wrap: nowrap;
   }
   
   .nav-btn {
-    padding: 10px 12px;
-    font-size: 13px;
+    padding: 8px 6px;
+    font-size: 12px;
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    justify-content: center;
   }
   
   .modal-overlay,
   .language-modal-overlay {
     padding: 12px;
+  }
+  
+  .language-options {
+    padding: 16px 20px 20px 20px;
+    gap: 10px;
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .language-option {
+    padding: 12px 8px;
+    font-size: 13px;
+    gap: 6px;
+    justify-content: center;
+    text-align: center;
+  }
+  
+  .lang-name {
+    text-align: center;
   }
 }
 </style>

@@ -11,7 +11,6 @@
       >
         <path d="M19 12H5M12 19l-7-7 7-7" />
       </svg>
-      {{ $t('back') }}
     </button>
     <div class="preference-content">
       <div class="progress-bar" v-if="currentStep > 0 && !isConfirmationStep">
@@ -115,7 +114,7 @@
                 'region-option',
                 { active: tempSelectedRegion === region.value },
               ]"
-              @click="selectRegion(region.value)"
+              @click="selectRegionAndClose(region.value)"
               :title="$t(region.label)"
             >
               <div class="region-image">
@@ -125,13 +124,16 @@
             </button>
           </div>
         </div>
-        <div class="modal-footer">
-          <button class="btn-primary" @click="confirmRegionSelection">
-            {{ $t('guided_search_confirm') }}
-          </button>
-        </div>
       </div>
     </div>
+    
+    <!-- 홈 버튼 (오른쪽 하단) -->
+    <button class="float-btn home-float-btn" @click="goHome">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+        <polyline points="9,22 9,12 15,12 15,22" />
+      </svg>
+    </button>
   </div>
 </template>
 
@@ -286,6 +288,21 @@ export default {
     },
     selectRegion(regionValue) {
       this.tempSelectedRegion = regionValue;
+    },
+    selectRegionAndClose(regionValue) {
+      const region = this.regionOptions.find(
+        (r) => r.value === regionValue
+      );
+      if (region) {
+        this.userSelections.region = {
+          text: this.$t(region.label),
+          value: region.value,
+        };
+      }
+      this.closeRegionModal();
+      console.log('지역 선택 완료, 다음 단계로 이동:', this.currentQuestion.nextStep);
+      console.log('현재 사용자 선택:', this.userSelections);
+      this.currentStep = this.currentQuestion.nextStep;
     },
     confirmRegionSelection() {
       const region = this.regionOptions.find(
@@ -471,15 +488,20 @@ export default {
         this.isSaving = false;
       }
     },
+    
+    goHome() {
+      this.$router.push('/');
+    }
   },
 };
 </script>
 
 <style scoped>
-/* Using styles from PreferenceInput.vue and SearchChooser.vue for consistency */
+/* 메인페이지와 일치하는 파란색 배경 */
 .preference-page {
   min-height: 100vh;
-  background: #f7f8fa;
+  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+  background-attachment: fixed;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   padding: 20px;
   display: flex;
@@ -488,35 +510,43 @@ export default {
   position: relative;
 }
 .page-back-btn {
-  position: absolute;
-  top: 20px;
+  position: fixed;
+  bottom: 20px;
   left: 20px;
-  background: white;
-  color: #4a69e2;
-  border: 1px solid #4a69e2;
-  border-radius: 8px;
-  padding: 10px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  padding: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: none;
+  background: #4A69E2;
+  color: white;
+  cursor: pointer;
   transition: all 0.2s ease;
   z-index: 1000;
 }
 .page-back-btn:hover {
-  background: #4a69e2;
-  color: white;
+  background: #3B5BC7;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 .preference-content {
   width: 100%;
   max-width: 720px;
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 16px;
   padding: 40px 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
   margin-top: 20px;
+  position: relative;
+  z-index: 10;
 }
 .progress-bar {
   height: 8px;
@@ -857,6 +887,52 @@ export default {
   .region-name {
     font-size: 10px;
     bottom: 2px;
+  }
+}
+
+/* 플로팅 버튼 스타일 */
+.float-btn {
+  position: fixed;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.float-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.home-float-btn {
+  bottom: 20px;
+  right: 20px;
+  background: #28a745;
+  color: white;
+}
+
+.home-float-btn:hover {
+  background: #218838;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+  .float-btn {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .home-float-btn {
+    right: 20px;
   }
 }
 </style>

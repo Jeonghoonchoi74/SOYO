@@ -3,7 +3,7 @@
     <div class="recommend-content">
       <div class="recommend-header">
         <h2 class="title">{{ $t('recommend_title') }}</h2>
-        <p class="region-info">{{ $t(getDisplayName(region)) }} 지역 {{ $t(getCategoryLabel(category)) }} 추천</p>
+        <p class="region-info">{{ getRegionCategoryText() }}</p>
       </div>
     
     <div v-if="loading" class="loading">
@@ -143,15 +143,7 @@
     </div>
     
     
-    <button class="bookmark-list-btn" @click="goBookmark">{{ $t('recommend_bookmark_btn') }}</button>
     
-    <!-- Floating 버튼 -->
-    <button class="floating-back-btn" @click="goHome">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-      </svg>
-      {{ $t('recommend_back_main') }}
-    </button>
     
     <!-- 상세 모달 -->
     <div v-if="selectedPlace" class="modal-overlay" @click="closeModal">
@@ -346,6 +338,20 @@
     
       <div v-if="showModal" class="custom-modal">{{ modalMessage }}</div>
     </div>
+    
+    <!-- Float 버튼들 -->
+    <button class="float-btn bookmark-float-btn" @click="goToBookmarks">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+      </svg>
+    </button>
+    
+    <button class="float-btn home-float-btn" @click="goHome">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+        <polyline points="9,22 9,12 15,12 15,22" />
+      </svg>
+    </button>
   </div>
 </template>
 
@@ -435,6 +441,32 @@ export default {
     // 지역명 표시 함수
     getDisplayName(dbRegionName) {
       return getDisplayName(dbRegionName);
+    },
+    
+    // 지역과 카테고리 텍스트 생성 함수
+    getRegionCategoryText() {
+      const regionName = this.$t(this.getDisplayName(this.region));
+      const categoryName = this.$t(this.getCategoryLabel(this.category));
+      
+      // <br/> 태그를 공백으로 치환
+      const cleanRegionName = regionName.replace(/<br\s*\/?>/gi, ' ');
+      const cleanCategoryName = categoryName.replace(/<br\s*\/?>/gi, ' ');
+      
+      // 현재 언어에 따라 다른 형식으로 반환
+      const currentLang = i18nState.lang;
+      
+      switch (currentLang) {
+        case 'ko':
+          return `${cleanRegionName} 지역 ${cleanCategoryName} 추천`;
+        case 'en':
+          return `${cleanRegionName} ${cleanCategoryName} Recommendations`;
+        case 'zh':
+          return `${cleanRegionName}地区${cleanCategoryName}推荐`;
+        case 'ja':
+          return `${cleanRegionName}地域${cleanCategoryName}推奨`;
+        default:
+          return `${cleanRegionName} ${cleanCategoryName} Recommendations`;
+      }
     },
     
     // 카테고리 라벨 표시 함수
@@ -1218,6 +1250,10 @@ export default {
       this.$router.push('/bookmarks');
     },
 
+    goToBookmarks() {
+      this.$router.push('/bookmarks');
+    },
+
     goHome() {
       this.$router.push('/');
     },
@@ -1554,35 +1590,47 @@ export default {
   font-weight: 500;
 }
 
-.floating-back-btn {
+
+/* Float 버튼들 */
+.float-btn {
   position: fixed;
-  bottom: 30px;
-  right: 30px;
-  background: #4A69E2;
-  color: white;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
   border: none;
-  border-radius: 50px;
-  padding: 12px 20px;
-  font-size: 14px;
-  font-weight: 500;
   cursor: pointer;
-  box-shadow: 0 4px 20px rgba(74, 105, 226, 0.3);
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   z-index: 1000;
   display: flex;
   align-items: center;
-  gap: 8px;
-  backdrop-filter: blur(10px);
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.floating-back-btn:hover {
+.bookmark-float-btn {
+  bottom: 20px;
+  left: 20px;
+  background: #4A69E2;
+  color: white;
+}
+
+.bookmark-float-btn:hover {
   background: #3B5BC7;
   transform: translateY(-2px);
-  box-shadow: 0 6px 25px rgba(74, 105, 226, 0.4);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
-.floating-back-btn:active {
-  transform: translateY(0);
+.home-float-btn {
+  bottom: 20px;
+  right: 20px;
+  background: #28a745;
+  color: white;
+}
+
+.home-float-btn:hover {
+  background: #218838;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
 .loading {
@@ -2385,11 +2433,14 @@ export default {
     grid-template-columns: 1fr;
   }
   
-  .floating-back-btn {
-    bottom: 20px;
+  
+  .float-btn {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .home-float-btn {
     right: 20px;
-    padding: 10px 16px;
-    font-size: 13px;
   }
   
   /* 모바일에서 지도 높이 조정 */

@@ -4,7 +4,6 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M19 12H5M12 19l-7-7 7-7"/>
       </svg>
-      {{ $t('back') }}
     </button>
     <div class="preference-content">
       <div class="preference-header">
@@ -46,7 +45,7 @@
               :class="['category-btn', { active: selectedCategory === category }]" 
               @click="selectCategory(category)"
             >
-              {{ getCategoryDisplayName(category) }}
+              <span v-html="getCategoryDisplayName(category)"></span>
             </button>
           </div>
         </div>
@@ -82,7 +81,7 @@
               v-for="region in regionOptions" 
               :key="region.value" 
               :class="['region-option', { active: selectedRegion === region.value }]"
-              @click="selectRegion(region.value)"
+              @click="selectRegionAndClose(region.value)"
               :title="$t(region.label)"
             >
               <div class="region-image">
@@ -91,9 +90,6 @@
               <span class="region-name">{{ $t(region.label) }}</span>
             </button>
           </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn-primary" @click="confirmRegionSelection">{{ $t('pref_confirm') }}</button>
         </div>
       </div>
     </div>
@@ -118,6 +114,14 @@
         </div>
       </div>
     </div>
+    
+    <!-- 홈 버튼 (오른쪽 하단) -->
+    <button class="float-btn home-float-btn" @click="goHome">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+        <polyline points="9,22 9,12 15,12 15,22" />
+      </svg>
+    </button>
   </div>
 </template>
 
@@ -179,6 +183,12 @@ export default {
     
     selectRegion(regionValue) {
       this.tempSelectedRegion = regionValue;
+    },
+    
+    selectRegionAndClose(regionValue) {
+      this.selectedRegion = regionValue;
+      this.onRegionChange();
+      this.closeRegionModal();
     },
     
     confirmRegionSelection() {
@@ -535,6 +545,10 @@ export default {
         return this.freeText;
       }
     },
+    
+    goHome() {
+      this.$router.push('/');
+    }
   },
 };
 </script>
@@ -555,27 +569,30 @@ export default {
 }
 
 .back-btn {
-  position: absolute;
-  top: 20px;
+  position: fixed;
+  bottom: 20px;
   left: 20px;
-  background: white;
-  color: #4A69E2;
-  border: 1px solid #4A69E2;
-  border-radius: 8px;
-  padding: 10px 16px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  padding: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: none;
+  background: #4A69E2;
+  color: white;
+  cursor: pointer;
   transition: all 0.2s ease;
   z-index: 1000;
 }
 
 .back-btn:hover {
-  background: #4A69E2;
-  color: white;
+  background: #3B5BC7;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
 .preference-content {
@@ -1151,6 +1168,52 @@ export default {
   .region-name {
     font-size: 10px;
     bottom: 2px;
+  }
+}
+
+/* 플로팅 버튼 스타일 */
+.float-btn {
+  position: fixed;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.float-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.home-float-btn {
+  bottom: 20px;
+  right: 20px;
+  background: #28a745;
+  color: white;
+}
+
+.home-float-btn:hover {
+  background: #218838;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+  .float-btn {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .home-float-btn {
+    right: 20px;
   }
 }
 </style>
