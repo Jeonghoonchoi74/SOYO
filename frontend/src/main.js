@@ -4,6 +4,7 @@ import './style.css'
 
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from './components/Home.vue'
+import Main from './components/Main.vue'
 import DestinationCategory from './components/DestinationCategory.vue'
 import PreferenceInput from './components/PreferenceInput.vue'
 import AuthPage from './components/AuthPage.vue'
@@ -15,6 +16,7 @@ import Mypage from './components/Mypage.vue'
 const routes = [
   { path: '/auth', component: AuthPage },
   { path: '/', component: Home },
+  { path: '/main', component: Main },
   { path: '/destination', redirect: '/search' }, // Redirect to the new chooser page
   { path: '/search', component: SearchChooser }, // New search chooser page
   { path: '/preference', component: PreferenceInput }, // Existing free search

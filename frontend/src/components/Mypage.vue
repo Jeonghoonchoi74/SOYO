@@ -157,13 +157,13 @@ export default {
         this.selectedLang = i18nState.lang || 'ko';
         this.loadUserInfo();
       } else {
-        this.$router.push('/');
+        this.$router.push('/main');
       }
     });
   },
   methods: {
     goBack() {
-      this.$router.push('/');
+      this.$router.push('/main');
     },
     async loadUserInfo() {
       try {
@@ -289,7 +289,7 @@ export default {
         await deleteUser(user);
         
         alert(this.$t('delete_account_success'));
-        this.$router.push('/');
+        this.$router.push('/main');
       } catch (error) {
         console.error('회원탈퇴 실패:', error);
         alert(this.$t('delete_account_error'));

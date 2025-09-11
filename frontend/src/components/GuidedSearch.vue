@@ -490,7 +490,7 @@ export default {
     },
     
     goHome() {
-      this.$router.push('/');
+      this.$router.push('/main');
     }
   },
 };

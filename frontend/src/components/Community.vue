@@ -241,7 +241,7 @@ export default {
     const auth = getAuth();
     this.currentUser = auth.currentUser;
     if (!this.currentUser) {
-      this.$router.push('/auth');
+      this.$router.push('/main');
       return;
     }
 
@@ -259,7 +259,7 @@ export default {
   methods: {
     $t,
     goBack() {
-      this.$router.go(-1);
+      this.$router.push('/main');
     },
 
     toggleWriteMode() {

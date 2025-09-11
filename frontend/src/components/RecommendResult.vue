@@ -1255,7 +1255,7 @@ export default {
     },
 
     goHome() {
-      this.$router.push('/');
+      this.$router.push('/main');
     },
 
     // 장소 내용 번역 함수 (일괄 번역으로 최적화)

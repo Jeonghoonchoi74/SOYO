@@ -138,14 +138,14 @@ export default {
             this.loading = false;
             return;
           }
-          this.$router.push('/');
+          this.$router.push('/main');
         } else {
           await signInWithEmailAndPassword(auth, this.email, this.password);
           const user = auth.currentUser;
           if (user && user.email && user.email.toLowerCase() === 'admin@gmail.com') {
             this.$router.push('/management');
           } else {
-            this.$router.push('/');
+            this.$router.push('/main');
           }
         }
       } catch (e) {
@@ -174,7 +174,7 @@ export default {
           if (user.email && user.email.toLowerCase() === 'admin@gmail.com') {
             this.$router.push('/management');
           } else {
-            this.$router.push('/');
+            this.$router.push('/main');
           }
         }
       } catch (e) {
@@ -190,7 +190,7 @@ export default {
       if (user && user.email && user.email.toLowerCase() === 'admin@gmail.com') {
         this.$router.push('/management');
       } else {
-        this.$router.push('/');
+        this.$router.push('/main');
       }
     },
     friendlyError(e) {

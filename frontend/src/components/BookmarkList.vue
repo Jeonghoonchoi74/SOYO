@@ -308,7 +308,7 @@ export default {
   },
   methods: {
     goBack() {
-      this.$router.go(-1);
+      this.$router.push('/main');
     },
     editReview(idx, place) {
       place.reviewText = place.review || '';

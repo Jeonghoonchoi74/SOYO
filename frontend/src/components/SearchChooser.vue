@@ -46,7 +46,7 @@
         return $t(key);
       },
       goBack() {
-        this.$router.push('/');
+        this.$router.push('/main');
       },
       goToFreeSearch() {
         this.$router.push('/preference');
@@ -55,7 +55,7 @@
         this.$router.push('/search/guided');
       },
       goHome() {
-        this.$router.push('/');
+        this.$router.push('/main');
       }
     }
   };

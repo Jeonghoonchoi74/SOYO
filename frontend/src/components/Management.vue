@@ -58,7 +58,7 @@ export default {
     const auth = getAuth();
     const user = auth.currentUser;
     if (!user || user.email !== 'admin@gmail.com') {
-      this.$router.push('/');
+      this.$router.push('/main');
       return;
     }
     this.isAdmin = true;
