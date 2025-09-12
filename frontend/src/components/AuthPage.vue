@@ -1,5 +1,6 @@
 <template>
   <div class="auth-page">
+
     <div class="auth-content">
       <div class="auth-tabs">
         <button :class="{active: mode==='login'}" @click="mode='login'">{{ $t('login') }}</button>
@@ -43,7 +44,6 @@
           {{ mode==='login' ? $t('login') : $t('signup') }}
         </button>
         
-        <div class="divider">{{ $t('or') }}</div>
         
         <button class="google-btn" type="button" @click="googleLogin" :disabled="loading">
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" class="google-icon" />
@@ -58,6 +58,7 @@
       :user="googleUser"
       @setup-complete="onLanguageSetupComplete"
     />
+
   </div>
 </template>
 
@@ -319,31 +320,6 @@ input:focus, select:focus {
 .auth-btn:hover:not(:disabled) {
   background: #3B5BC7;
 }
-.divider {
-  text-align: center;
-  color: #6c757d;
-  margin: 16px 0;
-  font-size: 14px;
-  position: relative;
-}
-
-.divider::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: #e9ecef;
-  z-index: 1;
-}
-
-.divider span {
-  background: white;
-  padding: 0 16px;
-  position: relative;
-  z-index: 2;
-}
 
 .google-btn {
   width: 100%;
@@ -437,5 +413,157 @@ input:focus, select:focus {
     padding: 12px;
     font-size: 13px;
   }
+}
+
+/* 도움말 버튼 */
+.help-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  width: 45px;
+  height: 45px;
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.help-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  color: #333;
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.help-btn svg {
+  width: 20px;
+  height: 20px;
+  stroke: white;
+  fill: none;
+}
+
+/* 모달 팝업 스타일 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  padding: 20px;
+  color: #212529;
+}
+
+.modal-box {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 85vh;
+  overflow-y: auto;
+  color: #212529;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  position: relative;
+  z-index: 3001;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px 24px 20px 24px;
+  text-align: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #212529;
+  text-align: center;
+  flex: 1;
+}
+
+.modal-content {
+  padding: 0 24px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  padding: 20px 24px 24px 24px;
+}
+
+.modal-btn {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+}
+
+.modal-btn.primary {
+  background: #4A69E2;
+  color: white;
+}
+
+.modal-btn.primary:hover {
+  background: #3B5BC7;
+}
+
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #adb5bd;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  color: #212529;
+}
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+  .help-btn {
+    width: 40px;
+    height: 40px;
+    top: 15px;
+    left: 15px;
+    border: 2px solid white;
+    font-size: 16px;
+  }
+
+  .help-btn svg {
+    width: 18px;
+    height: 18px;
+    stroke: white;
+    fill: none;
+  }
+  
 }
 </style> 

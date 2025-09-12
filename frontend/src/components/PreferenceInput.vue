@@ -1,5 +1,10 @@
 <template>
   <div class="preference-page">
+    <!-- 도움말 버튼 (오른쪽 하단) -->
+    <button class="help-btn" @click="showTutorial">
+      ?
+    </button>
+
     <button class="back-btn" @click="goBack">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M19 12H5M12 19l-7-7 7-7"/>
@@ -128,13 +133,28 @@
       </div>
     </div>
 
-    <!-- 홈 버튼 (오른쪽 하단) -->
-    <button class="float-btn home-float-btn" @click="goHome">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-        <polyline points="9,22 9,12 15,12 15,22" />
-      </svg>
-    </button>
+
+    <!-- 튜토리얼 모달 -->
+    <div v-if="showTutorialModal" class="modal-overlay" @click="closeTutorial">
+      <div class="modal-box tutorial-modal" @click.stop>
+        <div class="modal-header">
+          <h3>{{ $t('tutorial_title') }}</h3>
+          <button class="close-btn" @click="closeTutorial">×</button>
+        </div>
+        <div class="tutorial-content">
+          <div class="tutorial-step" v-for="(step, index) in tutorialSteps" :key="index">
+            <div class="step-number">{{ index + 1 }}</div>
+            <div class="step-content">
+              <h4>{{ $t(step.title) }}</h4>
+              <p>{{ $t(step.description) }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="modal-btn primary" @click="closeTutorial">{{ $t('tutorial_got_it') }}</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -165,6 +185,37 @@ export default {
       searchingImages: [trying1, trying2],
       currentSearchingImageIndex: 0,
       searchingImageInterval: null,
+      showTutorialModal: false,
+      tutorialSteps: [
+        {
+          title: 'tutorial_step1_title',
+          description: 'tutorial_step1_desc'
+        },
+        {
+          title: 'tutorial_step2_title',
+          description: 'tutorial_step2_desc'
+        },
+        {
+          title: 'tutorial_step3_title',
+          description: 'tutorial_step3_desc'
+        },
+        {
+          title: 'tutorial_step4_title',
+          description: 'tutorial_step4_desc'
+        },
+        {
+          title: 'tutorial_step5_title',
+          description: 'tutorial_step5_desc'
+        },
+        {
+          title: 'tutorial_step6_title',
+          description: 'tutorial_step6_desc'
+        },
+        {
+          title: 'tutorial_step7_title',
+          description: 'tutorial_step7_desc'
+        }
+      ]
     };
   },
   computed: {
@@ -608,6 +659,12 @@ export default {
         this.searchingImageInterval = null;
       }
     },
+    showTutorial() {
+      this.showTutorialModal = true;
+    },
+    closeTutorial() {
+      this.showTutorialModal = false;
+    }
   },
 };
 </script>
@@ -1311,8 +1368,185 @@ export default {
   line-height: 1.5;
 }
 
+/* 도움말 버튼 */
+.help-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  transition: all 0.3s ease;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.help-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.help-btn svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.5;
+  stroke: #333;
+  fill: none;
+}
+
+/* 모달 박스 스타일 */
+.modal-box {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 85vh;
+  overflow-y: auto;
+  color: #212529;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  position: relative;
+  z-index: 10000;
+}
+
+/* 튜토리얼 모달 */
+.tutorial-modal {
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.tutorial-content {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+
+.tutorial-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.tutorial-step:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.step-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #4A69E2;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.step-content h4 {
+  margin: 0 0 8px 0;
+  color: #212529;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.step-content p {
+  margin: 0;
+  color: #495057;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  padding: 20px 24px 24px 24px;
+}
+
+.modal-btn {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 120px;
+}
+
+.modal-btn.primary {
+  background: #4A69E2;
+  color: white;
+}
+
+.modal-btn.primary:hover {
+  background: #3B5BC7;
+}
+
 /* 모바일 반응형 */
 @media (max-width: 768px) {
+  .help-btn {
+    bottom: 15px;
+    right: 15px;
+    width: 40px;
+    height: 40px;
+    border: 2px solid white;
+    font-size: 16px;
+  }
+
+  .help-btn svg {
+    width: 18px;
+    height: 18px;
+    stroke: #333;
+    fill: none;
+  }
+
+  .tutorial-modal {
+    max-width: 95vw;
+    max-height: 85vh;
+  }
+
+  .tutorial-content {
+    max-height: 65vh;
+    padding: 16px 20px;
+  }
+
+  .tutorial-step {
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+  }
+
+  .step-number {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .step-content h4 {
+    font-size: 15px;
+  }
+
+  .step-content p {
+    font-size: 13px;
+  }
+
   .float-btn {
     width: 50px;
     height: 50px;
