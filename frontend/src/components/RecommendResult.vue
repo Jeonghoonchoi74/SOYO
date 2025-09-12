@@ -1,5 +1,6 @@
 <template>
   <div class="recommend-page">
+
     <div class="recommend-content">
       <div class="recommend-header">
         <h2 class="title">{{ $t('recommend_title') }}</h2>
@@ -89,14 +90,18 @@
           <div v-if="place.keywords && place.keywords.length > 0" class="place-keywords">
             <div class="keywords-container">
               <span 
-                v-for="(keyword, keywordIdx) in place.keywords.slice(0, 3)" 
+                v-for="(keyword, keywordIdx) in getVisibleKeywords(place)" 
                 :key="keywordIdx" 
                 class="keyword-tag"
               >
                 #{{ keyword }}
               </span>
-              <span v-if="place.keywords.length > 3" class="more-keywords">
-                +{{ place.keywords.length - 3 }}
+              <span 
+                v-if="place.keywords.length > 3" 
+                class="more-keywords"
+                @click.stop="toggleKeywords(idx)"
+              >
+                {{ place.showAllKeywords ? '접기' : `+${place.keywords.length - 3}` }}
               </span>
             </div>
           </div>
@@ -127,13 +132,6 @@
             </div>
           </div>
 
-          <!-- DB 참조 정보 섹션 -->
-          <div v-if="place.dbReference" class="db-reference">
-            <div class="db-reference-container">
-              <span class="db-label">📊 DB:</span>
-              <span class="db-path">{{ place.dbReference }}</span>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -352,6 +350,7 @@
         <polyline points="9,22 9,12 15,12 15,22" />
       </svg>
     </button>
+
   </div>
 </template>
 
@@ -782,10 +781,12 @@ export default {
           
           // 각 항목을 병렬로 처리하되, 완료되는 대로 즉시 표시
           const processItem = async (item) => {
-            console.log(`Firebase 조회 중: ${item.id}, ${item.region}, ${item.category}`);
+            // item.region이 undefined인 경우 this.region 사용 (전국 선택 시에는 실제 지역 정보가 필요)
+            const actualRegion = item.region || this.region;
+            console.log(`Firebase 조회 중: ${item.id}, ${item.region}, ${this.region}, 실제 사용: ${actualRegion}, ${item.category}`);
             const firebaseData = await this.getFirebaseData(
               item.id, 
-              item.region, 
+              actualRegion, 
               item.category
             );
             if (firebaseData) {
@@ -800,9 +801,10 @@ export default {
             // 리뷰 데이터 로드
             const reviews = await this.loadPlaceReviews(firebaseData.contentid);
             
-            // 즉시 추가하여 바로 표시
+            // 즉시 추가하여 바로 표시 (지역 정보 포함)
             this.places.push({
               ...firebaseData,
+              region: actualRegion, // 지역 정보 명시적으로 추가
               bookmarked: false,
               reviews: reviews
             });
@@ -860,10 +862,12 @@ export default {
         
         // 각 항목을 병렬로 처리하되, 완료되는 대로 즉시 표시
         const processItem = async (item) => {
-          console.log(`Firebase 조회 중: ${item.id}, ${item.region}, ${item.category}`);
+          // item.region이 undefined인 경우 this.region 사용 (전국 선택 시에는 실제 지역 정보가 필요)
+          const actualRegion = item.region || this.region;
+          console.log(`Firebase 조회 중: ${item.id}, ${item.region}, ${this.region}, 실제 사용: ${actualRegion}, ${item.category}`);
           const firebaseData = await this.getFirebaseData(
             item.id, 
-            item.region, 
+            actualRegion, 
             item.category
           );
           if (firebaseData) {
@@ -878,9 +882,10 @@ export default {
             // 리뷰 데이터 로드
             const reviews = await this.loadPlaceReviews(firebaseData.contentid);
             
-            // 즉시 추가하여 바로 표시
+            // 즉시 추가하여 바로 표시 (지역 정보 포함)
             this.places.push({
               ...firebaseData,
+              region: actualRegion, // 지역 정보 명시적으로 추가
               bookmarked: false,
               reviews: reviews
             });
@@ -1197,10 +1202,16 @@ export default {
     async openModal(place) {
       this.userLanguage = await this.getUserLanguage();
       
+      // 전국 선택 시 실제 지역 정보 사용, 그 외에는 this.region 사용
+      // place.region이 undefined인 경우 this.region 사용
+      const actualRegion = this.region === '전국' ? (place.region || this.region) : this.region;
+      
+      console.log('모달 열기 - place.region:', place.region, 'this.region:', this.region, 'actualRegion:', actualRegion);
+      
       // 최신 데이터(번역된 필드 포함)를 다시 가져오기
       const latestData = await this.getFirebaseData(
         place.contentid,
-        this.region,
+        actualRegion,
         this.category
       );
       
@@ -1435,6 +1446,9 @@ export default {
         
         if (!user) return;
 
+        // 전국 선택 시 실제 지역 정보 사용, undefined인 경우 this.region 사용
+        const actualRegion = this.region === '전국' ? (this.selectedPlace.region || this.region) : this.region;
+        
         const response = await fetch('/api/gemini/get-translation-status', {
           method: 'POST',
           headers: {
@@ -1443,7 +1457,7 @@ export default {
           body: JSON.stringify({
             content_id: this.selectedPlace.contentid,
             target_lang: this.userLanguage,
-            region: this.region,
+            region: actualRegion,
             category: this.category
           }),
         });
@@ -1471,6 +1485,9 @@ export default {
         
         if (!user || !this.selectedPlace) return;
 
+        // 전국 선택 시 실제 지역 정보 사용, undefined인 경우 this.region 사용
+        const actualRegion = this.region === '전국' ? (this.selectedPlace.region || this.region) : this.region;
+        
         const response = await fetch('/api/gemini/save-translation', {
           method: 'POST',
           headers: {
@@ -1481,7 +1498,7 @@ export default {
             content_id: this.selectedPlace.contentid,
             translated_content: translatedContent,
             target_lang: this.userLanguage,
-            region: this.region,
+            region: actualRegion,
             category: this.category
           }),
         });
@@ -1541,6 +1558,19 @@ export default {
       } catch (error) {
         return dateString;
       }
+    },
+
+    // 표시할 키워드 반환
+    getVisibleKeywords(place) {
+      if (place.showAllKeywords) {
+        return place.keywords;
+      }
+      return place.keywords.slice(0, 3);
+    },
+
+    // 키워드 확장/축소 토글
+    toggleKeywords(idx) {
+      this.places[idx].showAllKeywords = !this.places[idx].showAllKeywords;
     },
   },
 };
@@ -1881,38 +1911,18 @@ export default {
   font-size: 0.75rem;
   font-weight: 500;
   border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
 }
 
-.db-reference {
-  margin-top: 0.6rem;
-  padding-top: 0.6rem;
-  border-top: 1px solid #e2e8f0;
+.more-keywords:hover {
+  background: #e2e8f0;
+  color: #4a5568;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.db-reference-container {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.7rem;
-}
-
-.db-label {
-  color: #64748b;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.db-path {
-  color: #475569;
-  font-family: 'Courier New', monospace;
-  background: #f8fafc;
-  padding: 0.2rem 0.4rem;
-  border-radius: 4px;
-  border: 1px solid #e2e8f0;
-  font-size: 0.65rem;
-  word-break: break-all;
-  flex: 1;
-}
 
 .place-reviews {
   margin-top: 0.8rem;
@@ -2074,14 +2084,15 @@ export default {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   background: rgba(0, 0, 0, 0.7);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
   padding: 20px;
+  box-sizing: border-box;
 }
 
 .modal-content {
@@ -2391,18 +2402,22 @@ export default {
     padding: 0.25rem 0.5rem;
   }
   
-  .db-reference-container {
-    font-size: 0.65rem;
-  }
-  
-  .db-path {
-    font-size: 0.6rem;
-    padding: 0.15rem 0.3rem;
+  .modal-overlay {
+    padding: 12px;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
   }
   
   .modal-content {
-    margin: 12px;
+    margin: 0;
     max-height: 95vh;
+    width: 100%;
+    max-width: calc(100vw - 24px);
+    box-sizing: border-box;
   }
   
   .modal-header {
@@ -2448,4 +2463,7 @@ export default {
     height: 200px;
   }
 }
+
+
+
 </style>
