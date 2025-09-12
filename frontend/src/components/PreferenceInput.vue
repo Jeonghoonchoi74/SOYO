@@ -115,6 +115,19 @@
       </div>
     </div>
     
+    <!-- 검색 중 모달 -->
+    <div v-if="showSearchingModal" class="modal-overlay">
+      <div class="modal-content searching-modal">
+        <div class="searching-container">
+          <div class="searching-image">
+            <img :src="currentSearchingImage" alt="Searching" />
+          </div>
+          <h3 class="searching-title">{{ $t('searching_title') }}</h3>
+          <p class="searching-message">{{ $t('searching_message') }}</p>
+        </div>
+      </div>
+    </div>
+
     <!-- 홈 버튼 (오른쪽 하단) -->
     <button class="float-btn home-float-btn" @click="goHome">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -129,6 +142,8 @@
 import { i18nState, $t } from '../i18n';
 import { getAuth } from 'firebase/auth';
 import { getRegionOptions, getAvailableCategories, getCategoryLabel, getRegionDescription } from '../utils/regionMapping';
+import trying1 from '../assets/trying1.jpg';
+import trying2 from '../assets/trying2.png';
 
 export default {
   name: 'PreferenceInput',
@@ -142,14 +157,23 @@ export default {
       isSaving: false,
       showLocationModal: false,
       showRegionModal: false,
+      showSearchingModal: false,
       tempSelectedRegion: '',
       locationPermission: null,
+      trying1: trying1,
+      trying2: trying2,
+      searchingImages: [trying1, trying2],
+      currentSearchingImageIndex: 0,
+      searchingImageInterval: null,
     };
   },
   computed: {
     canProceed() {
       // 지역 선택, 카테고리 선택, 자유 텍스트 입력이 필요함
       return this.selectedRegion && this.selectedCategory && this.freeText && this.freeText.trim().length > 0;
+    },
+    currentSearchingImage() {
+      return this.searchingImages[this.currentSearchingImageIndex];
     },
   },
 
@@ -161,6 +185,11 @@ export default {
     
     // 위치 권한 확인
     this.checkLocationPermission();
+  },
+
+  beforeUnmount() {
+    // 컴포넌트 언마운트 시 interval 정리
+    this.stopSearchingImageRotation();
   },
 
   methods: {
@@ -363,6 +392,11 @@ export default {
         return;
       }
       
+      // 검색 중 모달 표시
+      this.showSearchingModal = true;
+      this.isSaving = true;
+      this.startSearchingImageRotation();
+      
       // 검색 쿼리 준비
       let searchQuery = '';
       if (this.freeText && this.freeText.trim()) {
@@ -432,7 +466,11 @@ export default {
           queryParams.region = this.selectedRegion;
         }
         
-        // 추천 페이지로 이동
+        // 검색 중 모달 숨기기
+        this.showSearchingModal = false;
+        this.stopSearchingImageRotation();
+        
+        // RecommendResult 페이지로 이동
         this.$router.push({
           path: '/recommend',
           query: queryParams
@@ -455,10 +493,16 @@ export default {
           queryParams.region = this.selectedRegion;
         }
         
+        // 검색 중 모달 숨기기
+        this.showSearchingModal = false;
+        this.stopSearchingImageRotation();
+        
         this.$router.push({
           path: '/recommend',
           query: queryParams
         });
+      } finally {
+        this.isSaving = false;
       }
     },
 
@@ -548,7 +592,22 @@ export default {
     
     goHome() {
       this.$router.push('/main');
-    }
+    },
+
+    // 검색 중 이미지 교체 관련 메서드들
+    startSearchingImageRotation() {
+      this.currentSearchingImageIndex = 0;
+      this.searchingImageInterval = setInterval(() => {
+        this.currentSearchingImageIndex = (this.currentSearchingImageIndex + 1) % this.searchingImages.length;
+      }, 500); // 0.5초마다 이미지 변경
+    },
+
+    stopSearchingImageRotation() {
+      if (this.searchingImageInterval) {
+        clearInterval(this.searchingImageInterval);
+        this.searchingImageInterval = null;
+      }
+    },
   },
 };
 </script>
@@ -1205,6 +1264,48 @@ export default {
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
+/* 검색 중 모달 스타일 */
+.searching-modal {
+  max-width: 400px;
+  text-align: center;
+}
+
+.searching-container {
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.searching-image {
+  width: 200px;
+  height: 200px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.searching-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.searching-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #212529;
+  margin: 0;
+}
+
+.searching-message {
+  font-size: 16px;
+  color: #6c757d;
+  margin: 0;
+  line-height: 1.5;
+}
+
 /* 모바일 반응형 */
 @media (max-width: 768px) {
   .float-btn {
@@ -1214,6 +1315,28 @@ export default {
   
   .home-float-btn {
     right: 20px;
+  }
+  
+  .searching-modal {
+    max-width: 350px;
+  }
+  
+  .searching-container {
+    padding: 32px 20px;
+    gap: 16px;
+  }
+  
+  .searching-image {
+    width: 160px;
+    height: 160px;
+  }
+  
+  .searching-title {
+    font-size: 18px;
+  }
+  
+  .searching-message {
+    font-size: 14px;
   }
 }
 </style>

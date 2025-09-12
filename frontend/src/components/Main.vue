@@ -36,43 +36,18 @@
       </div>
     </div>
     
-    <!-- 언어 선택 모달 -->
-    <div v-if="showLanguageModal" class="language-modal-overlay" @click="closeLanguageModal">
-      <div class="language-modal" @click.stop>
-        <div class="modal-header">
-          <h3>언어를 선택해주세요</h3>
-          <button class="close-btn" @click="closeLanguageModal">×</button>
-        </div>
-        <div class="language-options">
-          <button class="language-option" @click="selectLanguage('ko')">
-            <span class="flag">🇰🇷</span>
-            <span class="lang-name">한국어</span>
-          </button>
-          <button class="language-option" @click="selectLanguage('en')">
-            <span class="flag">🇺🇸</span>
-            <span class="lang-name">English</span>
-          </button>
-          <button class="language-option" @click="selectLanguage('ja')">
-            <span class="flag">🇯🇵</span>
-            <span class="lang-name">日本語</span>
-          </button>
-          <button class="language-option" @click="selectLanguage('zh')">
-            <span class="flag">🇨🇳</span>
-            <span class="lang-name">中文</span>
-          </button>
-        </div>
-      </div>
-    </div>
     
     <!-- 로그인 필요 모달 -->
-    <div v-if="showLoginModal" class="modal-overlay" @click="closeLoginModal">
-      <div class="modal-box" @click.stop>
+    <div v-if="showLoginModal" class="modal-overlay">
+      <div class="modal-box">
         <div class="modal-header">
-          <h3 v-html="$t('login_required').replace(/\\n/g, '<br>')"></h3>
-          <button class="close-btn" @click="closeLoginModal">×</button>
+          <h3>{{ $t('login_required_title') }}</h3>
+        </div>
+        <div class="modal-content">
+          <p class="modal-message" v-html="$t('login_required_message').replace(/\\n/g, '<br>')"></p>
         </div>
         <div class="modal-actions">
-          <button class="modal-btn" @click="goAuth">{{ $t('login_signup') }}</button>
+          <button class="modal-btn primary" @click="goAuth">{{ $t('login_signup') }}</button>
         </div>
       </div>
     </div>
@@ -106,7 +81,6 @@ export default {
       ],
       selectedLang: 'ko',
       showLoginModal: false,
-      showLanguageModal: true, // 첫 진입 시 언어 선택 모달 표시
       isLoggedIn: false,
     };
   },
@@ -139,39 +113,57 @@ export default {
               console.log('언어 설정 적용:', result.language);
             } else {
               console.log('사용자 데이터에 언어 설정이 없음');
+              // 로그인된 사용자지만 언어 설정이 없는 경우 sessionStorage 확인
+              const savedLanguage = sessionStorage.getItem('userLanguage');
+              if (savedLanguage) {
+                i18nState.lang = savedLanguage;
+                this.selectedLang = savedLanguage;
+                console.log('sessionStorage에서 언어 설정 적용:', savedLanguage);
+              }
             }
           } else {
             console.log('사용자 언어 조회 실패');
+            // API 조회 실패 시 sessionStorage 확인
+            const savedLanguage = sessionStorage.getItem('userLanguage');
+            if (savedLanguage) {
+              i18nState.lang = savedLanguage;
+              this.selectedLang = savedLanguage;
+              console.log('sessionStorage에서 언어 설정 적용:', savedLanguage);
+            }
           }
         } catch (e) {
           console.error('사용자 언어 조회 실패:', e);
+          // 에러 발생 시 sessionStorage 확인
+          const savedLanguage = sessionStorage.getItem('userLanguage');
+          if (savedLanguage) {
+            i18nState.lang = savedLanguage;
+            this.selectedLang = savedLanguage;
+            console.log('sessionStorage에서 언어 설정 적용:', savedLanguage);
+          }
         }
-        this.showLanguageModal = false; // 이미 로그인된 경우 언어 선택 팝업 숨김
       } else {
         console.log('사용자 로그아웃됨');
-        // 언어 선택 모달이 우선적으로 뜨도록
-        this.showLanguageModal = true;
-        this.showLoginModal = false;
-        i18nState.lang = 'ko';
-        this.selectedLang = 'ko';
+        
+        // 로그인되지 않은 경우 sessionStorage에서 언어 설정 확인
+        const savedLanguage = sessionStorage.getItem('userLanguage');
+        if (savedLanguage) {
+          i18nState.lang = savedLanguage;
+          this.selectedLang = savedLanguage;
+          console.log('sessionStorage에서 언어 설정 적용:', savedLanguage);
+        } else {
+          // sessionStorage에도 없으면 기본값 사용
+          i18nState.lang = 'ko';
+          this.selectedLang = 'ko';
+          console.log('기본 언어 설정 적용: ko');
+        }
+        
+        // 로그인되지 않은 경우 로그인 모달 표시
+        this.showLoginModal = true;
+        console.log('로그인되지 않은 사용자, 로그인 모달 표시');
       }
     });
   },
   methods: {
-    selectLanguage(langCode) {
-      this.selectedLang = langCode;
-      i18nState.lang = langCode;
-      this.showLanguageModal = false; // 언어 선택 후 모달 닫기
-      
-      // 로그인된 사용자의 경우 Firestore에 언어 설정 업데이트
-      const user = auth.currentUser;
-      if (user) {
-        this.updateUserLanguage(user.uid, langCode);
-      } else {
-        // 언어 선택 후 로그인 상태 확인
-        this.showLoginModal = true;
-      }
-    },
     async updateUserLanguage(uid, langCode) {
       try {
         console.log('Firebase 언어 업데이트 시작:', { uid, langCode });
@@ -208,6 +200,10 @@ export default {
       i18nState.lang = code;
       console.log('언어 상태 업데이트 완료:', i18nState.lang);
       
+      // sessionStorage에 언어 설정 저장
+      sessionStorage.setItem('userLanguage', code);
+      console.log('언어 설정을 sessionStorage에 저장:', code);
+      
       // 강제로 컴포넌트 업데이트
       this.$forceUpdate();
       
@@ -217,7 +213,7 @@ export default {
         console.log('로그인된 사용자, Firebase 업데이트 시작');
         this.updateUserLanguage(user.uid, code);
       } else {
-        console.log('로그인되지 않은 사용자, 로컬에서만 언어 변경');
+        console.log('로그인되지 않은 사용자, sessionStorage에만 저장');
       }
     },
     start() {
@@ -243,12 +239,6 @@ export default {
       i18nState.lang = 'ko';
       this.$router.push('/');
     },
-    closeLanguageModal() {
-      this.showLanguageModal = false;
-    },
-    closeLoginModal() {
-      this.showLoginModal = false;
-    }
   },
 };
 </script>
@@ -441,10 +431,9 @@ export default {
 
 .modal-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   padding: 24px 24px 20px 24px;
-  border-bottom: 1px solid #f1f3f4;
   text-align: center;
 }
 
@@ -457,45 +446,54 @@ export default {
   flex: 1;
 }
 
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 24px;
-  color: #adb5bd;
-  cursor: pointer;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+
+.modal-content {
+  padding: 0 24px;
 }
 
-.close-btn:hover {
-  color: #212529;
+.modal-message {
+  margin: 0;
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.5;
+  text-align: center;
 }
 
 .modal-actions {
   display: flex;
-  gap: 12px;
-  justify-content: flex-end;
+  justify-content: center;
   padding: 20px 24px 24px 24px;
 }
 
 .modal-btn {
-  padding: 10px 20px;
-  border-radius: 6px;
+  padding: 12px 24px;
+  border-radius: 8px;
   font-size: 14px;
   cursor: pointer;
   border: none;
-  background: #4A69E2;
-  color: white;
   font-weight: 500;
   transition: all 0.2s ease;
+  min-width: 120px;
 }
 
-.modal-btn:hover {
+.modal-btn.primary {
+  background: #4A69E2;
+  color: white;
+}
+
+.modal-btn.primary:hover {
   background: #3B5BC7;
+}
+
+.modal-btn.secondary {
+  background: #f8f9fa;
+  color: #495057;
+  border: 1px solid #e9ecef;
+}
+
+.modal-btn.secondary:hover {
+  background: #e9ecef;
+  color: #212529;
 }
 .main-content {
   transition: filter 0.2s;
@@ -506,76 +504,6 @@ export default {
   user-select: none;
 }
 
-/* 언어 선택 모달 스타일 - Community.vue 베이스 */
-.language-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 3000;
-  padding: 20px;
-  color: #212529;
-}
-
-.language-modal {
-  background: white;
-  border-radius: 16px;
-  width: 100%;
-  max-width: 480px;
-  max-height: 85vh;
-  overflow-y: auto;
-  color: #212529;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-  position: relative;
-  z-index: 3001;
-}
-
-.language-options {
-  padding: 20px 24px 24px 24px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.language-option {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 16px 12px;
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 14px;
-  font-weight: 500;
-  color: #212529;
-  width: 100%;
-  text-align: center;
-}
-
-.language-option:hover {
-  background: #4A69E2;
-  color: white;
-  border-color: #4A69E2;
-}
-
-.flag {
-  font-size: 20px;
-  color: inherit;
-}
-
-.lang-name {
-  flex: 1;
-  text-align: center;
-  color: inherit;
-}
 
 /* 반응형 */
 @media (max-width: 768px) {
@@ -622,27 +550,8 @@ export default {
     justify-content: center;
   }
   
-  .modal-overlay,
-  .language-modal-overlay {
+  .modal-overlay {
     padding: 12px;
-  }
-  
-  .language-options {
-    padding: 16px 20px 20px 20px;
-    gap: 10px;
-    grid-template-columns: 1fr 1fr;
-  }
-  
-  .language-option {
-    padding: 12px 8px;
-    font-size: 13px;
-    gap: 6px;
-    justify-content: center;
-    text-align: center;
-  }
-  
-  .lang-name {
-    text-align: center;
   }
 }
 </style>

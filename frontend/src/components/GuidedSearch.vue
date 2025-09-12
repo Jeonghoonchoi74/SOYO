@@ -127,6 +127,19 @@
       </div>
     </div>
     
+    <!-- 검색 중 모달 -->
+    <div v-if="showSearchingModal" class="modal-overlay">
+      <div class="modal-content searching-modal">
+        <div class="searching-container">
+          <div class="searching-image">
+            <img :src="currentSearchingImage" alt="Searching" />
+          </div>
+          <h3 class="searching-title">{{ $t('searching_title') }}</h3>
+          <p class="searching-message">{{ $t('searching_message') }}</p>
+        </div>
+      </div>
+    </div>
+
     <!-- 홈 버튼 (오른쪽 하단) -->
     <button class="float-btn home-float-btn" @click="goHome">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -142,6 +155,8 @@ import { getAuth } from "firebase/auth";
 import { getRegionOptions, getRegionDescription } from "../utils/regionMapping";
 import questions from "../utils/guidedSearchQuestions";
 import { $t, i18nState } from "../i18n";
+import trying1 from "../assets/trying1.jpg";
+import trying2 from "../assets/trying2.png";
 
 export default {
   name: "GuidedSearch",
@@ -155,8 +170,14 @@ export default {
       currentSubPath: "",
       regionOptions: getRegionOptions(),
       showRegionModal: false,
+      showSearchingModal: false,
       tempSelectedRegion: "",
       isSaving: false,
+      trying1: trying1,
+      trying2: trying2,
+      searchingImages: [trying1, trying2],
+      currentSearchingImageIndex: 0,
+      searchingImageInterval: null,
     };
   },
   computed: {
@@ -172,6 +193,9 @@ export default {
       const completedSteps = this.history.length;
       if (totalSteps === 0) return 0;
       return (completedSteps / totalSteps) * 100;
+    },
+    currentSearchingImage() {
+      return this.searchingImages[this.currentSearchingImageIndex];
     },
     finalQuery() {
       const queryConfig = this.questions.queryConfig;
@@ -391,8 +415,12 @@ export default {
         return;
       }
 
+      // 검색 중 모달 표시
+      this.showSearchingModal = true;
+      this.isSaving = true;
+      this.startSearchingImageRotation();
+
       try {
-        this.isSaving = true;
         let finalQuery = this.finalQuery;
         const region = this.userSelections.region
           ? this.userSelections.region.value
@@ -459,6 +487,10 @@ export default {
           JSON.stringify(searchResults)
         );
 
+        // 검색 중 모달 숨기기
+        this.showSearchingModal = false;
+        this.stopSearchingImageRotation();
+
         this.$router.push({
           path: "/recommend",
           query: {
@@ -472,6 +504,11 @@ export default {
         console.error("오류 메시지:", error.message);
         console.error("오류 스택:", error.stack);
         console.error("전체 오류 객체:", error);
+        
+        // 검색 중 모달 숨기기
+        this.showSearchingModal = false;
+        this.stopSearchingImageRotation();
+        
         this.$router.push({
           path: "/recommend",
           query: {
@@ -491,7 +528,27 @@ export default {
     
     goHome() {
       this.$router.push('/main');
-    }
+    },
+
+    // 검색 중 이미지 교체 관련 메서드들
+    startSearchingImageRotation() {
+      this.currentSearchingImageIndex = 0;
+      this.searchingImageInterval = setInterval(() => {
+        this.currentSearchingImageIndex = (this.currentSearchingImageIndex + 1) % this.searchingImages.length;
+      }, 500); // 0.5초마다 이미지 변경
+    },
+
+    stopSearchingImageRotation() {
+      if (this.searchingImageInterval) {
+        clearInterval(this.searchingImageInterval);
+        this.searchingImageInterval = null;
+      }
+    },
+  },
+
+  beforeUnmount() {
+    // 컴포넌트 언마운트 시 interval 정리
+    this.stopSearchingImageRotation();
   },
 };
 </script>
@@ -924,6 +981,48 @@ export default {
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
+/* 검색 중 모달 스타일 */
+.searching-modal {
+  max-width: 400px;
+  text-align: center;
+}
+
+.searching-container {
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.searching-image {
+  width: 200px;
+  height: 200px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.searching-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.searching-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #212529;
+  margin: 0;
+}
+
+.searching-message {
+  font-size: 16px;
+  color: #6c757d;
+  margin: 0;
+  line-height: 1.5;
+}
+
 /* 모바일 반응형 */
 @media (max-width: 768px) {
   .float-btn {
@@ -933,6 +1032,28 @@ export default {
   
   .home-float-btn {
     right: 20px;
+  }
+  
+  .searching-modal {
+    max-width: 350px;
+  }
+  
+  .searching-container {
+    padding: 32px 20px;
+    gap: 16px;
+  }
+  
+  .searching-image {
+    width: 160px;
+    height: 160px;
+  }
+  
+  .searching-title {
+    font-size: 18px;
+  }
+  
+  .searching-message {
+    font-size: 14px;
   }
 }
 </style>
