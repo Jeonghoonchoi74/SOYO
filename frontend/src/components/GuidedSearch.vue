@@ -787,9 +787,12 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 3000;
+  z-index: 9999;
   padding: 20px;
   color: #212529;
+  width: 100vw;
+  height: 100vh;
+  box-sizing: border-box;
 }
 .modal-content {
   background: rgba(255, 255, 255, 0.95);
@@ -803,7 +806,7 @@ export default {
   overflow-y: auto;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
   position: relative;
-  z-index: 3001;
+  z-index: 10000;
 }
 .modal-header {
   display: flex;
@@ -985,6 +988,8 @@ export default {
 .searching-modal {
   max-width: 400px;
   text-align: center;
+  z-index: 10000;
+  position: relative;
 }
 
 .searching-container {
@@ -1034,8 +1039,20 @@ export default {
     right: 20px;
   }
   
+  .modal-overlay {
+    padding: 10px;
+    z-index: 9999;
+  }
+  
+  .modal-content {
+    max-width: 95vw;
+    max-height: 90vh;
+    z-index: 10000;
+  }
+  
   .searching-modal {
     max-width: 350px;
+    z-index: 10000;
   }
   
   .searching-container {
