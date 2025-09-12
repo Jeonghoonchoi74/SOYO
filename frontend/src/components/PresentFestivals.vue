@@ -185,8 +185,6 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { collection, query, where, limit, getDocs } from 'firebase/firestore';
-import { db } from '../firebase.js';
 
 const festivals = ref([]);
 const loading = ref(true);
@@ -248,16 +246,19 @@ const handleImageError = (event) => {
 
 // 현재부터 12월 31일까지의 행사 필터링
 const isInTargetPeriod = (festival) => {
-  const startDate = festival.eventstartdate;
-  const endDate = festival.eventenddate;
+  // 날짜 필터링 주석 처리 - 모든 데이터 표시
+  return true;
   
-  // 현재 날짜부터 12월 31일까지
-  const currentDate = getCurrentDate();
-  const targetEndDate = '20251231';
-  
-  return startDate && endDate && 
-         startDate <= targetEndDate && 
-         endDate >= currentDate;
+  // const startDate = festival.eventstartdate;
+  // const endDate = festival.eventenddate;
+  // 
+  // // 현재 날짜부터 12월 31일까지
+  // const currentDate = getCurrentDate();
+  // const targetEndDate = '20251231';
+  // 
+  // return startDate && endDate && 
+  //        startDate <= targetEndDate && 
+  //        endDate >= currentDate;
 };
 
 // 행사 상태 텍스트 반환
@@ -300,15 +301,25 @@ const fetchPresentFestivals = async () => {
     loading.value = true;
     error.value = null;
     
-    // Firebase에서 서울 행사 데이터 가져오기
-    const seoulCollectionRef = collection(db, 'api_data', 'ko', '부산', 'events', 'items'); // 나중에는 Prefercen Input 에서 받아온 값으로 변경 예정정
-    const querySnapshot = await getDocs(seoulCollectionRef);
-    
-    const allFestivals = [];
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      allFestivals.push(data);
+    // Backend API를 통해 행사 데이터 가져오기
+    const response = await fetch('/api/firebase/get-recommend-places', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        region: '부산', // 나중에는 Preference Input에서 받아온 값으로 변경 예정
+        category: 'events',
+        userLanguage: 'ko'
+      }),
     });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    const allFestivals = result.success ? result.data : [];
     
     // 2025년 4월부터 12월까지의 행사만 필터링
     const targetFestivals = allFestivals.filter(isInTargetPeriod);
@@ -357,7 +368,7 @@ onMounted(() => {
 <style scoped>
 .present-festivals {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
   padding: 20px 0;
 }
 

@@ -1,29 +1,8 @@
 <template>
   <div class="community-page">
-    <!-- 탭 네비게이션 -->
-    <div class="tab-nav">
-      <button class="tab-btn" :class="{ active: sortBy === 'recent' }" @click="setSortBy('recent')">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="3" y1="6" x2="21" y2="6" />
-          <line x1="3" y1="12" x2="21" y2="12" />
-          <line x1="3" y1="18" x2="21" y2="18" />
-        </svg>
-        최신순
-      </button>
-      <button class="tab-btn" :class="{ active: sortBy === 'rating' }" @click="setSortBy('rating')">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-        </svg>
-        인기순
-      </button>
-      
-      <!-- 메인으로 돌아가기 버튼 -->
-      <button class="home-btn" @click="goHome">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-        </svg>
-        메인으로
-      </button>
+    <!-- 헤더 -->
+    <div class="header-nav">
+      <h1 class="page-title">{{ $t('community_title') }}</h1>
     </div>
 
     <!-- 지역 선택 스크롤 -->
@@ -40,8 +19,14 @@
     <div class="main-content">
       <!-- 리뷰 목록 -->
       <div class="review-list">
-        <div v-if="filteredReviews.length > 0">
-          <div v-for="review in filteredReviews" :key="review.id" class="review-item">
+        <!-- 로딩 상태 -->
+        <div v-if="isLoading" class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>{{ $t('community_loading_reviews') }}</p>
+        </div>
+        
+        <div v-else-if="filteredReviews.length > 0">
+          <div v-for="review in filteredReviews" :key="review.id" class="review-item fade-in">
             <div class="review-content">
               <div class="review-image" v-if="review.placeImage">
                 <img :src="review.placeImage" :alt="review.placeName" />
@@ -69,20 +54,20 @@
                   <path
                     d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                 </svg>
-                공감하기 {{ review.likes || 0 }}
+                {{ $t('community_empathy') }} {{ review.likes || 0 }}
               </button>
               <button class="action-btn" @click="toggleComments(review)">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                 </svg>
-                댓글 {{ review.comments ? review.comments.length : 0 }}
+                {{ $t('community_comments') }} {{ review.comments ? review.comments.length : 0 }}
               </button>
               <!-- 본인 리뷰인 경우에만 삭제 버튼 표시 -->
               <button v-if="review.uid === currentUser.uid" class="action-btn delete-btn" @click="deleteReview(review)">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                 </svg>
-                삭제
+                {{ $t('community_delete') }}
               </button>
             </div>
 
@@ -96,17 +81,17 @@
                     <span class="comment-time">{{ formatTimeAgo(comment.createdAt) }}</span>
                   </div>
                   <button v-if="comment.uid === currentUser.uid" class="delete-comment-btn"
-                    @click="deleteComment(review, comment)" title="댓글 삭제">
+                    @click="deleteComment(review, comment)" :title="$t('community_comment_delete')">
                     ×
                   </button>
                 </div>
               </div>
 
               <div class="comment-input">
-                <textarea v-model="review.newComment" placeholder="댓글을 입력하세요..." rows="2" />
+                <textarea v-model="review.newComment" :placeholder="$t('community_comment_placeholder')" rows="2" />
                 <button class="comment-submit" @click="submitComment(review)"
                   :disabled="!review.newComment || !review.newComment.trim()">
-                  등록
+                  {{ $t('community_register') }}
                 </button>
               </div>
             </div>
@@ -115,11 +100,18 @@
 
         <div v-else class="empty-state">
           <div class="empty-icon">📝</div>
-          <p>아직 공개된 후기가 없습니다.</p>
-          <p class="empty-subtitle">첫 번째 후기를 작성해보세요!</p>
+          <p>{{ $t('community_no_reviews') }}</p>
+          <p class="empty-subtitle">{{ $t('community_first_review') }}</p>
         </div>
       </div>
     </div>
+
+    <!-- 플로팅 뒤로가기 버튼 -->
+    <button class="floating-back-btn" @click="goBack">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+    </button>
 
     <!-- 플로팅 작성 버튼 -->
     <button class="floating-btn" @click="toggleWriteMode">
@@ -133,15 +125,15 @@
     <div v-if="showWriteModal" class="write-modal-overlay" @click="closeWriteModal">
       <div class="write-modal" @click.stop>
         <div class="modal-header">
-          <h3>후기 작성</h3>
+          <h3>{{ $t('community_write_review') }}</h3>
           <button class="close-btn" @click="closeWriteModal">×</button>
         </div>
 
         <div class="modal-body">
           <div v-if="availablePlaces.length > 0" class="place-selector">
-            <label>장소 선택</label>
+            <label>{{ $t('community_place_select') }}</label>
             <select v-model="selectedPlace" class="place-select">
-              <option value="">장소를 선택하세요</option>
+              <option value="">{{ $t('community_place_select_placeholder') }}</option>
               <option v-for="place in availablePlaces" :key="place.name" :value="place">
                 {{ place.name }}
               </option>
@@ -149,13 +141,13 @@
           </div>
 
           <div v-else class="no-places-message">
-            <p>리뷰를 작성할 수 있는 장소가 없습니다.</p>
-            <p>먼저 북마크에 장소를 추가해주세요.</p>
+            <p>{{ $t('community_no_places') }}</p>
+            <p>{{ $t('community_add_bookmark_first') }}</p>
           </div>
 
           <div v-if="selectedPlace" class="review-form">
             <div class="rating-input">
-              <label>평점</label>
+              <label>{{ $t('community_rating') }}</label>
               <div class="star-input">
                 <button v-for="star in 5" :key="star" class="star-btn" :class="{ active: star <= newReview.rating }"
                   @click="setNewRating(star)">
@@ -167,19 +159,19 @@
             <div class="visibility-input">
               <label>
                 <input type="checkbox" v-model="newReview.isPublic" />
-                공개하기
+                {{ $t('community_public') }}
               </label>
             </div>
 
             <div class="text-input">
-              <label>후기 내용</label>
-              <textarea v-model="newReview.text" placeholder="이 장소에 대한 후기를 작성해주세요..." rows="4" />
+              <label>{{ $t('community_review_content') }}</label>
+              <textarea v-model="newReview.text" :placeholder="$t('community_review_placeholder')" rows="4" />
             </div>
 
             <div class="modal-actions">
-              <button class="cancel-btn" @click="cancelNewReview">취소</button>
+              <button class="cancel-btn" @click="cancelNewReview">{{ $t('community_cancel') }}</button>
               <button class="submit-btn" @click="submitNewReview" :disabled="!newReview.text.trim()">
-                등록
+                {{ $t('community_submit') }}
               </button>
             </div>
           </div>
@@ -193,6 +185,7 @@
 </template>
 
 <script>
+import { i18nState, $t } from '../i18n';
 import { getAuth } from 'firebase/auth';
 import { getRegionOptions, getDisplayName } from '../utils/regionMapping';
 
@@ -215,6 +208,8 @@ export default {
       showPlaceDropdown: false,
       regions: [],
       selectedRegion: '',
+      isLoading: false,
+      streamingDelay: 300, // 스트리밍 지연 시간 (ms)
 
       sortBy: 'recent'
     };
@@ -224,7 +219,7 @@ export default {
       let filtered = this.publicReviews;
 
       // 지역 필터링 ('전국'이 선택되면 모든 리뷰 표시)
-      if (this.selectedRegion && this.selectedRegion !== '전국') {
+      if (this.selectedRegion && this.selectedRegion !== this.$t('region_nationwide')) {
         filtered = filtered.filter(review =>
           review.region === this.selectedRegion
         );
@@ -246,7 +241,7 @@ export default {
     const auth = getAuth();
     this.currentUser = auth.currentUser;
     if (!this.currentUser) {
-      this.$router.push('/auth');
+      this.$router.push('/main');
       return;
     }
 
@@ -262,8 +257,9 @@ export default {
     document.removeEventListener('click', this.handleOutsideClick);
   },
   methods: {
-    goHome() {
-      this.$router.push('/');
+    $t,
+    goBack() {
+      this.$router.push('/main');
     },
 
     toggleWriteMode() {
@@ -303,7 +299,7 @@ export default {
         else if (desc.includes('경북')) region = '경북';
         else if (desc.includes('경남')) region = '경남';
         else if (desc.includes('제주')) region = '제주';
-        else region = '전국';
+        else region = this.$t('region_nationwide');
       }
 
       // console.log('선택된 장소:', place);
@@ -312,75 +308,108 @@ export default {
 
     async loadPublicReviews() {
       try {
-        const response = await fetch('http://localhost:5000/api/get_public_reviews');
+        this.isLoading = true;
+        this.publicReviews = []; // 기존 리뷰 초기화
+        
+        const response = await fetch('/api/get_public_reviews');
         const result = await response.json();
 
-        if (result.success) {
-          this.publicReviews = result.reviews.map(review => ({
-            ...review,
-            showComments: false,
-            newComment: '',
-            isLiked: false
-          }));
-
-          for (let review of this.publicReviews) {
-            await this.loadReviewInteractions(review);
-          }
+        if (result.success && result.reviews.length > 0) {
+          // 리뷰를 하나씩 스트리밍으로 표시 (비동기로 실행)
+          this.streamReviews(result.reviews);
         }
       } catch (error) {
         console.error('공개 리뷰 로드 오류:', error);
-        this.showModalMessage('리뷰를 불러오는 중 오류가 발생했습니다.');
+        this.showModalMessage(this.$t('community_public_review_error'));
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    streamReviews(reviews) {
+      reviews.forEach((review, index) => {
+        // 각 리뷰를 지연 시간 후에 표시
+        setTimeout(() => {
+          const reviewItem = {
+            ...review,
+            showComments: false,
+            newComment: '',
+            isLiked: false,
+            likes: 0,
+            comments: []
+          };
+          
+          this.publicReviews.push(reviewItem);
+          
+          // 백그라운드에서 좋아요 정보 로드
+          this.loadReviewLikes(reviewItem);
+        }, index * this.streamingDelay);
+      });
+    },
+
+    async loadReviewLikes(review) {
+      try {
+        const likesResponse = await fetch(`/api/get_review_likes/${review.contentId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uid: this.currentUser.uid })
+        });
+
+        const likesResult = await likesResponse.json();
+        if (likesResult.success) {
+          review.likes = likesResult.likes;
+          review.isLiked = likesResult.userLiked;
+        }
+      } catch (error) {
+        console.error(`리뷰 ${review.contentId} 좋아요 로드 오류:`, error);
       }
     },
 
     async loadAvailablePlaces() {
       try {
-        // Firebase에서 직접 북마크 가져오기
-        const { collection, getDocs, query, where } = await import('firebase/firestore');
-        const { db } = await import('../firebase.js');
+        // Backend API를 통해 북마크와 리뷰 정보 가져오기
+        const [bookmarksRes, reviewsRes] = await Promise.all([
+          fetch('/api/get_user_bookmarks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ uid: this.currentUser.uid })
+          }),
+          fetch('/api/get_user_reviews', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ uid: this.currentUser.uid })
+          })
+        ]);
 
-        // 사용자의 북마크 가져오기
-        const bookmarksRef = collection(db, 'users', this.currentUser.uid, 'bookmarks');
-        const bookmarksSnapshot = await getDocs(bookmarksRef);
+        const bookmarksResult = await bookmarksRes.json();
+        const reviewsResult = await reviewsRes.json();
 
-        const bookmarks = [];
-        bookmarksSnapshot.forEach((doc) => {
-          const data = doc.data();
-          if (data.bookmark) { // 북마크된 것만
-            bookmarks.push({
-              name: data.name,
-              desc: data.desc,
-              image: data.image,
-              region: data.region || '전국'
-            });
-          }
-        });
+        if (bookmarksResult.success && reviewsResult.success) {
+          const bookmarks = bookmarksResult.bookmarks || [];
+          const reviews = reviewsResult.reviews || [];
 
-        // 사용자의 기존 리뷰 가져오기
-        const reviewsRef = collection(db, 'users', this.currentUser.uid, 'reviews');
-        const reviewsSnapshot = await getDocs(reviewsRef);
+          // 리뷰된 장소 이름들 Set으로 변환
+          const reviewedPlaces = new Set(reviews.map(review => review.placeName));
 
-        const reviewedPlaces = new Set();
-        reviewsSnapshot.forEach((doc) => {
-          const data = doc.data();
-          reviewedPlaces.add(data.placeId);
-        });
+          // 리뷰가 없는 북마크만 필터링
+          this.availablePlaces = bookmarks.filter(bookmark =>
+            !reviewedPlaces.has(bookmark.name)
+          );
 
-        // 리뷰가 없는 북마크만 필터링
-        this.availablePlaces = bookmarks.filter(bookmark =>
-          !reviewedPlaces.has(bookmark.name) // bookmark.name이 placeId 역할
-        );
-
-        // console.log('Firebase에서 직접 가져온 북마크:', bookmarks);
-        // console.log('리뷰 작성 가능한 장소:', this.availablePlaces);
+          console.log('Firebase에서 직접 가져온 북마크:', bookmarks);
+          console.log('사용자가 작성한 리뷰들:', reviews);
+          console.log('리뷰된 장소 이름들:', Array.from(reviewedPlaces));
+          console.log('리뷰 작성 가능한 장소:', this.availablePlaces);
+        }
       } catch (error) {
         console.error('사용 가능한 장소 로드 오류:', error);
       }
     },
 
+
     async loadReviewInteractions(review) {
       try {
-        const likesResponse = await fetch(`http://localhost:5000/api/get_review_likes/${review.contentId}`, {
+        const likesResponse = await fetch(`/api/get_review_likes/${review.contentId}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ uid: this.currentUser.uid })
@@ -391,7 +420,7 @@ export default {
           review.isLiked = likesResult.userLiked;
         }
 
-        const commentsResponse = await fetch(`http://localhost:5000/api/get_review_comments/${review.contentId}`);
+        const commentsResponse = await fetch(`/api/get_review_comments/${review.contentId}`);
         const commentsResult = await commentsResponse.json();
         if (commentsResult.success) {
           review.comments = commentsResult.comments;
@@ -407,14 +436,14 @@ export default {
 
     async submitNewReview() {
       if (!this.selectedPlace || !this.newReview.text.trim()) {
-        this.showModalMessage('장소와 리뷰 내용을 모두 입력해주세요.');
+        this.showModalMessage(this.$t('community_place_and_content_required'));
         return;
       }
 
       // 사용자 선호도에서 region 우선 가져오기
-      let region = '전국'; // 기본값
+      let region = this.$t('region_nationwide'); // 기본값
       try {
-        const preferencesResponse = await fetch('http://localhost:5000/api/get_user_preferences', {
+        const preferencesResponse = await fetch('/api/get_user_preferences', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ uid: this.currentUser.uid })
@@ -425,7 +454,7 @@ export default {
           region = preferencesResult.preferences.region;
         }
       } catch (error) {
-        console.warn('사용자 선호도 조회 실패, 장소 정보에서 추출:', error);
+        console.warn(this.$t('community_user_preference_error'), error);
         
         // 사용자 선호도가 없으면 장소 정보에서 region 사용
         region = this.selectedPlace.region;
@@ -450,7 +479,7 @@ export default {
           else if (desc.includes('경북')) region = '경상북도';
           else if (desc.includes('경남')) region = '경상남도';
           else if (desc.includes('제주')) region = '제주도';
-          else region = '전국';
+          else region = this.$t('region_nationwide');
         }
       }
 
@@ -458,7 +487,7 @@ export default {
       console.log('사용할 지역:', region);
 
       try {
-        const response = await fetch('http://localhost:5000/api/save_review', {
+        const response = await fetch('/api/save_review', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -477,16 +506,16 @@ export default {
 
         const result = await response.json();
         if (result.success) {
-          this.showModalMessage('리뷰가 성공적으로 등록되었습니다.');
+          this.showModalMessage(this.$t('community_review_success'));
           this.closeWriteModal();
           await this.loadPublicReviews();
           await this.loadAvailablePlaces();
         } else {
-          throw new Error(result.error || '리뷰 등록에 실패했습니다.');
+          throw new Error(result.error || this.$t('community_review_failed'));
         }
       } catch (error) {
         console.error('리뷰 등록 오류:', error);
-        this.showModalMessage('리뷰 등록 중 오류가 발생했습니다.');
+        this.showModalMessage(this.$t('community_review_error'));
       }
     },
 
@@ -509,7 +538,7 @@ export default {
         };
         // console.log('좋아요 토글 - 전송 데이터:', requestData);
 
-        const response = await fetch('http://localhost:5000/api/toggle_review_like', {
+        const response = await fetch('/api/toggle_review_like', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestData)
@@ -522,12 +551,25 @@ export default {
         }
       } catch (error) {
         console.error('좋아요 토글 오류:', error);
-        this.showModalMessage('좋아요 처리 중 오류가 발생했습니다.');
+        this.showModalMessage(this.$t('community_like_error'));
       }
     },
 
-    toggleComments(review) {
+    async toggleComments(review) {
       review.showComments = !review.showComments;
+      
+      // 댓글 섹션이 열릴 때만 댓글 로드 (지연 로딩)
+      if (review.showComments && (!review.comments || review.comments.length === 0)) {
+        try {
+          const commentsResponse = await fetch(`/api/get_review_comments/${review.contentId}`);
+          const commentsResult = await commentsResponse.json();
+          if (commentsResult.success) {
+            review.comments = commentsResult.comments;
+          }
+        } catch (error) {
+          console.error('댓글 로드 오류:', error);
+        }
+      }
     },
 
     async submitComment(review) {
@@ -545,7 +587,7 @@ export default {
         };
         // console.log('댓글 추가 - 전송 데이터:', requestData);
 
-        const response = await fetch('http://localhost:5000/api/add_review_comment', {
+        const response = await fetch('/api/add_review_comment', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestData)
@@ -556,11 +598,11 @@ export default {
           review.comments = review.comments || [];
           review.comments.push(result.comment);
           review.newComment = '';
-          this.showModalMessage('댓글이 등록되었습니다.');
+          this.showModalMessage(this.$t('community_comment_success'));
         }
       } catch (error) {
         console.error('댓글 등록 오류:', error);
-        this.showModalMessage('댓글 등록 중 오류가 발생했습니다.');
+        this.showModalMessage(this.$t('community_comment_error'));
       }
     },
 
@@ -574,7 +616,7 @@ export default {
     },
 
     formatTimeAgo(timestamp) {
-      if (!timestamp) return '방금 전';
+      if (!timestamp) return this.$t('community_just_now');
 
       let date;
       if (timestamp.seconds) {
@@ -593,26 +635,26 @@ export default {
 
       // 유효하지 않은 날짜인 경우
       if (isNaN(date.getTime())) {
-        return '방금 전';
+        return this.$t('community_just_now');
       }
 
       const now = new Date();
       const diffInMinutes = Math.floor((now - date) / (1000 * 60));
 
-      if (diffInMinutes < 1) return '방금 전';
-      if (diffInMinutes < 60) return `${diffInMinutes}분 전`;
+      if (diffInMinutes < 1) return this.$t('community_just_now');
+      if (diffInMinutes < 60) return `${diffInMinutes}${this.$t('community_minutes_ago')}`;
 
       const diffInHours = Math.floor(diffInMinutes / 60);
-      if (diffInHours < 24) return `${diffInHours}시간 전`;
+      if (diffInHours < 24) return `${diffInHours}${this.$t('community_hours_ago')}`;
 
       const diffInDays = Math.floor(diffInHours / 24);
-      if (diffInDays < 7) return `${diffInDays}일 전`;
+      if (diffInDays < 7) return `${diffInDays}${this.$t('community_days_ago')}`;
 
       const diffInWeeks = Math.floor(diffInDays / 7);
-      if (diffInWeeks < 4) return `${diffInWeeks}주 전`;
+      if (diffInWeeks < 4) return `${diffInWeeks}${this.$t('community_weeks_ago')}`;
 
       const diffInMonths = Math.floor(diffInDays / 30);
-      if (diffInMonths < 12) return `${diffInMonths}개월 전`;
+      if (diffInMonths < 12) return `${diffInMonths}${this.$t('community_months_ago')}`;
 
       return date.toLocaleDateString('ko-KR');
     },
@@ -626,7 +668,7 @@ export default {
     },
 
     async deleteComment(review, comment) {
-      if (!confirm('댓글을 삭제하시겠습니까?')) {
+      if (!confirm(this.$t('community_comment_delete_confirm'))) {
         return;
       }
 
@@ -641,7 +683,7 @@ export default {
         // console.log('댓글 삭제 - 댓글 데이터:', comment);
         // console.log('댓글 삭제 - 전송 데이터:', requestData);
 
-        const response = await fetch('http://localhost:5000/api/delete_review_comment', {
+        const response = await fetch('/api/delete_review_comment', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestData)
@@ -654,13 +696,13 @@ export default {
           if (commentIndex > -1) {
             review.comments.splice(commentIndex, 1);
           }
-          this.showModalMessage('댓글이 삭제되었습니다.');
+          this.showModalMessage(this.$t('community_comment_delete_success'));
         } else {
-          throw new Error(result.error || '댓글 삭제에 실패했습니다.');
+          throw new Error(result.error || this.$t('community_comment_delete_failed'));
         }
       } catch (error) {
         console.error('댓글 삭제 오류:', error);
-        this.showModalMessage('댓글 삭제 중 오류가 발생했습니다.');
+        this.showModalMessage(this.$t('community_comment_delete_error'));
       }
     },
 
@@ -668,13 +710,13 @@ export default {
       try {
         // regionMapping.js에서 지역 목록 가져오기
         const regionOptions = getRegionOptions();
-        this.regions = ['전국', ...regionOptions.map(option => this.$t(getDisplayName(option.value)))];
-        this.selectedRegion = '전국';
+        this.regions = regionOptions.map(option => this.$t(getDisplayName(option.value)));
+        this.selectedRegion = this.$t('region_nationwide');
       } catch (error) {
-        console.error('지역 로드 오류:', error);
+        console.error(this.$t('community_region_load_error'), error);
         // 오류 시 기본 지역 목록 사용
-        this.regions = ['전국', '서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종', '경기도', '강원도', '충청북도', '충청남도', '전라북도', '전라남도', '경상북도', '경상남도', '제주도'];
-        this.selectedRegion = '전국';
+        this.regions = [this.$t('region_nationwide'), this.$t('region_seoul'), this.$t('region_busan'), this.$t('region_daegu'), this.$t('region_incheon'), this.$t('region_gwangju'), this.$t('region_daejeon'), this.$t('region_ulsan'), this.$t('region_sejong'), this.$t('region_gyeonggi'), this.$t('region_gangwon'), this.$t('region_chungbuk'), this.$t('region_chungnam'), this.$t('region_jeonbuk'), this.$t('region_jeonnam'), this.$t('region_gyeongbuk'), this.$t('region_gyeongnam'), this.$t('region_jeju')];
+        this.selectedRegion = this.$t('region_nationwide');
       }
     },
 
@@ -687,12 +729,12 @@ export default {
     },
 
     async deleteReview(review) {
-      if (!confirm('정말로 이 리뷰를 삭제하시겠습니까?')) {
+      if (!confirm(this.$t('community_review_delete_confirm'))) {
         return;
       }
 
       try {
-        const response = await fetch('http://localhost:5000/api/delete_review', {
+        const response = await fetch('/api/delete_review', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -703,32 +745,47 @@ export default {
 
         const result = await response.json();
         if (result.success) {
-          this.showModalMessage('리뷰가 삭제되었습니다.');
+          this.showModalMessage(this.$t('community_review_delete_success'));
           // 리뷰 목록 새로고침
           await this.loadPublicReviews();
           // 사용 가능한 장소 목록도 새로고침 (삭제된 리뷰가 다시 작성 가능해짐)
           await this.loadAvailablePlaces();
         } else {
-          throw new Error(result.error || '리뷰 삭제에 실패했습니다.');
+          throw new Error(result.error || this.$t('community_review_delete_failed'));
         }
       } catch (error) {
         console.error('리뷰 삭제 오류:', error);
-        this.showModalMessage('리뷰 삭제 중 오류가 발생했습니다.');
+        this.showModalMessage(this.$t('community_review_delete_error'));
       }
     }
   }
 };
 </script>
 <style scoped>
-/* 네이버 지식iN 스타일 */
+/* 모던 세련된 스타일 */
 .community-page {
   min-height: 100vh;
-  background: #F7F8FA;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   width: 100vw;
   max-width: 100vw;
   overflow-x: hidden;
   box-sizing: border-box;
+  position: relative;
+}
+
+.community-page::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(74, 105, 226, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(59, 91, 199, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 
@@ -737,21 +794,24 @@ export default {
 
 /* 지역 선택 스크롤 */
 .region-scroll {
-  background: white;
-  border-bottom: 1px solid #e9ecef;
-  padding: 12px 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 16px 0;
   width: 100vw;
   max-width: 100vw;
   box-sizing: border-box;
   position: relative;
   z-index: 10;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .region-list {
   display: flex;
-  gap: 8px;
+  gap: 12px;
   overflow-x: auto;
-  padding: 0 12px;
+  padding: 0 16px;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -761,27 +821,32 @@ export default {
 }
 
 .region-item {
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 20px;
-  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(74, 105, 226, 0.2);
+  border-radius: 25px;
+  padding: 10px 20px;
   font-size: 14px;
   color: #6c757d;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.2s ease;
-  border: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .region-item:hover {
-  background: #e9ecef;
-  color: #495057;
+  background: rgba(74, 105, 226, 0.1);
+  color: #4A69E2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(74, 105, 226, 0.15);
 }
 
 .region-item.active {
-  background: #4A69E2;
+  background: linear-gradient(135deg, #4A69E2 0%, #3B5BC7 100%);
   color: white;
-  font-weight: 500;
+  font-weight: 600;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(74, 105, 226, 0.3);
 }
 
 
@@ -790,80 +855,59 @@ export default {
 
 
 
-/* 탭 네비게이션 */
-.tab-nav {
-  background: white;
-  border-bottom: 1px solid #e9ecef;
+/* 헤더 네비게이션 */
+.header-nav {
+  background: linear-gradient(135deg, #4A69E2 0%, #3B5BC7 100%);
+  border-bottom: none;
   display: flex;
-  gap: 8px;
-  overflow-x: auto;
+  align-items: center;
+  justify-content: center;
   width: 100vw;
   max-width: 100vw;
   margin: 0;
-  padding: 0 12px;
+  padding: 20px 12px;
   box-sizing: border-box;
   position: relative;
   z-index: 10;
+  box-shadow: 0 4px 20px rgba(74, 105, 226, 0.15);
 }
 
-
-
-.tab-btn {
-  background: none;
-  border: none;
-  padding: 12px 16px;
-  font-size: 14px;
-  color: #6c757d;
-  cursor: pointer;
-  white-space: nowrap;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s;
+.page-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  letter-spacing: -0.5px;
 }
 
-.tab-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.tab-btn:first-child {
-  padding: 12px 8px;
-}
-
-.tab-btn:hover {
-  color: #212529;
-}
-
-.tab-btn.active {
-  color: #4A69E2;
-  border-bottom-color: #4A69E2;
-}
-
-/* 메인으로 돌아가기 버튼 */
-.home-btn {
-  background: #4A69E2;
+/* 플로팅 뒤로가기 버튼 */
+.floating-back-btn {
+  position: fixed;
+  bottom: 30px;
+  left: 20px;
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #4A69E2 0%, #3B5BC7 100%);
   color: white;
   border: none;
-  padding: 12px 16px;
-  font-size: 14px;
-  cursor: pointer;
-  white-space: nowrap;
-  border-radius: 8px;
-  transition: all 0.2s;
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-left: auto;
-  font-weight: 500;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(74, 105, 226, 0.3);
+  z-index: 1000;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.home-btn:hover {
-  background: #3B5BC7;
-  transform: translateY(-1px);
+.floating-back-btn:hover {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 12px 32px rgba(74, 105, 226, 0.4);
 }
 
-.home-btn:active {
-  transform: translateY(0);
+.floating-back-btn:active {
+  transform: translateY(-2px) scale(1.02);
 }
 
 /* 메인 컨텐츠 */
@@ -881,13 +925,37 @@ export default {
 }
 
 .review-item {
-  background: white;
-  margin-bottom: 8px;
-  padding: 16px;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  margin-bottom: 12px;
+  padding: 20px;
+  border-radius: 16px;
   width: 100%;
   box-sizing: border-box;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.review-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
+
+.fade-in {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 
@@ -976,34 +1044,45 @@ export default {
 .action-btn {
   display: flex;
   align-items: center;
-  gap: 4px;
-  background: none;
-  border: 1px solid #e9ecef;
-  border-radius: 20px;
-  padding: 6px 12px;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(74, 105, 226, 0.2);
+  border-radius: 25px;
+  padding: 8px 16px;
   font-size: 13px;
   color: #6c757d;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .action-btn:hover {
-  background: #f8f9fa;
+  background: rgba(74, 105, 226, 0.1);
+  color: #4A69E2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(74, 105, 226, 0.15);
 }
 
 .action-btn.active {
-  color: #4A69E2;
-  border-color: #4A69E2;
+  background: linear-gradient(135deg, #4A69E2 0%, #3B5BC7 100%);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 4px 16px rgba(74, 105, 226, 0.3);
 }
 
 .action-btn.delete-btn {
   color: #dc3545;
-  border-color: #dc3545;
+  border-color: rgba(220, 53, 69, 0.3);
+  background: rgba(220, 53, 69, 0.05);
 }
 
 .action-btn.delete-btn:hover {
   background: #dc3545;
   color: white;
+  border-color: #dc3545;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
 }
 
 /* 댓글 섹션 */
@@ -1108,7 +1187,7 @@ export default {
   right: 20px;
   width: 56px;
   height: 56px;
-  background: #4A69E2;
+  background: linear-gradient(135deg, #4A69E2 0%, #3B5BC7 100%);
   color: white;
   border: none;
   border-radius: 50%;
@@ -1116,8 +1195,18 @@ export default {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(74, 105, 226, 0.3);
+  box-shadow: 0 8px 24px rgba(74, 105, 226, 0.3);
   z-index: 1000;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.floating-btn:hover {
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 12px 32px rgba(74, 105, 226, 0.4);
+}
+
+.floating-btn:active {
+  transform: translateY(-2px) scale(1.02);
 }
 
 /* 작성 모달 */
@@ -1137,7 +1226,10 @@ export default {
 }
 
 .write-modal {
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 16px;
   width: 100%;
   max-width: 480px;
@@ -1309,6 +1401,28 @@ export default {
   cursor: not-allowed;
 }
 
+/* 로딩 상태 */
+.loading-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6c757d;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #4A69E2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* 빈 상태 */
 .empty-state {
   text-align: center;
@@ -1398,8 +1512,135 @@ export default {
     font-size: 13px;
   }
 
+  /* 모바일에서 리뷰 작성 모달을 더 크게 */
   .write-modal-overlay {
-    padding: 12px;
+    padding: 8px;
+    align-items: flex-start;
+    padding-top: 20px;
+  }
+
+  .write-modal {
+    max-width: 100%;
+    width: calc(100% - 16px);
+    max-height: calc(100vh - 40px);
+    border-radius: 12px;
+    margin: 0;
+  }
+
+  .modal-header {
+    padding: 20px 20px 16px 20px;
+  }
+
+  .modal-header h3 {
+    font-size: 20px;
+  }
+
+  .modal-body {
+    padding: 16px 20px 20px 20px;
+  }
+
+  .place-selector label,
+  .rating-input label,
+  .text-input label {
+    font-size: 16px;
+    margin-bottom: 10px;
+  }
+
+  .place-select {
+    padding: 16px;
+    font-size: 16px;
+    border-radius: 12px;
+  }
+
+  .star-btn {
+    font-size: 28px;
+    padding: 4px;
+    margin: 0 2px;
+  }
+
+  .visibility-input label {
+    font-size: 16px;
+  }
+
+  .text-input textarea {
+    padding: 16px;
+    font-size: 16px;
+    border-radius: 12px;
+    min-height: 120px;
+    line-height: 1.6;
+  }
+
+  .modal-actions {
+    gap: 16px;
+    margin-top: 20px;
+  }
+
+  .cancel-btn,
+  .submit-btn {
+    padding: 14px 24px;
+    font-size: 16px;
+    border-radius: 8px;
+    flex: 1;
+  }
+}
+
+/* 더 작은 모바일 화면 (480px 이하) */
+@media (max-width: 480px) {
+  .write-modal-overlay {
+    padding: 4px;
+    padding-top: 10px;
+  }
+
+  .write-modal {
+    width: calc(100% - 8px);
+    max-height: calc(100vh - 20px);
+    border-radius: 8px;
+  }
+
+  .modal-header {
+    padding: 16px 16px 12px 16px;
+  }
+
+  .modal-header h3 {
+    font-size: 18px;
+  }
+
+  .modal-body {
+    padding: 12px 16px 16px 16px;
+  }
+
+  .place-selector label,
+  .rating-input label,
+  .text-input label {
+    font-size: 15px;
+    margin-bottom: 8px;
+  }
+
+  .place-select {
+    padding: 14px;
+    font-size: 15px;
+  }
+
+  .star-btn {
+    font-size: 26px;
+    margin: 0 2px;
+  }
+
+  .text-input textarea {
+    padding: 14px;
+    font-size: 15px;
+    min-height: 100px;
+  }
+
+  .modal-actions {
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .cancel-btn,
+  .submit-btn {
+    padding: 12px 20px;
+    font-size: 15px;
   }
 }
 </style>
