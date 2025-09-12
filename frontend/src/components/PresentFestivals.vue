@@ -1,5 +1,6 @@
 <template>
   <div class="present-festivals">
+
     <div class="container">
       <h1 class="page-title">현재~12월 서울 행사</h1>
       
@@ -180,6 +181,7 @@
         </div>
       </div>
     </div>
+
   </div>
 </template>
 
@@ -359,6 +361,7 @@ const openModal = (festival) => {
 const closeModal = () => {
   selectedFestival.value = null;
 };
+
 
 onMounted(() => {
   fetchPresentFestivals();
@@ -758,4 +761,7 @@ onMounted(() => {
     font-size: 1.1rem;
   }
 }
+
+
+
 </style> 

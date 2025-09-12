@@ -14,6 +14,7 @@
         <span class="overlay-icon">🗺️</span>
       </div>
     </div>
+
   </div>
 </template>
 
@@ -44,7 +45,7 @@ export default {
       geocoder: null,
       loading: true,
       error: null,
-      mapLoaded: false
+      mapLoaded: false,
     };
   },
   async mounted() {
@@ -179,7 +180,7 @@ export default {
          console.error('Google Maps 열기 실패:', error);
          alert('Google Maps를 열 수 없습니다.');
        }
-     }
+     },
   },
   watch: {
     // 주소가 변경되면 지도 새로고침
@@ -321,6 +322,57 @@ export default {
   
   .overlay-icon {
     font-size: 12px;
+  }
+}
+
+
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+  .help-btn {
+    width: 40px;
+    height: 40px;
+    top: 15px;
+    left: 15px;
+    border: 2px solid white;
+    font-size: 16px;
+  }
+
+  .help-btn svg {
+    width: 18px;
+    height: 18px;
+    stroke: white;
+    fill: none;
+  }
+  
+  .tutorial-modal {
+    max-width: 95vw;
+    max-height: 85vh;
+  }
+  
+  .tutorial-content {
+    padding: 16px 20px;
+    max-height: 65vh;
+  }
+  
+  .tutorial-step {
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+  }
+  
+  .step-number {
+    width: 28px;
+    height: 28px;
+    font-size: 13px;
+  }
+  
+  .step-content h4 {
+    font-size: 15px;
+  }
+  
+  .step-content p {
+    font-size: 13px;
   }
 }
 </style>
