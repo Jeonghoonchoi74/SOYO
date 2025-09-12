@@ -1,17 +1,13 @@
 <template>
   <div class="bookmark-page">
-    <div class="bookmark-header">
-      <button class="back-btn" @click="goHome">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M19 12H5M12 19l-7-7 7-7" />
-        </svg>
-        {{ $t('bookmark_back_home') }}
-      </button>
-      <h2 class="title">{{ $t('bookmark_title') }}</h2>
-    </div>
-    <div class="bookmark-list">
+    <div class="bookmark-container">
+      <div class="bookmark-header">
+        <h2 class="title">{{ $t('bookmark_title') }}</h2>
+      </div>
+      <div class="bookmark-list">
       <template v-if="bookmarked.length > 0">
         <div v-for="(place, idx) in bookmarked" :key="idx" class="bookmark-card">
+          <button class="delete-btn" @click="deleteBookmark(idx, place)">🗑️</button>
           <img :src="place.image" class="place-img" :alt="$t('bookmark_place_img_alt')" @click="showPlaceDetail(place)" />
           <div class="place-info">
             <div class="place-name">{{ place.name }}</div>
@@ -23,7 +19,7 @@
               <div v-if="!place.isEditing" class="read-mode">
                 <!-- 평점 표시 -->
                 <div class="rating-display">
-                  <span class="info-label">평점:</span>
+                  <span class="info-label">{{ $t('bookmark_rating') }}</span>
                   <div class="star-rating readonly">
                     <span v-for="star in 5" :key="star" class="star" :class="{ active: star <= (place.rating || 0) }">
                       ★
@@ -34,15 +30,15 @@
 
                 <!-- 공개여부 표시 -->
                 <div class="visibility-display">
-                  <span class="info-label">공개여부:</span>
+                  <span class="info-label">{{ $t('bookmark_visibility') }}</span>
                   <span class="visibility-status" :class="{ public: place.isPublic }">
-                    {{ place.isPublic ? '공개' : '비공개' }}
+                    {{ place.isPublic ? $t('bookmark_public') : $t('bookmark_private') }}
                   </span>
                 </div>
 
                 <!-- 리뷰 표시 -->
                 <div v-if="place.review" class="review-display">
-                  <span class="info-label">리뷰:</span>
+                  <span class="info-label">{{ $t('bookmark_review') }}</span>
                   <div class="review-content">
                     <p>{{ place.review }}</p>
                   </div>
@@ -52,20 +48,20 @@
                 <div class="action-buttons">
                   <!-- 리뷰가 있는 경우: 수정 버튼 -->
                   <button v-if="place.review" class="edit-btn" @click="editReview(idx, place)">
-                    수정
+                    {{ $t('bookmark_edit') }}
                   </button>
                   <!-- 리뷰가 없는 경우: 리뷰 작성 버튼 -->
                   <button v-else class="write-review-btn" @click="editReview(idx, place)">
-                    리뷰 작성
+                    {{ $t('bookmark_write_review') }}
                   </button>
                 </div>
               </div>
 
               <!-- 편집 모드 -->
-              <div v-else class="edit-mode" :data-mode="place.review ? '리뷰 수정' : '리뷰 작성'">
+              <div v-else class="edit-mode" :data-mode="place.review ? $t('review_edit_mode') : $t('review_write_mode')">
                 <!-- 평점 편집 -->
                 <div class="rating-edit">
-                  <div class="edit-label">평점:</div>
+                  <div class="edit-label">{{ $t('bookmark_rating') }}</div>
                   <div class="star-rating editable">
                     <span v-for="star in 5" :key="star" class="star"
                       :class="{ active: star <= (place.tempRating || 0) }" @click="setTempRating(place, star)">
@@ -77,34 +73,33 @@
 
                 <!-- 공개여부 편집 -->
                 <div class="visibility-edit">
-                  <div class="edit-label">공개여부:</div>
+                  <div class="edit-label">{{ $t('bookmark_visibility') }}</div>
                   <label class="visibility-toggle">
                     <input type="checkbox" v-model="place.tempIsPublic" />
                     <span class="toggle-slider"></span>
-                    <span class="toggle-label">{{ place.tempIsPublic ? '공개' : '비공개' }}</span>
+                    <span class="toggle-label">{{ place.tempIsPublic ? $t('bookmark_public') : $t('bookmark_private') }}</span>
                   </label>
                 </div>
 
                 <!-- 리뷰 편집 -->
                 <div class="review-edit">
-                  <div class="edit-label">리뷰:</div>
+                  <div class="edit-label">{{ $t('review_label') }}</div>
                   <textarea v-model="place.reviewText" class="review-input"
-                    :placeholder="place.review ? $t('review_placeholder') : '이 장소에 대한 리뷰를 작성해주세요...'" rows="3" />
+                    :placeholder="place.review ? $t('review_placeholder') : $t('review_placeholder_text')" rows="3" />
                 </div>
 
                 <!-- 편집 버튼들 -->
                 <div class="edit-buttons">
                   <button class="save-btn" @click="submitReview(idx, place)">
-                    {{ place.review ? '저장' : '리뷰 등록' }}
+                    {{ place.review ? $t('save_button') : $t('register_review_button') }}
                   </button>
                   <button class="cancel-btn" @click="cancelEdit(idx, place)">
-                    취소
+                    {{ $t('cancel_button') }}
                   </button>
                 </div>
               </div>
             </div>
           </div>
-          <button class="delete-btn" @click="deleteBookmark(idx, place)">🗑️</button>
         </div>
       </template>
       <template v-else>
@@ -112,28 +107,6 @@
           <p>{{ $t('bookmark_empty') }}</p>
         </div>
       </template>
-    </div>
-
-    <!-- 관리자 버튼 (admin@gmail.com인 경우만 표시) -->
-    <div class="section">
-      <button class="delete-account-btn" @click="showDeleteAccountConfirm">
-        {{ $t('delete_account_btn') }}
-      </button>
-    </div>
-
-    <!-- 회원탈퇴 확인 모달 -->
-    <div v-if="showDeleteConfirm" class="delete-confirm-modal">
-      <div class="delete-confirm-content">
-        <h3>{{ $t('delete_account_btn') }}</h3>
-        <p>{{ $t('delete_account_confirm') }}</p>
-        <div class="delete-confirm-buttons">
-          <button class="cancel-btn" @click="cancelDeleteAccount">
-            {{ $t('delete_account_cancel') }}
-          </button>
-          <button class="confirm-delete-btn" @click="confirmDeleteAccount">
-            {{ $t('delete_account_btn') }}
-          </button>
-        </div>
       </div>
     </div>
 
@@ -152,111 +125,118 @@
           </div>
           <div class="detail-info">
             <div class="detail-section">
-              <h4 class="detail-section-title">📝 설명</h4>
+              <h4 class="detail-section-title">📝 {{ $t('detail_description') }}</h4>
               <p class="detail-description">{{ selectedPlace?.desc }}</p>
             </div>
             
             <div v-if="selectedPlace?.address" class="detail-section">
-              <h4 class="detail-section-title">📍 주소</h4>
+              <h4 class="detail-section-title">📍 {{ $t('detail_address') }}</h4>
               <p class="detail-address">{{ selectedPlace?.address }}</p>
             </div>
             
             <div v-if="selectedPlace?.detailAddress" class="detail-section">
-              <h4 class="detail-section-title">📍 상세주소</h4>
+              <h4 class="detail-section-title">📍 {{ $t('detail_detail_address') }}</h4>
               <p class="detail-address">{{ selectedPlace?.detailAddress }}</p>
             </div>
             
             <div v-if="selectedPlace?.contact" class="detail-section">
-              <h4 class="detail-section-title">📞 연락처</h4>
+              <h4 class="detail-section-title">📞 {{ $t('detail_contact') }}</h4>
               <p class="detail-contact">{{ selectedPlace?.contact }}</p>
             </div>
             
             <div v-if="selectedPlace?.openingHours" class="detail-section">
-              <h4 class="detail-section-title">🕒 영업시간</h4>
+              <h4 class="detail-section-title">🕒 {{ $t('detail_opening_hours') }}</h4>
               <p class="detail-hours">{{ selectedPlace?.openingHours }}</p>
             </div>
             
             <div v-if="selectedPlace?.restDay" class="detail-section">
-              <h4 class="detail-section-title">📅 휴무일</h4>
+              <h4 class="detail-section-title">📅 {{ $t('detail_rest_day') }}</h4>
               <p class="detail-rest-day">{{ selectedPlace?.restDay }}</p>
             </div>
             
             <div v-if="selectedPlace?.representativeMenu" class="detail-section">
-              <h4 class="detail-section-title">🍽️ 대표메뉴</h4>
+              <h4 class="detail-section-title">🍽️ {{ $t('detail_representative_menu') }}</h4>
               <p class="detail-menu">{{ selectedPlace?.representativeMenu }}</p>
             </div>
             
             <div v-if="selectedPlace?.menu" class="detail-section">
-              <h4 class="detail-section-title">🍽️ 메뉴</h4>
+              <h4 class="detail-section-title">🍽️ {{ $t('detail_menu') }}</h4>
               <p class="detail-menu">{{ selectedPlace?.menu }}</p>
             </div>
             
             <div v-if="selectedPlace?.eventStartDate && selectedPlace?.eventEndDate" class="detail-section">
-              <h4 class="detail-section-title">📅 행사기간</h4>
+              <h4 class="detail-section-title">📅 {{ $t('detail_event_period') }}</h4>
               <p class="detail-period">{{ selectedPlace?.eventStartDate }} ~ {{ selectedPlace?.eventEndDate }}</p>
             </div>
             
             <div v-if="selectedPlace?.eventIntro" class="detail-section">
-              <h4 class="detail-section-title">🎪 행사소개</h4>
+              <h4 class="detail-section-title">🎪 {{ $t('detail_event_intro') }}</h4>
               <p class="detail-intro">{{ selectedPlace?.eventIntro }}</p>
             </div>
             
             <div v-if="selectedPlace?.eventContent" class="detail-section">
-              <h4 class="detail-section-title">📋 행사내용</h4>
+              <h4 class="detail-section-title">📋 {{ $t('detail_event_content') }}</h4>
               <p class="detail-content">{{ selectedPlace?.eventContent }}</p>
             </div>
             
             <div v-if="selectedPlace?.inquiry" class="detail-section">
-              <h4 class="detail-section-title">📞 문의처</h4>
+              <h4 class="detail-section-title">📞 {{ $t('detail_inquiry') }}</h4>
               <p class="detail-inquiry">{{ selectedPlace?.inquiry }}</p>
             </div>
             
             <div v-if="selectedPlace?.usageTime" class="detail-section">
-              <h4 class="detail-section-title">⏰ 이용시간</h4>
+              <h4 class="detail-section-title">⏰ {{ $t('detail_usage_time') }}</h4>
               <p class="detail-usage-time">{{ selectedPlace?.usageTime }}</p>
             </div>
             
             <div v-if="selectedPlace?.performanceTime" class="detail-section">
-              <h4 class="detail-section-title">🎭 공연시간</h4>
+              <h4 class="detail-section-title">🎭 {{ $t('detail_performance_time') }}</h4>
               <p class="detail-performance-time">{{ selectedPlace?.performanceTime }}</p>
             </div>
             
             <div v-if="selectedPlace?.duration" class="detail-section">
-              <h4 class="detail-section-title">⏱️ 소요시간</h4>
+              <h4 class="detail-section-title">⏱️ {{ $t('detail_duration') }}</h4>
               <p class="detail-duration">{{ selectedPlace?.duration }}</p>
             </div>
             
             <div v-if="selectedPlace?.ageLimit" class="detail-section">
-              <h4 class="detail-section-title">👥 연령제한</h4>
+              <h4 class="detail-section-title">👥 {{ $t('detail_age_limit') }}</h4>
               <p class="detail-age-limit">{{ selectedPlace?.ageLimit }}</p>
             </div>
             
             <div v-if="selectedPlace?.bookingPlace" class="detail-section">
-              <h4 class="detail-section-title">📋 예약처</h4>
+              <h4 class="detail-section-title">📋 {{ $t('detail_booking_place') }}</h4>
               <p class="detail-booking-place">{{ selectedPlace?.bookingPlace }}</p>
             </div>
             
             <div v-if="selectedPlace?.discountInfo" class="detail-section">
-              <h4 class="detail-section-title">💰 할인정보</h4>
+              <h4 class="detail-section-title">💰 {{ $t('detail_discount_info') }}</h4>
               <p class="detail-discount">{{ selectedPlace?.discountInfo }}</p>
             </div>
             
             <div v-if="selectedPlace?.eventGrade" class="detail-section">
-              <h4 class="detail-section-title">⭐ 등급</h4>
+              <h4 class="detail-section-title">⭐ {{ $t('detail_event_grade') }}</h4>
               <p class="detail-grade">{{ selectedPlace?.eventGrade }}</p>
             </div>
             
             <div v-if="selectedPlace?.status" class="detail-section">
-              <h4 class="detail-section-title">📊 상태</h4>
+              <h4 class="detail-section-title">📊 {{ $t('detail_status') }}</h4>
               <p class="detail-status">{{ selectedPlace?.status }}</p>
             </div>
           </div>
         </div>
         <div class="detail-modal-footer">
-          <button class="detail-modal-btn" @click="closeDetailModal">닫기</button>
+          <button class="detail-modal-btn" @click="closeDetailModal">{{ $t('close_button') }}</button>
         </div>
       </div>
     </div>
+    
+    <!-- 뒤로가기 버튼 (왼쪽 하단) -->
+    <button class="back-btn" @click="goBack">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+    </button>
   </div>
 </template>
 
@@ -270,7 +250,6 @@ export default {
       bookmarked: [],
       showModal: false,
       modalMessage: '',
-      showDeleteConfirm: false,
       showDetailModal: false,
       selectedPlace: null,
     };
@@ -280,7 +259,7 @@ export default {
     const user = auth.currentUser;
     if (!user) return;
 
-    const res = await fetch('http://localhost:5000/api/get_user_bookmarks', {
+    const res = await fetch('/api/get_user_bookmarks', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ uid: user.uid })
@@ -308,7 +287,7 @@ export default {
     }
 
     // 사용자 리뷰 로드
-    const reviewsRes = await fetch('http://localhost:5000/api/get_user_reviews', {
+    const reviewsRes = await fetch('/api/get_user_reviews', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ uid: user.uid })
@@ -328,8 +307,8 @@ export default {
     $t() { return $t; },
   },
   methods: {
-    goHome() {
-      this.$router.push('/');
+    goBack() {
+      this.$router.push('/main');
     },
     editReview(idx, place) {
       place.reviewText = place.review || '';
@@ -353,26 +332,26 @@ export default {
         if (place.isEditing && (place.tempRating !== place.rating || place.tempIsPublic !== place.isPublic)) {
           // 평점 업데이트
           if (place.tempRating !== place.rating) {
-            const ratingResponse = await fetch('http://localhost:5000/api/update_bookmark_rating', {
+            const ratingResponse = await fetch('/api/update_bookmark_rating', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 uid: user.uid,
-                contentId: place.contentId, // placeId를 contentId로 변경
+                contentId: place.contentId, // contentId 사용
                 rating: place.tempRating
               })
             });
 
             const ratingResult = await ratingResponse.json();
             if (!ratingResult.success) {
-              throw new Error(ratingResult.error || '평점 저장에 실패했습니다.');
+              throw new Error(ratingResult.error || this.$t('rating_save_error'));
             }
             place.rating = place.tempRating;
           }
 
           // 공개여부 업데이트
           if (place.tempIsPublic !== place.isPublic) {
-            const visibilityResponse = await fetch('http://localhost:5000/api/update_bookmark_visibility', {
+            const visibilityResponse = await fetch('/api/update_bookmark_visibility', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -384,7 +363,7 @@ export default {
 
             const visibilityResult = await visibilityResponse.json();
             if (!visibilityResult.success) {
-              throw new Error(visibilityResult.error || '공개여부 저장에 실패했습니다.');
+              throw new Error(visibilityResult.error || this.$t('visibility_save_error'));
             }
             place.isPublic = place.tempIsPublic;
           }
@@ -393,9 +372,9 @@ export default {
         // 리뷰 저장 (리뷰가 있는 경우에만)
         if (place.reviewText && place.reviewText.trim()) {
           // 사용자 선호도에서 region 가져오기
-          let userRegion = '전국'; // 기본값
+          let userRegion = this.$t('nationwide_default'); // 기본값
           try {
-            const preferencesResponse = await fetch('http://localhost:5000/api/get_user_preferences', {
+            const preferencesResponse = await fetch('/api/get_user_preferences', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ uid: user.uid })
@@ -406,10 +385,10 @@ export default {
               userRegion = preferencesResult.preferences.region;
             }
           } catch (error) {
-            console.warn('사용자 선호도 조회 실패, 기본값 사용:', error);
+            console.warn(this.$t('user_preference_error'), error);
           }
 
-          const response = await fetch('http://localhost:5000/api/save_review', {
+          const response = await fetch('/api/save_review', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -436,18 +415,18 @@ export default {
           if (result.success) {
             place.review = place.reviewText.trim();
           } else {
-            throw new Error(result.error || '서버에서 오류가 발생했습니다.');
+            throw new Error(result.error || this.$t('server_error'));
           }
         }
 
         // 편집 모드 종료
         place.reviewText = '';
         place.isEditing = false;
-        this.showModalMessage('저장되었습니다.');
+        this.showModalMessage(this.$t('saved_successfully'));
 
       } catch (error) {
         console.error('저장 오류:', error);
-        this.showModalMessage(`저장 중 오류가 발생했습니다: ${error.message}`);
+        this.showModalMessage(`${this.$t('save_error')} ${error.message}`);
       }
     },
     async deleteBookmark(idx, place) {
@@ -455,10 +434,10 @@ export default {
       const user = auth.currentUser;
       if (!user) return;
 
-      console.log('삭제할 북마크 정보:', place);
-      console.log('전송할 placeId:', place.name);
+      console.log(this.$t('bookmark_delete_info'), place);
+      console.log(this.$t('bookmark_place_id'), place.name);
 
-      const response = await fetch('http://localhost:5000/api/delete_user_bookmark', {
+      const response = await fetch('/api/delete_user_bookmark', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uid: user.uid, contentId: place.contentId }) // contentId 사용
@@ -470,7 +449,7 @@ export default {
         this.showModalMessage(this.$t('delete_bookmark_alert'));
       } else {
         console.error('북마크 삭제 실패:', result.error);
-        this.showModalMessage('북마크 삭제에 실패했습니다.');
+        this.showModalMessage(this.$t('bookmark_delete_failed'));
       }
     },
     showModalMessage(msg) {
@@ -479,41 +458,6 @@ export default {
       setTimeout(() => {
         this.showModal = false;
       }, 1500);
-    },
-    showDeleteAccountConfirm() {
-      this.showDeleteConfirm = true;
-    },
-    cancelDeleteAccount() {
-      this.showDeleteConfirm = false;
-    },
-    async confirmDeleteAccount() {
-      const auth = getAuth();
-      const user = auth.currentUser;
-      if (!user) return;
-
-      try {
-        // 백엔드 API 호출하여 사용자 데이터 삭제
-        await fetch('http://localhost:5000/api/delete_user_account', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ uid: user.uid })
-        });
-
-        // Firebase Auth에서 사용자 삭제
-        await user.delete();
-
-        this.showDeleteConfirm = false;
-        this.showModalMessage(this.$t('delete_account_success'));
-
-        // 홈페이지로 리다이렉트
-        setTimeout(() => {
-          this.$router.push('/');
-        }, 2000);
-
-      } catch (error) {
-        console.error('회원탈퇴 오류:', error);
-        this.showModalMessage('회원탈퇴 중 오류가 발생했습니다.');
-      }
     },
     setTempRating(place, rating) {
       place.tempRating = rating;
@@ -534,13 +478,22 @@ export default {
 /* 네이버 지식iN 스타일 - Community.vue 베이스 */
 .bookmark-page {
   min-height: 100vh;
-  background: #F7F8FA;
+  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+  background-attachment: fixed;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   width: 100vw;
   max-width: 100vw;
   overflow-x: hidden;
   box-sizing: border-box;
   padding: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.bookmark-container {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
 .bookmark-header {
@@ -551,35 +504,44 @@ export default {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 16px;
 }
 
 .back-btn {
-  background: #F7F8FA;
-  color: #495057;
-  border: 1px solid #e9ecef;
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  padding: 0;
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: none;
+  background: #4A69E2;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 1000;
 }
 
 .back-btn:hover {
-  background: #4A69E2;
-  color: white;
-  border-color: #4A69E2;
+  background: #3B5BC7;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
 .title {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
   color: #212529;
   margin: 0;
+  text-align: center;
+  flex: 1;
 }
 
 .section {
@@ -592,7 +554,7 @@ export default {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .bookmark-card {
@@ -699,7 +661,10 @@ export default {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  align-self: flex-start;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
 }
 
 .delete-btn:hover {
@@ -751,89 +716,6 @@ export default {
   }
 }
 
-.delete-account-btn {
-  width: 100%;
-  padding: 1.2rem 0;
-  background: #dc2626;
-  color: #fff;
-  font-size: 1.2rem;
-  font-weight: 800;
-  border: none;
-  border-radius: 14px;
-  box-shadow: 0 6px 24px rgba(220, 38, 38, 0.12);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.delete-account-btn:hover {
-  background: #b91c1c;
-  transform: translateY(-2px);
-}
-
-.delete-account-btn:active {
-  background: #991b1b;
-  transform: translateY(0);
-}
-
-.delete-confirm-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 4000;
-}
-
-.delete-confirm-content {
-  background: #fff;
-  border-radius: 20px;
-  padding: 2.5rem;
-  max-width: 400px;
-  width: 90%;
-  text-align: center;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-}
-
-.delete-confirm-content h3 {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: #dc2626;
-  margin-bottom: 1rem;
-}
-
-.delete-confirm-content p {
-  font-size: 1.1rem;
-  color: #64748b;
-  margin-bottom: 2rem;
-  line-height: 1.6;
-  white-space: pre-line;
-}
-
-.delete-confirm-buttons {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-}
-
-.confirm-delete-btn {
-  padding: 1rem 2rem;
-  background: #dc2626;
-  color: #fff;
-  border: none;
-  border-radius: 12px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.confirm-delete-btn:hover {
-  background: #b91c1c;
-}
 
 /*
  통합된 리뷰 카드 스타일 */
@@ -1176,27 +1058,37 @@ export default {
     padding: 12px;
   }
   
+  .bookmark-container {
+    max-width: 100%;
+  }
+  
   .bookmark-header {
     padding: 16px 20px;
     margin-bottom: 12px;
   }
   
   .back-btn {
-    padding: 6px 10px;
-    font-size: 13px;
+    width: 50px;
+    height: 50px;
   }
   
   .title {
     font-size: 18px;
+    text-align: center;
   }
   
   .bookmark-list {
-    gap: 8px;
+    gap: 6px;
   }
   
   .bookmark-card {
-    padding: 12px;
-    gap: 8px;
+    padding: 16px;
+    gap: 12px;
+    flex-direction: column;
+  }
+  
+  .place-info {
+    width: 100%;
   }
   
   .place-img {
@@ -1210,6 +1102,45 @@ export default {
   
   .place-desc {
     font-size: 13px;
+  }
+  
+  /* 리뷰 입력란 모바일 최적화 */
+  .review-input {
+    padding: 12px;
+    font-size: 16px; /* 모바일에서 더 큰 폰트 */
+    min-height: 100px; /* 더 높은 최소 높이 */
+    line-height: 1.6;
+  }
+  
+  .review-edit {
+    margin-bottom: 1rem;
+  }
+  
+  .edit-label {
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+  
+  .edit-buttons {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .save-btn,
+  .cancel-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 14px;
+  }
+  
+  /* 모바일에서 쓰레기통 버튼 크기 조정 */
+  .delete-btn {
+    width: 40px;
+    height: 40px;
+    padding: 0.6rem;
+    font-size: 1rem;
+    top: 8px;
+    right: 8px;
   }
 }
 

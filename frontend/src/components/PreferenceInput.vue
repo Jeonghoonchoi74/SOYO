@@ -1,5 +1,10 @@
 <template>
   <div class="preference-page">
+    <button class="back-btn" @click="goBack">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+    </button>
     <div class="preference-content">
       <div class="preference-header">
         <h2 class="title">{{ $t('pref_title') }}</h2>
@@ -9,14 +14,28 @@
       <div class="preference-form">
         <div class="form-group">
           <label class="section-label">{{ $t('pref_section_region') }}</label>
-          <select v-model="selectedRegion" class="region-dropdown" @change="onRegionChange">
-            <option value="" disabled>{{ $t('pref_region_placeholder') }}</option>
-            <option v-for="region in regionOptions" :key="region.value" :value="region.value">
-              {{ $t(region.label) }}
-            </option>
-          </select>
+          <button 
+            type="button" 
+            class="region-selector-btn" 
+            @click="openRegionModal"
+            :class="{ 'has-selection': selectedRegion }"
+          >
+            <span v-if="selectedRegion">
+              {{ getSelectedRegionDisplayName() }}
+            </span>
+            <span v-else class="placeholder">
+              {{ $t('pref_region_placeholder') }}
+            </span>
+            <span class="dropdown-icon">▼</span>
+          </button>
         </div>
         
+        <div v-if="selectedRegion" class="form-group">
+          <div class="region-description">
+            <p class="description-text">{{ $t(getRegionDescription(selectedRegion)) }}</p>
+          </div>
+        </div>
+
         <div v-if="selectedRegion" class="form-group">
           <label class="section-label">{{ $t('pref_section_category') }}</label>
           <div class="category-selector">
@@ -26,7 +45,7 @@
               :class="['category-btn', { active: selectedCategory === category }]" 
               @click="selectCategory(category)"
             >
-              {{ getCategoryDisplayName(category) }}
+              <span v-html="getCategoryDisplayName(category)"></span>
             </button>
           </div>
         </div>
@@ -46,6 +65,32 @@
         <button class="recommend-btn" :disabled="!canProceed || isSaving" @click="recommend">
           {{ isSaving ? $t('location_modal_saving') : $t('pref_recommend_btn') }}
         </button>
+      </div>
+    </div>
+
+    <!-- 지역 선택 모달 -->
+    <div v-if="showRegionModal" class="modal-overlay" @click="closeRegionModal">
+      <div class="modal-content region-modal" @click.stop>
+        <div class="modal-header">
+          <h3>{{ $t('pref_section_region') }}</h3>
+          <button class="close-btn" @click="closeRegionModal">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="region-grid">
+            <button 
+              v-for="region in regionOptions" 
+              :key="region.value" 
+              :class="['region-option', { active: selectedRegion === region.value }]"
+              @click="selectRegionAndClose(region.value)"
+              :title="$t(region.label)"
+            >
+              <div class="region-image">
+                <img :src="region.image" :alt="$t(region.label)" />
+              </div>
+              <span class="region-name">{{ $t(region.label) }}</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -69,14 +114,36 @@
         </div>
       </div>
     </div>
+    
+    <!-- 검색 중 모달 -->
+    <div v-if="showSearchingModal" class="modal-overlay">
+      <div class="modal-content searching-modal">
+        <div class="searching-container">
+          <div class="searching-image">
+            <img :src="currentSearchingImage" alt="Searching" />
+          </div>
+          <h3 class="searching-title">{{ $t('searching_title') }}</h3>
+          <p class="searching-message">{{ $t('searching_message') }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 홈 버튼 (오른쪽 하단) -->
+    <button class="float-btn home-float-btn" @click="goHome">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+        <polyline points="9,22 9,12 15,12 15,22" />
+      </svg>
+    </button>
   </div>
 </template>
 
 <script>
 import { i18nState, $t } from '../i18n';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
-import { getRegionOptions, getAvailableCategories, getCategoryLabel } from '../utils/regionMapping';
+import { getRegionOptions, getAvailableCategories, getCategoryLabel, getRegionDescription } from '../utils/regionMapping';
+import trying1 from '../assets/trying1.jpg';
+import trying2 from '../assets/trying2.png';
 
 export default {
   name: 'PreferenceInput',
@@ -89,15 +156,25 @@ export default {
       freeText: '',
       isSaving: false,
       showLocationModal: false,
+      showRegionModal: false,
+      showSearchingModal: false,
+      tempSelectedRegion: '',
       locationPermission: null,
+      trying1: trying1,
+      trying2: trying2,
+      searchingImages: [trying1, trying2],
+      currentSearchingImageIndex: 0,
+      searchingImageInterval: null,
     };
   },
   computed: {
     canProceed() {
-      // 지역 선택과 카테고리 선택이 필요함
-      return this.selectedRegion && this.selectedCategory;
+      // 지역 선택, 카테고리 선택, 자유 텍스트 입력이 필요함
+      return this.selectedRegion && this.selectedCategory && this.freeText && this.freeText.trim().length > 0;
     },
-    $t() { return $t; },
+    currentSearchingImage() {
+      return this.searchingImages[this.currentSearchingImageIndex];
+    },
   },
 
   mounted() {
@@ -110,10 +187,50 @@ export default {
     this.checkLocationPermission();
   },
 
+  beforeUnmount() {
+    // 컴포넌트 언마운트 시 interval 정리
+    this.stopSearchingImageRotation();
+  },
+
   methods: {
     $t,
 
+    goBack() {
+      this.$router.push('/search');
+    },
 
+    // 지역 선택 관련 메서드들
+    openRegionModal() {
+      this.tempSelectedRegion = this.selectedRegion;
+      this.showRegionModal = true;
+    },
+    
+    closeRegionModal() {
+      this.showRegionModal = false;
+      this.tempSelectedRegion = '';
+    },
+    
+    selectRegion(regionValue) {
+      this.tempSelectedRegion = regionValue;
+    },
+    
+    selectRegionAndClose(regionValue) {
+      this.selectedRegion = regionValue;
+      this.onRegionChange();
+      this.closeRegionModal();
+    },
+    
+    confirmRegionSelection() {
+      this.selectedRegion = this.tempSelectedRegion;
+      this.onRegionChange();
+      this.closeRegionModal();
+    },
+    
+    getSelectedRegionDisplayName() {
+      const region = this.regionOptions.find(r => r.value === this.selectedRegion);
+      return region ? this.$t(region.label) : '';
+    },
+    
     onRegionChange() {
       this.selectedCategory = ''; // 지역 변경 시 카테고리 초기화
       this.availableCategories = getAvailableCategories(this.selectedRegion);
@@ -123,6 +240,9 @@ export default {
     },
     getCategoryDisplayName(category) {
       return this.$t(getCategoryLabel(category));
+    },
+    getRegionDescription(region) {
+      return getRegionDescription(region);
     },
 
     // 위치 권한 확인
@@ -233,7 +353,7 @@ export default {
       try {
         this.isSaving = true;
         
-        const response = await fetch('http://localhost:5000/api/save_user_preferences', {
+        const response = await fetch('/api/save_user_preferences', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -272,15 +392,10 @@ export default {
         return;
       }
       
-      // Free Text가 있고 사용자 언어가 한국어가 아닐 때만 번역 API 호출
-      if (this.freeText && this.freeText.trim()) {
-        const userLanguage = await this.getUserLanguage();
-        if (userLanguage && userLanguage !== 'ko') {
-          await this.translateFreeText();
-        } else {
-          console.log('사용자 언어가 한국어이므로 번역을 건너뜁니다.');
-        }
-      }
+      // 검색 중 모달 표시
+      this.showSearchingModal = true;
+      this.isSaving = true;
+      this.startSearchingImageRotation();
       
       // 검색 쿼리 준비
       let searchQuery = '';
@@ -306,24 +421,32 @@ export default {
           category: this.selectedCategory
         });
         
-        const response = await fetch('http://localhost:5002/search', {
+        // 전국 선택 시 지역 필터링 없이 요청
+        const requestBody = {
+          uid: user.uid,
+          query: finalQuery,
+          category: this.selectedCategory
+        };
+        
+        // 전국이 아닌 경우에만 region 필드 추가
+        if (this.selectedRegion !== '전국') {
+          requestBody.region = this.selectedRegion;
+        }
+        
+        const response = await fetch('/api/recommend/search', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            uid: user.uid,
-            query: finalQuery,
-            region: this.selectedRegion,
-            category: this.selectedCategory
-          }),
+          body: JSON.stringify(requestBody),
         });
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const searchResults = await response.json();
+        const result = await response.json();
+        const searchResults = result.data;
         console.log('검색 결과:', searchResults);
         
         // 검색 결과를 localStorage에 임시 저장
@@ -332,14 +455,25 @@ export default {
         // 선호도 저장
         const saved = await this.savePreferences();
         
-        // 추천 페이지로 이동
+        // 전국 선택 시 지역 필터링 없이 쿼리 파라미터 설정
+        const queryParams = {
+          category: this.selectedCategory,
+          searchQuery: searchQuery
+        };
+        
+        // 전국이 아닌 경우에만 region 파라미터 추가
+        if (this.selectedRegion !== '전국') {
+          queryParams.region = this.selectedRegion;
+        }
+        
+        // 검색 중 모달 숨기기
+        this.showSearchingModal = false;
+        this.stopSearchingImageRotation();
+        
+        // RecommendResult 페이지로 이동
         this.$router.push({
           path: '/recommend',
-          query: { 
-            region: this.selectedRegion,
-            category: this.selectedCategory,
-            searchQuery: searchQuery
-          }
+          query: queryParams
         });
         
       } catch (error) {
@@ -347,14 +481,28 @@ export default {
         
         // API 호출 실패 시에도 선호도 저장 후 추천 페이지로 이동
         const saved = await this.savePreferences();
+        
+        // 전국 선택 시 지역 필터링 없이 쿼리 파라미터 설정
+        const queryParams = {
+          category: this.selectedCategory,
+          searchQuery: searchQuery
+        };
+        
+        // 전국이 아닌 경우에만 region 파라미터 추가
+        if (this.selectedRegion !== '전국') {
+          queryParams.region = this.selectedRegion;
+        }
+        
+        // 검색 중 모달 숨기기
+        this.showSearchingModal = false;
+        this.stopSearchingImageRotation();
+        
         this.$router.push({
           path: '/recommend',
-          query: { 
-            region: this.selectedRegion,
-            category: this.selectedCategory,
-            searchQuery: searchQuery
-          }
+          query: queryParams
         });
+      } finally {
+        this.isSaving = false;
       }
     },
 
@@ -369,17 +517,22 @@ export default {
       }
 
       try {
-        // Firestore에서 사용자 언어 설정 조회
-        const db = getFirestore();
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          const userLanguage = userData.lang;
-          console.log('사용자 언어 설정:', userLanguage);
-          return userLanguage;
+        const response = await fetch('/api/firebase/get-user-language', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            uid: user.uid
+          }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('사용자 언어 설정:', result.language);
+          return result.language;
         } else {
-          console.log('Firestore에 사용자 데이터가 없음');
+          console.log('사용자 언어 조회 실패');
           return null;
         }
       } catch (error) {
@@ -399,16 +552,19 @@ export default {
       }
 
       try {
+        const userLanguage = await this.getUserLanguage() || 'auto';
         console.log('번역 요청 시작:', this.freeText);
+        console.log('소스 언어:', userLanguage, '→ 타겟 언어: ko');
         
-        const response = await fetch('http://localhost:5001/translate', {
+        const response = await fetch('/api/translate/', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             text: this.freeText,
-            target_lang: 'ko',
+            source_lang: userLanguage,
+            target_language: 'ko',
             uid: user.uid
           }),
         });
@@ -433,6 +589,25 @@ export default {
         return this.freeText;
       }
     },
+    
+    goHome() {
+      this.$router.push('/main');
+    },
+
+    // 검색 중 이미지 교체 관련 메서드들
+    startSearchingImageRotation() {
+      this.currentSearchingImageIndex = 0;
+      this.searchingImageInterval = setInterval(() => {
+        this.currentSearchingImageIndex = (this.currentSearchingImageIndex + 1) % this.searchingImages.length;
+      }, 500); // 0.5초마다 이미지 변경
+    },
+
+    stopSearchingImageRotation() {
+      if (this.searchingImageInterval) {
+        clearInterval(this.searchingImageInterval);
+        this.searchingImageInterval = null;
+      }
+    },
   },
 };
 </script>
@@ -441,19 +616,51 @@ export default {
 /* 네이버 지식iN 스타일 - Community.vue 베이스 */
 .preference-page {
   min-height: 100vh;
-  background: #F7F8FA;
+  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+  background-attachment: fixed;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   width: 100vw;
   max-width: 100vw;
   overflow-x: hidden;
   box-sizing: border-box;
   padding: 20px;
+  position: relative;
+}
+
+.back-btn {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: none;
+  background: #4A69E2;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 1000;
+}
+
+.back-btn:hover {
+  background: #3B5BC7;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
 .preference-content {
   width: 100%;
   max-width: 480px;
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 16px;
   padding: 40px 24px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -500,28 +707,49 @@ export default {
   color: #212529;
 }
 
-.region-dropdown {
+.region-selector-btn {
   width: 100%;
-  padding: 14px;
+  padding: 14px 16px;
   font-size: 14px;
   border: 1px solid #e9ecef;
   border-radius: 8px;
-  background: #F7F8FA;
+  background: #ffffff;
   color: #212529;
   outline: none;
   transition: all 0.2s ease;
   font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
-.region-dropdown:focus {
+.region-selector-btn:hover {
   border-color: #4A69E2;
-  background: white;
-  box-shadow: 0 0 0 3px rgba(74, 105, 226, 0.1);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(74, 105, 226, 0.12);
 }
 
-.region-dropdown option {
-  padding: 8px;
-  font-size: 14px;
+.region-selector-btn.has-selection {
+  background: #ffffff;
+  border-color: #4A69E2;
+  color: #4A69E2;
+}
+
+.region-selector-btn .placeholder {
+  color: #adb5bd;
+}
+
+.region-selector-btn .dropdown-icon {
+  font-size: 12px;
+  transition: transform 0.2s ease;
+  color: #6c757d;
+}
+
+.region-selector-btn:hover .dropdown-icon {
+  transform: rotate(180deg);
 }
 
 .category-selector {
@@ -555,6 +783,22 @@ export default {
   color: white;
 }
 
+.region-description {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 8px;
+}
+
+.description-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #495057;
+  text-align: left;
+}
+
 .toggle-list {
   display: flex;
   flex-wrap: wrap;
@@ -567,7 +811,8 @@ export default {
   padding: 12px 16px;
   border: 1px solid #e9ecef;
   border-radius: 8px;
-  background: #F7F8FA;
+  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+  background-attachment: fixed;
   color: #495057;
   font-size: 14px;
   font-weight: 500;
@@ -592,7 +837,7 @@ export default {
   font-size: 14px;
   border: 1px solid #e9ecef;
   border-radius: 8px;
-  background: #F7F8FA;
+  background: #ffffff;
   color: #212529;
   outline: none;
   transition: all 0.2s ease;
@@ -600,6 +845,7 @@ export default {
   resize: vertical;
   min-height: 80px;
   box-sizing: border-box;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
 .free-input:focus {
@@ -652,22 +898,28 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 3000;
+  z-index: 9999;
   padding: 20px;
   color: #212529;
+  width: 100vw;
+  height: 100vh;
+  box-sizing: border-box;
 }
 
 .modal-content {
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 16px;
   width: 100%;
-  max-width: 480px;
-  max-height: 85vh;
+  max-width: 900px;
+  max-height: 95vh;
   overflow-y: auto;
   color: #212529;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
   position: relative;
-  z-index: 3001;
+  z-index: 10000;
 }
 
 .modal-header {
@@ -756,7 +1008,8 @@ export default {
 }
 
 .btn-secondary {
-  background: #F7F8FA;
+  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+  background-attachment: fixed;
   color: #495057;
   border: 1px solid #e9ecef;
   border-radius: 6px;
@@ -770,6 +1023,100 @@ export default {
 .btn-secondary:hover {
   background: #e9ecef;
   border-color: #adb5bd;
+}
+
+/* 지역 선택 모달 스타일 */
+.region-modal {
+  max-width: 900px;
+}
+
+.region-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(6, 1fr);
+  gap: 4px;
+  max-height: 900px;
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.region-grid::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.region-option {
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #495057;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  min-height: 100px;
+  position: relative;
+  overflow: hidden;
+}
+
+.region-option:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+
+.region-option.active {
+  box-shadow: 0 4px 12px rgba(74, 105, 226, 0.5);
+  transform: scale(1.02);
+  z-index: 10;
+}
+
+.region-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.region-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.region-name {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  word-break: keep-all;
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  transition: all 0.2s ease;
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  z-index: 10;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 /* 반응형 */
@@ -857,6 +1204,156 @@ export default {
   .btn-primary {
     width: 100%;
     padding: 14px 20px;
+  }
+  
+  .region-selector-btn {
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+  
+  .region-grid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: auto;
+    gap: 4px;
+  }
+  
+  .region-option {
+    padding: 0;
+    min-height: 70px;
+  }
+  
+  .region-image {
+    width: 100%;
+    height: 100%;
+  }
+  
+  .region-name {
+    font-size: 10px;
+    bottom: 2px;
+  }
+}
+
+/* 플로팅 버튼 스타일 */
+.float-btn {
+  position: fixed;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.float-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.home-float-btn {
+  bottom: 20px;
+  right: 20px;
+  background: #28a745;
+  color: white;
+}
+
+.home-float-btn:hover {
+  background: #218838;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* 검색 중 모달 스타일 */
+.searching-modal {
+  max-width: 400px;
+  text-align: center;
+  z-index: 10000;
+  position: relative;
+}
+
+.searching-container {
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.searching-image {
+  width: 200px;
+  height: 200px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.searching-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.searching-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #212529;
+  margin: 0;
+}
+
+.searching-message {
+  font-size: 16px;
+  color: #6c757d;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+  .float-btn {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .home-float-btn {
+    right: 20px;
+  }
+  
+  .modal-overlay {
+    padding: 10px;
+    z-index: 9999;
+  }
+  
+  .modal-content {
+    max-width: 95vw;
+    max-height: 90vh;
+    z-index: 10000;
+  }
+  
+  .searching-modal {
+    max-width: 350px;
+    z-index: 10000;
+  }
+  
+  .searching-container {
+    padding: 32px 20px;
+    gap: 16px;
+  }
+  
+  .searching-image {
+    width: 160px;
+    height: 160px;
+  }
+  
+  .searching-title {
+    font-size: 18px;
+  }
+  
+  .searching-message {
+    font-size: 14px;
   }
 }
 </style>

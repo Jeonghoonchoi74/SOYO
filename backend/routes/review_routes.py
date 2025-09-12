@@ -333,6 +333,43 @@ async def delete_review(request: Request):
         print(f"리뷰 삭제 오류: {str(e)}")
         return JSONResponse(content={'success': False, 'error': str(e)}, status_code=500)
 
+@router.post("/get_place_reviews")
+async def get_place_reviews(request: Request):
+    """특정 장소의 모든 리뷰를 가져오는 API"""
+    data = await request.json()
+    content_id = data.get('contentId')
+    
+    if not content_id:
+        return JSONResponse(content={'success': False, 'error': 'Missing contentId'}, status_code=400)
+    
+    try:
+        # 해당 장소의 공개된 리뷰만 가져오기
+        place_reviews = await asyncio.to_thread(
+            lambda: list(db.collection('places').document(content_id).collection('reviews').where('isPublic', '==', True).stream())
+        )
+        
+        reviews = []
+        for review_doc in place_reviews:
+            review_data = review_doc.to_dict()
+            # 필요한 정보만 추출 (uid 제외)
+            filtered_review = {
+                'userName': review_data.get('userName', '익명'),
+                'review': review_data.get('review', ''),
+                'rating': review_data.get('rating', 0),
+                'createdAt': review_data.get('createdAt')
+            }
+            reviews.append(filtered_review)
+        
+        # 생성일 기준으로 최신순 정렬
+        reviews.sort(key=lambda x: x.get('createdAt', 0), reverse=True)
+        
+        print(f"장소 {content_id}의 공개 리뷰 {len(reviews)}개 조회 완료")
+        return {'success': True, 'reviews': reviews}
+        
+    except Exception as e:
+        print(f"장소 리뷰 조회 오류: {str(e)}")
+        return JSONResponse(content={'success': False, 'error': str(e)}, status_code=500)
+
 @router.post("/get_available_places_for_review")
 async def get_available_places_for_review(request: Request):
     """사용자가 리뷰를 작성할 수 있는 장소들을 가져오는 API"""
@@ -351,11 +388,13 @@ async def get_available_places_for_review(request: Request):
             lambda: list(db.collection('users').document(uid).collection('reviews').stream())
         )
         
-        reviewed_places = {doc.id for doc in user_reviews}
+        # 리뷰를 작성한 장소 ID들을 문자열로 변환하여 저장
+        reviewed_places = {str(doc.id) for doc in user_reviews}
+        print(f"사용자 {uid}가 리뷰를 작성한 장소들: {reviewed_places}")
         
         available_places = []
         for bookmark_doc in user_bookmarks:
-            content_id = bookmark_doc.id
+            content_id = str(bookmark_doc.id)  # 문자열로 변환
             
             if content_id not in reviewed_places:
                 place_info_doc = await asyncio.to_thread(

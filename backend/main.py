@@ -8,6 +8,11 @@ from routes.review_routes import router as review_router
 from routes.comment_routes import router as comment_router
 from routes.like_routes import router as like_router
 from routes.statistics_routes import router as statistics_router
+from routes.translate_routes import router as translate_router
+from routes.recommend_routes import router as recommend_router
+from routes.firebase_routes import router as firebase_router
+from routes.gemini_routes import router as gemini_router
+# from routes.finetuned_ai_routes import router as finetuned_ai_router
 
 # 데이터베이스 초기화
 from config.database import initialize_firebase
@@ -33,6 +38,11 @@ app.include_router(review_router)
 app.include_router(comment_router)
 app.include_router(like_router)
 app.include_router(statistics_router)
+app.include_router(translate_router)
+app.include_router(recommend_router)
+app.include_router(firebase_router)
+app.include_router(gemini_router)
+# app.include_router(finetuned_ai_router)
 
 @app.get("/")
 async def root():
@@ -40,4 +50,6 @@ async def root():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=5000)
+    # 동시 사용자 처리를 위한 다중 워커 설정
+    # import string을 사용하여 workers 파라미터 활성화
+    uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=False)

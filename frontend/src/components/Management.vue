@@ -58,7 +58,7 @@ export default {
     const auth = getAuth();
     const user = auth.currentUser;
     if (!user || user.email !== 'admin@gmail.com') {
-      this.$router.push('/');
+      this.$router.push('/main');
       return;
     }
     this.isAdmin = true;
@@ -73,7 +73,7 @@ export default {
     },
     async loadStatistics() {
       try {
-        const response = await fetch('http://localhost:5000/api/get_statistics');
+        const response = await fetch('/api/get_statistics');
         const result = await response.json();
         
         if (result.success) {
@@ -107,7 +107,8 @@ export default {
 /* 네이버 지식iN 스타일 - Community.vue 베이스 */
 .management-page {
   min-height: 100vh;
-  background: #F7F8FA;
+  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+  background-attachment: fixed;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   width: 100vw;
   max-width: 100vw;
@@ -179,7 +180,8 @@ export default {
 }
 
 .stat-card {
-  background: #F7F8FA;
+  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+  background-attachment: fixed;
   border-radius: 12px;
   padding: 20px;
   text-align: center;
@@ -200,7 +202,8 @@ export default {
 }
 
 .place-stats {
-  background: #F7F8FA;
+  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+  background-attachment: fixed;
   border-radius: 12px;
   padding: 20px;
   border: 1px solid #e9ecef;

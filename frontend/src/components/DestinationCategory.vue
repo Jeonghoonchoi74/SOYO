@@ -205,7 +205,8 @@ export default {
 /* 네이버 지식iN 스타일 - Community.vue 베이스 */
 .destination-page {
   min-height: 100vh;
-  background: #F7F8FA;
+  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+  background-attachment: fixed;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   width: 100vw;
   max-width: 100vw;
@@ -298,7 +299,8 @@ export default {
   font-size: 14px;
   border: 1px solid #e9ecef;
   border-radius: 8px;
-  background: #F7F8FA;
+  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+  background-attachment: fixed;
   box-sizing: border-box;
   color: #212529;
   font-family: inherit;
@@ -540,7 +542,8 @@ export default {
 }
 
 .btn-secondary {
-  background: #F7F8FA;
+  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+  background-attachment: fixed;
   color: #495057;
   border: 1px solid #e9ecef;
   border-radius: 6px;
