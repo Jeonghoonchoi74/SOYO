@@ -101,7 +101,7 @@
                 class="more-keywords"
                 @click.stop="toggleKeywords(idx)"
               >
-                {{ place.showAllKeywords ? '접기' : `+${place.keywords.length - 3}` }}
+                {{ place.showAllKeywords ? $t('recommend_fold') : `+${place.keywords.length - 3}` }}
               </span>
             </div>
           </div>
@@ -118,7 +118,7 @@
                 class="review-item"
               >
                 <div class="review-header">
-                  <span class="reviewer-name">{{ review.userName || '익명' }}</span>
+                  <span class="reviewer-name">{{ review.userName || $t('recommend_anonymous') }}</span>
                   <div class="review-rating">
                     <span v-for="star in 5" :key="star" class="star" :class="{ filled: star <= review.rating }">⭐</span>
                   </div>
@@ -136,9 +136,17 @@
       </div>
     </div>
     
-    <div class="summary">
-      <p>{{ $t('recommend_summary').replace('{count}', places.length).replace('{displayed}', places.length) }}</p>
+    <!-- 다시 검색하기 버튼 -->
+    <div class="search-again-section">
+      <button class="search-again-btn" @click="openSearchModal">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.35-4.35"/>
+        </svg>
+        {{ $t('search_again_title') }}
+      </button>
     </div>
+    
     
     
     
@@ -351,13 +359,108 @@
       </svg>
     </button>
 
+    <!-- 검색 모달 -->
+    <div v-if="showSearchModal" class="modal-overlay" @click="closeSearchModal">
+      <div class="modal-content search-modal" @click.stop>
+        <div class="modal-header">
+          <h3>{{ $t('search_again_title') }}</h3>
+          <button class="close-btn" @click="closeSearchModal">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="section-label">{{ $t('pref_section_region') }}</label>
+            <button 
+              type="button" 
+              class="region-selector-btn" 
+              @click="openRegionModal"
+              :class="{ 'has-selection': searchForm.selectedRegion }"
+            >
+              <span v-if="searchForm.selectedRegion">
+                {{ getSelectedRegionDisplayName() }}
+              </span>
+              <span v-else class="placeholder">
+                {{ $t('pref_region_placeholder') }}
+              </span>
+              <span class="dropdown-icon">▼</span>
+            </button>
+          </div>
+          
+          <div v-if="searchForm.selectedRegion" class="form-group">
+            <div class="region-description">
+              <p class="description-text">{{ $t(getRegionDescription(searchForm.selectedRegion)) }}</p>
+            </div>
+          </div>
+
+          <div v-if="searchForm.selectedRegion" class="form-group">
+            <label class="section-label">{{ $t('pref_section_category') }}</label>
+            <div class="category-selector">
+              <button 
+                v-for="category in availableCategories" 
+                :key="category" 
+                :class="['category-btn', { active: searchForm.selectedCategory === category }]" 
+                @click="selectSearchCategory(category)"
+              >
+                <span v-html="getCategoryDisplayName(category)"></span>
+              </button>
+            </div>
+          </div>
+
+          <div v-if="searchForm.selectedCategory" class="form-group">
+            <label class="section-label">{{ $t('pref_section_free') }}</label>
+            <textarea
+              v-model="searchForm.freeText"
+              class="free-input"
+              :placeholder="$t('pref_free_placeholder')"
+              rows="3"
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" @click="closeSearchModal">{{ $t('search_again_cancel') }}</button>
+          <button 
+            class="btn-primary" 
+            @click="performSearchAgain"
+            :disabled="!canSearchAgain || isSearching"
+          >
+            {{ isSearching ? $t('searching_title') : $t('search_again_btn') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 지역 선택 모달 -->
+    <div v-if="showRegionModal" class="modal-overlay" @click="closeRegionModal">
+      <div class="modal-content region-modal" @click.stop>
+        <div class="modal-header">
+          <h3>{{ $t('pref_section_region') }}</h3>
+          <button class="close-btn" @click="closeRegionModal">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="region-grid">
+            <button 
+              v-for="region in regionOptions" 
+              :key="region.value" 
+              :class="['region-option', { active: searchForm.selectedRegion === region.value }]"
+              @click="selectSearchRegion(region.value)"
+              :title="$t(region.label)"
+            >
+              <div class="region-image">
+                <img :src="region.image" :alt="$t(region.label)" />
+              </div>
+              <span class="region-name">{{ $t(region.label) }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
 <script>
 import { i18nState, $t } from '../i18n';
 import { getAuth } from 'firebase/auth';
-import { getDisplayName } from '../utils/regionMapping';
+import { getDisplayName, getRegionOptions, getAvailableCategories, getCategoryLabel, getRegionDescription } from '../utils/regionMapping';
 import GoogleMap from './GoogleMap.vue';
 
 export default {
@@ -380,10 +483,27 @@ export default {
       isTranslating: false,
       translatedContent: null,
       isTranslated: false, // Firebase에서 가져온 번역 상태
+      // 검색 모달 관련
+      showSearchModal: false,
+      showRegionModal: false,
+      isSearching: false,
+      regionOptions: getRegionOptions(),
+      availableCategories: [],
+      searchForm: {
+        selectedRegion: '',
+        selectedCategory: '',
+        freeText: ''
+      }
     };
   },
   computed: {
     // $t는 methods에서만 정의
+    canSearchAgain() {
+      return this.searchForm.selectedRegion && 
+             this.searchForm.selectedCategory && 
+             this.searchForm.freeText && 
+             this.searchForm.freeText.trim().length > 0;
+    }
   },
       async mounted() {
         // 사용자 언어 설정 가져오기
@@ -444,6 +564,13 @@ export default {
     
     // 지역과 카테고리 텍스트 생성 함수
     getRegionCategoryText() {
+      // 쿼리 파라미터에서 searchQuery가 있으면 그것을 사용
+      const searchQuery = this.$route.query.searchQuery;
+      if (searchQuery && searchQuery.trim()) {
+        return searchQuery;
+      }
+      
+      // searchQuery가 없으면 기본 형식으로 표시
       const regionName = this.$t(this.getDisplayName(this.region));
       const categoryName = this.$t(this.getCategoryLabel(this.category));
       
@@ -835,6 +962,93 @@ export default {
       }
     },
 
+    // 필터링 조건을 매개변수로 받는 검색 결과 처리 메서드
+    async processSearchResultsWithFilter(searchResults, filterRegion, filterCategory) {
+      try {
+        this.loading = true;
+        this.error = null;
+        
+        console.log('필터링 조건으로 검색 결과 처리:', {
+          searchResults: searchResults.length,
+          filterRegion,
+          filterCategory
+        });
+        
+        // 전국 선택 시 지역 필터링 없이 모든 결과 표시
+        let filteredResults;
+        if (filterRegion === '전국') {
+          filteredResults = searchResults.filter(item => item.category === filterCategory);
+        } else {
+          filteredResults = searchResults.filter(item => 
+            item.region === filterRegion && item.category === filterCategory
+          );
+        }
+        
+        console.log('필터링 조건:', {
+          filterRegion,
+          filterCategory,
+          totalResults: searchResults.length,
+          filteredResults: filteredResults.length
+        });
+        
+        console.log(`전체 결과: ${searchResults.length}개, 지역 및 카테고리 필터링 후: ${filteredResults.length}개`);
+        
+        // Firebase에서 상세 정보 가져오기 (실시간 로딩)
+        this.places = []; // 초기화
+        this.bookmarkDisabled = []; // 초기화
+        console.log(`필터링된 결과 ${filteredResults.length}개 처리 시작`);
+        
+        // 각 항목을 병렬로 처리하되, 완료되는 대로 즉시 표시
+        const processItem = async (item) => {
+          // item.region이 undefined인 경우 filterRegion 사용 (전국 선택 시에는 실제 지역 정보가 필요)
+          const actualRegion = item.region || filterRegion;
+          console.log(`Firebase 조회 중: ${item.id}, ${item.region}, ${filterRegion}, 실제 사용: ${actualRegion}, ${item.category}`);
+          const firebaseData = await this.getFirebaseData(
+            item.id, 
+            actualRegion, 
+            item.category
+          );
+          if (firebaseData) {
+            console.log(`Firebase 데이터 추가: ${item.id}`, firebaseData);
+            
+            // 날짜 필터링 적용 (events 카테고리인 경우)
+            if (filterCategory === 'events' && !this.isInTargetPeriod(firebaseData)) {
+              console.log(`날짜 필터링으로 제외: ${item.id}`);
+              return;
+            }
+            
+            // 리뷰 데이터 로드
+            const reviews = await this.loadPlaceReviews(firebaseData.contentid);
+            
+            // 즉시 추가하여 바로 표시 (지역 정보 포함)
+            this.places.push({
+              ...firebaseData,
+              region: actualRegion, // 지역 정보 명시적으로 추가
+              bookmarked: false,
+              reviews: reviews
+            });
+            this.bookmarkDisabled.push(false);
+            
+            console.log(`장소 추가됨: ${item.id}, 총 ${this.places.length}개`);
+          } else {
+            console.log(`Firebase 데이터 없음: ${item.id}`);
+          }
+        };
+        
+        // 모든 항목을 병렬로 시작 (완료되는 대로 즉시 표시)
+        const promises = filteredResults.map(processItem);
+        await Promise.allSettled(promises);
+        
+        console.log(`최종 상세 장소 ${this.places.length}개`, this.places);
+        
+      } catch (err) {
+        console.error('검색 결과 처리 오류:', err);
+        this.error = '검색 결과를 처리하는 중 오류가 발생했습니다.';
+      } finally {
+        this.loading = false;
+      }
+    },
+
     // 라우터 state에서 전달된 검색 결과 처리
     async processSearchResults(searchResults) {
       try {
@@ -852,6 +1066,13 @@ export default {
             item.region === this.region && item.category === this.category
           );
         }
+        
+        console.log('필터링 조건:', {
+          region: this.region,
+          category: this.category,
+          totalResults: searchResults.length,
+          filteredResults: filteredResults.length
+        });
         
         console.log(`전체 결과: ${searchResults.length}개, 지역 및 카테고리 필터링 후: ${filteredResults.length}개`);
         
@@ -1385,7 +1606,7 @@ export default {
           // 모달 메시지 표시
           this.showModalMessage(this.$t('recommend_translation_complete'));
         } else {
-          throw new Error('번역할 내용이 없습니다.');
+          throw new Error(this.$t('recommend_no_content_to_translate'));
         }
         
       } catch (error) {
@@ -1572,6 +1793,230 @@ export default {
     toggleKeywords(idx) {
       this.places[idx].showAllKeywords = !this.places[idx].showAllKeywords;
     },
+
+    // 검색 모달 관련 메서드들
+    openSearchModal() {
+      this.showSearchModal = true;
+      // 현재 설정으로 초기화
+      this.searchForm.selectedRegion = this.region;
+      this.searchForm.selectedCategory = this.category;
+      this.searchForm.freeText = '';
+      this.availableCategories = getAvailableCategories(this.searchForm.selectedRegion);
+    },
+
+    closeSearchModal() {
+      this.showSearchModal = false;
+      this.showRegionModal = false;
+      // searchForm 초기화는 검색 완료 후에만 수행
+      this.availableCategories = [];
+    },
+
+    openRegionModal() {
+      this.showRegionModal = true;
+    },
+
+    closeRegionModal() {
+      this.showRegionModal = false;
+    },
+
+    selectSearchRegion(regionValue) {
+      this.searchForm.selectedRegion = regionValue;
+      this.searchForm.selectedCategory = ''; // 지역 변경 시 카테고리 초기화
+      this.availableCategories = getAvailableCategories(regionValue);
+      this.closeRegionModal();
+    },
+
+    selectSearchCategory(category) {
+      this.searchForm.selectedCategory = category;
+    },
+
+    getSelectedRegionDisplayName() {
+      const region = this.regionOptions.find(r => r.value === this.searchForm.selectedRegion);
+      return region ? this.$t(region.label) : '';
+    },
+
+    getRegionDescription(region) {
+      return getRegionDescription(region);
+    },
+
+    getCategoryDisplayName(category) {
+      return this.$t(getCategoryLabel(category));
+    },
+
+    // 다시 검색하기 실행
+    async performSearchAgain() {
+      if (this.isSearching) return;
+      
+      const auth = getAuth();
+      const user = auth.currentUser;
+      
+      if (!user) {
+        console.error('사용자가 로그인되지 않았습니다.');
+        return;
+      }
+      
+      this.isSearching = true;
+      
+      try {
+        // 검색 쿼리 준비
+        let searchQuery = '';
+        if (this.searchForm.freeText && this.searchForm.freeText.trim()) {
+          const userLanguage = await this.getUserLanguage();
+          if (userLanguage && userLanguage !== 'ko') {
+            // 번역된 텍스트 사용
+            const translatedResult = await this.translateFreeText(this.searchForm.freeText);
+            searchQuery = translatedResult || this.searchForm.freeText;
+          } else {
+            console.log('사용자 언어가 한국어이므로 번역을 건너뜁니다.');
+            searchQuery = this.searchForm.freeText;
+          }
+        }
+        
+        // 새로운 검색 API 호출
+        const finalQuery = searchQuery || `${this.searchForm.selectedRegion} ${this.getCategoryDisplayName(this.searchForm.selectedCategory)}`;
+        console.log('검색 API 요청:', {
+          uid: user.uid,
+          query: finalQuery,
+          region: this.searchForm.selectedRegion,
+          category: this.searchForm.selectedCategory
+        });
+        
+        // 전국 선택 시 지역 필터링 없이 요청
+        const requestBody = {
+          uid: user.uid,
+          query: finalQuery,
+          category: this.searchForm.selectedCategory
+        };
+        
+        // 전국이 아닌 경우에만 region 필드 추가
+        if (this.searchForm.selectedRegion !== '전국') {
+          requestBody.region = this.searchForm.selectedRegion;
+        }
+        
+        const response = await fetch('/api/recommend/search', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        const searchResults = result.data;
+        console.log('검색 결과:', searchResults);
+        
+        // 검색 결과를 localStorage에 임시 저장
+        localStorage.setItem('tempSearchResults', JSON.stringify(searchResults));
+        
+        // 검색 모달 닫기
+        this.closeSearchModal();
+        
+        // 현재 컴포넌트의 데이터를 직접 업데이트
+        this.region = this.searchForm.selectedRegion;
+        this.category = this.searchForm.selectedCategory;
+        
+        console.log('검색 모달에서 전달된 필터링 조건:', {
+          selectedRegion: this.searchForm.selectedRegion,
+          selectedCategory: this.searchForm.selectedCategory,
+          searchResults: searchResults.length
+        });
+        
+        // 검색 결과를 즉시 처리 (업데이트된 region, category로)
+        await this.processSearchResultsWithFilter(searchResults, this.searchForm.selectedRegion, this.searchForm.selectedCategory);
+        
+        // URL 쿼리 파라미터도 업데이트
+        const queryParams = {
+          category: this.searchForm.selectedCategory,
+          searchQuery: searchQuery
+        };
+        
+        // 전국이 아닌 경우에만 region 파라미터 추가
+        if (this.searchForm.selectedRegion !== '전국') {
+          queryParams.region = this.searchForm.selectedRegion;
+        }
+        
+        // URL 업데이트 (페이지 새로고침 없이)
+        this.$router.replace({
+          path: '/recommend',
+          query: queryParams
+        });
+        
+        console.log('검색 결과 업데이트 완료:', this.places.length, '개 장소');
+        
+        // 검색 완료 후 searchForm 초기화
+        this.searchForm = {
+          selectedRegion: '',
+          selectedCategory: '',
+          freeText: ''
+        };
+        
+      } catch (error) {
+        console.error('검색 API 호출 중 오류 발생:', error);
+        this.showModalMessage(this.$t('recommend_search_error'));
+        
+        // 에러 발생 시에도 searchForm 초기화
+        this.searchForm = {
+          selectedRegion: '',
+          selectedCategory: '',
+          freeText: ''
+        };
+      } finally {
+        this.isSearching = false;
+      }
+    },
+
+    // Free Text 번역 함수
+    async translateFreeText(text) {
+      const auth = getAuth();
+      const user = auth.currentUser;
+      
+      if (!user) {
+        console.error('사용자가 로그인되지 않았습니다.');
+        return text;
+      }
+
+      try {
+        const userLanguage = await this.getUserLanguage() || 'auto';
+        console.log('번역 요청 시작:', text);
+        console.log('소스 언어:', userLanguage, '→ 타겟 언어: ko');
+        
+        const response = await fetch('/api/translate/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text: text,
+            source_lang: userLanguage,
+            target_language: 'ko',
+            uid: user.uid
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        
+        if (result.translated_text) {
+          console.log('원본 텍스트:', text);
+          console.log('번역된 텍스트 (한국어):', result.translated_text);
+          return result.translated_text;
+        } else {
+          console.error('번역 결과가 없습니다:', result);
+          return text;
+        }
+        
+      } catch (error) {
+        console.error('번역 API 호출 중 오류 발생:', error);
+        return text;
+      }
+    },
   },
 };
 </script>
@@ -1662,6 +2107,7 @@ export default {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
+
 
 .loading {
   text-align: center;
@@ -2047,11 +2493,37 @@ export default {
   color: white;
 }
 
-.summary {
+
+/* 다시 검색하기 버튼 섹션 */
+.search-again-section {
   text-align: center;
-  color: #64748b;
-  font-size: 1rem;
   margin-bottom: 2rem;
+}
+
+.search-again-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: #4A69E2;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(74, 105, 226, 0.3);
+}
+
+.search-again-btn:hover {
+  background: #3B5BC7;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(74, 105, 226, 0.4);
+}
+
+.search-again-btn:active {
+  transform: translateY(0);
 }
 
 .bookmark-list-btn {
@@ -2354,6 +2826,299 @@ export default {
   100% { opacity: 0; transform: translate(-50%, -40%); }
 }
 
+/* 검색 모달 스타일 */
+.search-modal {
+  max-width: 500px;
+}
+
+.search-modal .modal-header {
+  padding: 16px 24px 12px 24px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.search-modal .modal-header h3 {
+  color: #212529 !important;
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.search-modal .modal-body {
+  padding: 16px 24px;
+}
+
+.search-modal .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.search-modal .section-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #212529;
+}
+
+.search-modal .region-selector-btn {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 14px;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #212529;
+  outline: none;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.search-modal .region-selector-btn:hover {
+  border-color: #4A69E2;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(74, 105, 226, 0.12);
+}
+
+.search-modal .region-selector-btn.has-selection {
+  background: #ffffff;
+  border-color: #4A69E2;
+  color: #4A69E2;
+}
+
+.search-modal .region-selector-btn .placeholder {
+  color: #adb5bd;
+}
+
+.search-modal .region-selector-btn .dropdown-icon {
+  font-size: 12px;
+  transition: transform 0.2s ease;
+  color: #6c757d;
+}
+
+.search-modal .region-selector-btn:hover .dropdown-icon {
+  transform: rotate(180deg);
+}
+
+.search-modal .region-description {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 8px;
+}
+
+.search-modal .description-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #495057;
+  text-align: left;
+}
+
+.search-modal .category-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.search-modal .category-btn {
+  flex: 1;
+  min-width: 120px;
+  padding: 12px 16px;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  background: #f8f9fa;
+  color: #495057;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.search-modal .category-btn:hover {
+  background: #e9ecef;
+  color: #212529;
+}
+
+.search-modal .category-btn.active {
+  background: #4A69E2;
+  border-color: #4A69E2;
+  color: white;
+}
+
+.search-modal .free-input {
+  width: 100%;
+  padding: 14px;
+  font-size: 14px;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #212529;
+  outline: none;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+  box-sizing: border-box;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.search-modal .free-input:focus {
+  border-color: #4A69E2;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(74, 105, 226, 0.1);
+}
+
+.search-modal .free-input::placeholder {
+  color: #adb5bd;
+}
+
+.search-modal .modal-footer {
+  padding: 20px 24px;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.search-modal .btn-primary {
+  background: #4A69E2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.search-modal .btn-primary:hover:not(:disabled) {
+  background: #3B5BC7;
+}
+
+.search-modal .btn-primary:disabled {
+  background: #adb5bd;
+  cursor: not-allowed;
+}
+
+.search-modal .btn-secondary {
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.search-modal .btn-secondary:hover {
+  background: #5a6268;
+}
+
+/* 지역 선택 모달 스타일 */
+.region-modal {
+  max-width: 900px;
+}
+
+.region-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(6, 1fr);
+  gap: 4px;
+  max-height: 600px;
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+.region-grid::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.region-option {
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #495057;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  min-height: 100px;
+  position: relative;
+  overflow: hidden;
+}
+
+.region-option:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+
+.region-option.active {
+  box-shadow: 0 4px 12px rgba(74, 105, 226, 0.5);
+  transform: scale(1.02);
+  z-index: 10;
+}
+
+.region-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.region-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.region-name {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  word-break: keep-all;
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  transition: all 0.2s ease;
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  z-index: 10;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
 /* overview 관련 커스텀 스타일 제거 (overview-item, info-title 등) */
 
 /* 반응형 */
@@ -2461,6 +3226,93 @@ export default {
   /* 모바일에서 지도 높이 조정 */
   .google-map-container {
     height: 200px;
+  }
+  
+  /* 검색 모달 모바일 스타일 */
+  .search-modal {
+    max-width: 95vw;
+    max-height: 90vh;
+  }
+  
+  .search-modal .modal-header {
+    padding: 12px 20px 8px 20px;
+  }
+  
+  .search-modal .modal-header h3 {
+    font-size: 16px;
+  }
+  
+  .search-modal .modal-body {
+    padding: 12px 20px;
+  }
+  
+  .search-modal .form-group {
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  
+  .search-modal .section-label {
+    font-size: 15px;
+  }
+  
+  .search-modal .region-selector-btn {
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+  
+  .search-modal .category-btn {
+    padding: 10px 12px;
+    font-size: 13px;
+    min-width: 100px;
+  }
+  
+  .search-modal .free-input {
+    padding: 12px;
+    font-size: 13px;
+  }
+  
+  .search-modal .modal-footer {
+    padding: 16px 20px;
+    flex-direction: column;
+  }
+  
+  .search-modal .btn-secondary,
+  .search-modal .btn-primary {
+    width: 100%;
+    padding: 14px 20px;
+  }
+  
+  /* 지역 선택 모달 모바일 스타일 */
+  .region-modal {
+    max-width: 95vw;
+    max-height: 90vh;
+  }
+  
+  .region-grid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: auto;
+    gap: 4px;
+  }
+  
+  .region-option {
+    padding: 0;
+    min-height: 70px;
+  }
+  
+  .region-image {
+    width: 100%;
+    height: 100%;
+  }
+  
+  .region-name {
+    font-size: 10px;
+    bottom: 2px;
+  }
+  
+  /* 모바일에서 다시 검색하기 버튼 */
+  .search-again-btn {
+    padding: 10px 20px;
+    font-size: 14px;
   }
 }
 
