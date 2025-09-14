@@ -448,14 +448,16 @@ export default {
       this.isSaving = true;
       this.startSearchingImageRotation();
       
-      // 검색 쿼리 준비
+      // 검색 쿼리 준비 - 번역된 텍스트로 검색하되, 사용자에게는 원본 표시
       let searchQuery = '';
+      let originalFreeText = this.freeText; // 사용자에게 보여줄 원본 텍스트 저장
       if (this.freeText && this.freeText.trim()) {
         const userLanguage = await this.getUserLanguage();
         if (userLanguage && userLanguage !== 'ko') {
-          // 번역된 텍스트 사용
+          // 번역된 텍스트로 검색
           const translatedResult = await this.translateFreeText();
           searchQuery = translatedResult || this.freeText;
+          console.log('번역된 텍스트로 검색:', searchQuery);
         } else {
           console.log('사용자 언어가 한국어이므로 번역을 건너뜁니다.');
           searchQuery = this.freeText;
@@ -506,20 +508,20 @@ export default {
         // 선호도 저장
         const saved = await this.savePreferences();
         
+        // 검색 중 모달 숨기기
+        this.showSearchingModal = false;
+        this.stopSearchingImageRotation();
+        
         // 전국 선택 시 지역 필터링 없이 쿼리 파라미터 설정
         const queryParams = {
           category: this.selectedCategory,
-          searchQuery: searchQuery
+          searchQuery: originalFreeText // 사용자에게 보여줄 원본 텍스트
         };
         
         // 전국이 아닌 경우에만 region 파라미터 추가
         if (this.selectedRegion !== '전국') {
           queryParams.region = this.selectedRegion;
         }
-        
-        // 검색 중 모달 숨기기
-        this.showSearchingModal = false;
-        this.stopSearchingImageRotation();
         
         // RecommendResult 페이지로 이동
         this.$router.push({
@@ -536,7 +538,7 @@ export default {
         // 전국 선택 시 지역 필터링 없이 쿼리 파라미터 설정
         const queryParams = {
           category: this.selectedCategory,
-          searchQuery: searchQuery
+          searchQuery: originalFreeText // 사용자에게 보여줄 원본 텍스트
         };
         
         // 전국이 아닌 경우에만 region 파라미터 추가

@@ -152,7 +152,7 @@
     
     
     <!-- 상세 모달 -->
-    <div v-if="selectedPlace" class="modal-overlay" @click="closeModal">
+    <div v-if="selectedPlace" class="modal-overlay" @click="!isTranslating && closeModal()">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
           <h2 class="modal-title">
@@ -178,13 +178,7 @@
             >
               {{ isTranslating ? $t('recommend_translating') : $t('recommend_translate') }}
             </button>
-            <div 
-              v-if="userLanguage !== 'ko' && isTranslated" 
-              class="translate-status"
-            >
-              ✅ {{ $t('recommend_translated') }}
-            </div>
-            <button class="modal-close" @click="closeModal">&times;</button>
+            <button class="modal-close" @click="!isTranslating && closeModal()" :disabled="isTranslating">&times;</button>
           </div>
         </div>
         
@@ -343,6 +337,14 @@
     </div>
     
       <div v-if="showModal" class="custom-modal">{{ modalMessage }}</div>
+      
+      <!-- 번역 중 팝업 -->
+      <div v-if="isTranslating" class="translating-popup">
+        <div class="translating-content">
+          <div class="translating-spinner"></div>
+          <p>{{ $t('recommend_translating') }}</p>
+        </div>
+      </div>
     </div>
     
     <!-- Float 버튼들 -->
@@ -564,10 +566,10 @@ export default {
     
     // 지역과 카테고리 텍스트 생성 함수
     getRegionCategoryText() {
-      // 쿼리 파라미터에서 searchQuery가 있으면 그것을 사용
+      // 쿼리 파라미터에서 searchQuery가 있으면 그것을 사용 (사용자가 입력한 원본 텍스트)
       const searchQuery = this.$route.query.searchQuery;
       if (searchQuery && searchQuery.trim()) {
-        return searchQuery;
+        return searchQuery; // 사용자가 입력한 원본 텍스트 그대로 반환 (검색은 번역된 쿼리로 했지만 표시는 원본)
       }
       
       // searchQuery가 없으면 기본 형식으로 표시
@@ -1603,8 +1605,7 @@ export default {
           // Firebase에 번역 결과 저장
           await this.saveTranslationToFirebase(translatedTexts);
           
-          // 모달 메시지 표시
-          this.showModalMessage(this.$t('recommend_translation_complete'));
+          // 번역 완료 메시지 제거 (사용자에게 표시하지 않음)
         } else {
           throw new Error(this.$t('recommend_no_content_to_translate'));
         }
@@ -1858,14 +1859,16 @@ export default {
       this.isSearching = true;
       
       try {
-        // 검색 쿼리 준비
+        // 검색 쿼리 준비 - 번역된 텍스트로 검색하되, 사용자에게는 원본 표시
         let searchQuery = '';
+        let originalFreeText = this.searchForm.freeText; // 사용자에게 보여줄 원본 텍스트 저장
         if (this.searchForm.freeText && this.searchForm.freeText.trim()) {
           const userLanguage = await this.getUserLanguage();
           if (userLanguage && userLanguage !== 'ko') {
-            // 번역된 텍스트 사용
+            // 번역된 텍스트로 검색
             const translatedResult = await this.translateFreeText(this.searchForm.freeText);
             searchQuery = translatedResult || this.searchForm.freeText;
+            console.log('번역된 텍스트로 검색:', searchQuery);
           } else {
             console.log('사용자 언어가 한국어이므로 번역을 건너뜁니다.');
             searchQuery = this.searchForm.freeText;
@@ -1931,7 +1934,7 @@ export default {
         // URL 쿼리 파라미터도 업데이트
         const queryParams = {
           category: this.searchForm.selectedCategory,
-          searchQuery: searchQuery
+          searchQuery: originalFreeText // 사용자에게 보여줄 원본 텍스트
         };
         
         // 전국이 아닌 경우에만 region 파라미터 추가
@@ -2826,6 +2829,47 @@ export default {
   100% { opacity: 0; transform: translate(-50%, -40%); }
 }
 
+/* 번역 중 팝업 스타일 */
+.translating-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.translating-content {
+  background: white;
+  border-radius: 16px;
+  padding: 40px 32px;
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  max-width: 300px;
+  width: 90%;
+}
+
+.translating-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e2e8f0;
+  border-top: 4px solid #4A69E2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+.translating-content p {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
 /* 검색 모달 스타일 */
 .search-modal {
   max-width: 500px;
@@ -3312,6 +3356,22 @@ export default {
   /* 모바일에서 다시 검색하기 버튼 */
   .search-again-btn {
     padding: 10px 20px;
+    font-size: 14px;
+  }
+  
+  /* 번역 중 팝업 모바일 스타일 */
+  .translating-content {
+    padding: 32px 24px;
+    max-width: 280px;
+  }
+  
+  .translating-spinner {
+    width: 32px;
+    height: 32px;
+    border-width: 3px;
+  }
+  
+  .translating-content p {
     font-size: 14px;
   }
 }
