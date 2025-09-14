@@ -160,6 +160,11 @@ async def get_user_preferences(request: Request):
         print(f"선호도 조회 에러: {str(e)}")
         return JSONResponse(content={'success': False, 'error': str(e)}, status_code=500)
 
+@router.post("/delete_user")
+async def delete_user(request: Request):
+    """사용자 계정 삭제 API - 클라이언트 호환성을 위한 별칭"""
+    return await delete_user_account(request)
+
 @router.post("/delete_user_account")
 async def delete_user_account(request: Request):
     data = await request.json()

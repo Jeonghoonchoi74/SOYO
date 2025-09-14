@@ -562,6 +562,16 @@ export const messages = {
     community_days_ago: '일 전',
     community_weeks_ago: '주 전',
     community_months_ago: '개월 전',
+    // 검색 모달 관련
+    search_again_title: '다시 검색하기',
+    search_again_btn: '검색하기',
+    search_again_cancel: '취소',
+    // RecommendResult 관련
+    recommend_fold: '접기',
+    recommend_anonymous: '익명',
+    recommend_nationwide: '전국',
+    recommend_search_error: '검색 중 오류가 발생했습니다. 다시 시도해주세요.',
+    recommend_no_content_to_translate: '번역할 내용이 없습니다.',
   },
   en: {
     welcome: 'Every moment of your trip,\nwith AI Travel Assistant',
@@ -1123,6 +1133,16 @@ export const messages = {
     community_days_ago: 'days ago',
     community_weeks_ago: 'weeks ago',
     community_months_ago: 'months ago',
+    // 검색 모달 관련
+    search_again_title: 'Search Again',
+    search_again_btn: 'Search',
+    search_again_cancel: 'Cancel',
+    // RecommendResult 관련
+    recommend_fold: 'Fold',
+    recommend_anonymous: 'Anonymous',
+    recommend_nationwide: 'Nationwide',
+    recommend_search_error: 'An error occurred during search. Please try again.',
+    recommend_no_content_to_translate: 'No content to translate.',
   },
   zh: {
     welcome: '旅行的每一刻，\n与AI旅行助手同行',
@@ -1684,6 +1704,16 @@ export const messages = {
     community_days_ago: '天前',
     community_weeks_ago: '周前',
     community_months_ago: '个月前',
+    // 검색 모달 관련
+    search_again_title: '重新搜索',
+    search_again_btn: '搜索',
+    search_again_cancel: '取消',
+    // RecommendResult 관련
+    recommend_fold: '收起',
+    recommend_anonymous: '匿名',
+    recommend_nationwide: '全国',
+    recommend_search_error: '搜索时发生错误，请重试。',
+    recommend_no_content_to_translate: '没有可翻译的内容。',
   },
   ja: {
     welcome: '旅のすべての瞬間を\nAI旅行アシスタントと共に',
@@ -2245,6 +2275,16 @@ export const messages = {
     community_days_ago: '日前',
     community_weeks_ago: '週前',
     community_months_ago: 'ヶ月前',
+    // 검색 모달 관련
+    search_again_title: '再検索',
+    search_again_btn: '検索',
+    search_again_cancel: 'キャンセル',
+    // RecommendResult 관련
+    recommend_fold: '折りたたむ',
+    recommend_anonymous: '匿名',
+    recommend_nationwide: '全国',
+    recommend_search_error: '検索中にエラーが発生しました。再試行してください。',
+    recommend_no_content_to_translate: '翻訳する内容がありません。',
   },
 };
 
