@@ -190,6 +190,19 @@ flowchart LR
      PD:::apiNode
 ```
 
+# M2M100 Korean Tourism Translator (ONNX)
+
+이 모델은 `facebook/m2m100_1.2B`를 한국 관광 데이터셋으로 파인튜닝한 번역기입니다. ONNX 형식으로 변환되어 빠른 추론 속도를 제공하며, API 서버 배포에 최적화되었습니다.
+
+---## 📌 Specs- **Base Model**: `facebook/m2m100_1.2B`- **Languages**: `ko` ↔ `en`, `ja`, `zh`- **Domain**: Korean Tourism (지명, 음식 등 고유명사 번역 정확도 향상)- **Format**: ONNX (Fast CPU/GPU Inference)
+
+---## 🛠️ Install```bash
+pip install transformers optimum[onnxruntime] sentencepiece
+
+---## 🔗 More Info
+더 자세한 내용은 아래 Hugging Face 저장소에서 확인하세요.
+[Pokqok/m2m100-onnx-ko-to-ja-zh-k-tourism](https://huggingface.co/Pokqok/m2m100-onnx-ko-to-ja-zh-k-tourism)
+
 ## 🚀 설치 및 실행
 
 ### 📋 사전 요구사항
