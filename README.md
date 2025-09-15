@@ -44,7 +44,7 @@
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white)
 ![npm](https://img.shields.io/badge/npm-CB3837?style=for-the-badge&logo=npm&logoColor=white)
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-m2m100--onnx--ko--to--ja--zh--k--tourism-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/Pokqok/m2m100-onnx-ko-to-ja-zh-k-tourism)
-[![Hugging Face](https://huggingface.co/seoseo99/qwen2-1_5b-sum_lk_gemini)
+[![Hugging Face Model](https://img.shields.io/badge/HuggingFace-Model-ffcc00?logo=huggingface&logoColor=black)](https://huggingface.co/seoseo99/qwen2-1_5b-sum_lk_gemini)
 [![Docker Hub](https://img.shields.io/badge/Docker%20Hub-sbert--pinecone--api-0db7ed?logo=docker&logoColor=white)](https://hub.docker.com/r/pokqok/sbert-pinecone-api)
 [![Docker Hub](https://img.shields.io/badge/Docker%20Hub-m2m100--k--tourism--ko--ja--zh--onnx-0db7ed?logo=docker&logoColor=white)](https://hub.docker.com/r/pokqok/m2m100-k-tourism-ko-ja-zh-onnx)
 [![Docker Hub](https://img.shields.io/badge/Docker%20Hub-review--summary--worker-0db7ed?logo=docker&logoColor=white)](https://hub.docker.com/r/seoseo99/review-summary-worker)
